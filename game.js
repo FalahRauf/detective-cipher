@@ -1400,13 +1400,13 @@
     tctx = tcv.getContext('2d');
     tctx.imageSmoothingEnabled = false;
     rain = [];
-    for (var i = 0; i < 170; i++) {
+    for (var i = 0; i < 112; i++) {
       rain.push({
         x: Math.random() * TW,
         y: Math.random() * TH,
-        v: 190 + Math.random() * 170,
-        l: 5 + Math.random() * 8,
-        a: 0.10 + Math.random() * 0.22
+        v: 170 + Math.random() * 150,
+        l: 4 + Math.random() * 7,
+        a: 0.07 + Math.random() * 0.17
       });
     }
   }
@@ -1563,208 +1563,293 @@
 
   function applyLeftShade() {
     var vg = tctx.createLinearGradient(0, 10, 0, 144);
-    vg.addColorStop(0, 'rgba(3,4,7,.76)');
+    vg.addColorStop(0, 'rgba(3,4,7,.64)');
     vg.addColorStop(0.68, 'rgba(3,4,7,.34)');
     vg.addColorStop(1, 'rgba(3,4,7,0)');
     tctx.fillStyle = vg;
     tctx.fillRect(0, 10, 300, 136);
   }
 
-  /* ---------- garis TKP kuning (kanan) ---------- */
+  /* ---------- langit malam + bulan ---------- */
+  function drawSky() {
+    var g = tctx;
+    var sky = g.createLinearGradient(0, 0, 0, 214);
+    sky.addColorStop(0, '#060a12');
+    sky.addColorStop(0.55, '#0b1220');
+    sky.addColorStop(1, '#131b27');
+    g.fillStyle = sky;
+    g.fillRect(0, 0, 640, 214);
+
+    // bintang
+    for (var i = 0; i < 64; i++) {
+      var sx = (i * 97) % 640, sy = 3 + (i * 41) % 104;
+      g.globalAlpha = 0.18 + 0.40 * Math.abs(Math.sin(tTime * 0.8 + i * 1.7));
+      TR(sx, sy, 1, 1, '#cfe0f5');
+    }
+    g.globalAlpha = 1;
+
+    // halo bulan
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    var mg = g.createRadialGradient(556, 42, 6, 556, 42, 96);
+    mg.addColorStop(0, 'rgba(200,222,255,.26)');
+    mg.addColorStop(0.42, 'rgba(168,198,240,.09)');
+    mg.addColorStop(1, 'rgba(150,180,230,0)');
+    g.fillStyle = mg;
+    g.fillRect(452, -54, 208, 194);
+    g.restore();
+
+    // bulan
+    TR(548, 34, 17, 17, '#dfe8f5');
+    TR(550, 32, 13, 21, '#dfe8f5');
+    TR(546, 36, 21, 13, '#dfe8f5');
+    TR(552, 38, 5, 4, '#c2cee0');
+    TR(557, 44, 6, 5, '#c2cee0');
+    TR(550, 47, 4, 3, '#c2cee0');
+
+    // silhouette pepohonan jauh
+    for (var j = 0; j < 15; j++) {
+      var bx = j * 44;
+      var bh = 24 + (j * 23) % 30;
+      TR(bx, 200 - bh, 46, bh, '#0a1018');
+    }
+    for (var k = 0; k < 13; k++) {
+      var tx = 16 + k * 52;
+      var th = 26 + (k * 17) % 24;
+      TR(tx, 200 - th, 5, th, '#0a1018');
+      TR(tx - 10, 200 - th - 12, 26, 15, '#0a1018');
+      TR(tx - 4, 200 - th - 20, 15, 10, '#0a1018');
+    }
+  }
+
+  /* ---------- lahan kosong (kanan) ---------- */
+  function drawLot() {
+    // tanah
+    TR(294, 196, 346, 56, '#302a1f');
+    TR(294, 196, 346, 5, '#3d3626');
+
+    // bercak tanah & lumpur
+    for (var i = 0; i < 30; i++) {
+      var bx = 298 + (i * 53) % 338;
+      var by = 202 + (i * 17) % 44;
+      TR(bx, by, 8 + (i % 4) * 7, 3 + (i % 3) * 2, (i % 2) ? '#3b3422' : '#241f15');
+    }
+
+    // rumput
+    for (var g = 0; g < 90; g++) {
+      var gx = 294 + (g * 13) % 344;
+      var gy = 196 + (g * 31) % 54;
+      var gh = 3 + (g * 7) % 10;
+      TR(gx, gy - gh, 2, gh, (g % 3 === 0) ? '#40542f' : '#2f3f26');
+    }
+    // rumpun tinggi
+    var cl = [300, 340, 388, 430, 476, 528, 578, 620];
+    for (var ci = 0; ci < cl.length; ci++) {
+      for (var b = 0; b < 4; b++) {
+        var hh = 7 + ((ci * 5 + b * 4) % 12);
+        TR(cl[ci] + b * 3, 232 - hh, 2, hh, (b % 2) ? '#42582f' : '#33452a');
+      }
+    }
+
+    // ---- pagar rusak ----
+    TR(294, 186, 346, 4, '#3a3128');
+    for (var p = 0; p < 15; p++) {
+      var px = 296 + p * 23;
+      var ph = 20 + (p * 11) % 12;
+      var lean = (p % 5 === 0) ? 3 : 0;
+      TR(px + lean, 192 - ph, 5, ph + 14, (p % 3 === 0) ? '#4a4034' : '#3d3529');
+      TR(px + lean, 192 - ph, 5, 2, '#5a4e3e');
+      if (p % 7 === 3) TR(px + lean, 192 - ph - 5, 5, 6, '#2b2519');
+    }
+    // papan pagar patah
+    TR(340, 198, 26, 4, '#4a4034');
+    TR(366, 202, 14, 4, '#3d3529');
+    // bayangan pagar
+    tctx.globalAlpha = 0.32;
+    TR(294, 202, 346, 6, '#000');
+    tctx.globalAlpha = 1;
+
+    // ---- pohon ----
+    drawTree(360, 200, 1.0);
+    drawTree(608, 200, 1.15);
+    drawTree(492, 198, 0.72);
+  }
+
+  function drawTree(cx, baseY, sc) {
+    var tw = Math.round(11 * sc), th = Math.round(96 * sc);
+    var rx = Math.round(44 * sc), ry = Math.round(38 * sc);
+    var cy = baseY - th;
+
+    // batang
+    TR(cx - (tw >> 1), cy, tw, th, '#181410');
+    TR(cx - (tw >> 1), cy, 2, th, '#241d16');
+    // cabang
+    TR(cx - Math.round(16 * sc), cy + Math.round(20 * sc), Math.round(16 * sc), 3, '#181410');
+    TR(cx + Math.round(2 * sc), cy + Math.round(12 * sc), Math.round(15 * sc), 3, '#181410');
+
+    // kanopi (3 lapis)
+    var layers = [
+      [cx, cy - ry * 0.30, rx * 1.00, ry * 1.00, '#101a12'],
+      [cx - rx * 0.34, cy - ry * 0.06, rx * 0.72, ry * 0.74, '#0c150f'],
+      [cx + rx * 0.30, cy - ry * 0.10, rx * 0.68, ry * 0.70, '#0c150f'],
+      [cx - rx * 0.10, cy - ry * 0.52, rx * 0.62, ry * 0.58, '#0e1811']
+    ];
+    for (var l = 0; l < layers.length; l++) {
+      tctx.fillStyle = layers[l][4];
+      tctx.beginPath();
+      tctx.ellipse(layers[l][0], layers[l][1], layers[l][2], layers[l][3], 0, 0, 6.283);
+      tctx.fill();
+    }
+
+    // bayangan pohon di tanah
+    tctx.globalAlpha = 0.38;
+    tctx.fillStyle = '#000';
+    tctx.beginPath();
+    tctx.ellipse(cx - 10, baseY + 6, rx * 0.9, 6 * sc, 0, 0, 6.283);
+    tctx.fill();
+    tctx.globalAlpha = 1;
+
+    // rim bulan di kanan atas kanopi
+    tctx.save();
+    tctx.globalAlpha = 0.20;
+    tctx.strokeStyle = '#a9c4e8';
+    tctx.lineWidth = 1.5;
+    tctx.beginPath();
+    tctx.ellipse(cx, cy - ry * 0.30, rx * 1.00, ry * 1.00, 0, -1.9, -0.55);
+    tctx.stroke();
+    tctx.restore();
+  }
+
+  /* ---------- jalan tanah ---------- */
+  function drawRoad() {
+    TR(0, 248, 640, 112, '#332f27');
+    TR(0, 248, 640, 6, '#4e4636');
+    TR(0, 252, 640, 108, '#2d2922');
+
+    // bekas roda
+    for (var x = 0; x < 640; x += 8) {
+      var wob = Math.sin(x * 0.05) * 2;
+      TR(x, 300 + wob, 8, 3, 'rgba(96,86,68,.50)');
+      TR(x, 322 + wob, 8, 3, 'rgba(96,86,68,.42)');
+    }
+    // kerikil & tekstur
+    for (var i = 0; i < 120; i++) {
+      var gx = (i * 71) % 640;
+      var gy = 254 + (i * 37) % 100;
+      var gs = 1 + (i % 3);
+      TR(gx, gy, gs, gs, (i % 4 === 0) ? 'rgba(150,138,112,.38)' : 'rgba(18,15,11,.45)');
+    }
+    // genangan air
+    var pd = [[96, 300, 34, 9], [300, 320, 46, 11], [470, 292, 30, 8], [566, 334, 40, 10]];
+    for (var p = 0; p < pd.length; p++) {
+      tctx.save();
+      var pg = tctx.createRadialGradient(pd[p][0], pd[p][1], 1, pd[p][0], pd[p][1], pd[p][2]);
+      pg.addColorStop(0, 'rgba(132,170,210,.46)');
+      pg.addColorStop(0.6, 'rgba(98,134,176,.22)');
+      pg.addColorStop(1, 'rgba(70,100,140,0)');
+      tctx.fillStyle = pg;
+      tctx.beginPath();
+      tctx.ellipse(pd[p][0], pd[p][1], pd[p][2], pd[p][3], 0, 0, 6.283);
+      tctx.fill();
+      tctx.globalAlpha = 0.34;
+      tctx.fillStyle = '#d2e4f6';
+      tctx.beginPath();
+      tctx.ellipse(pd[p][0] + 7, pd[p][1] - 2, pd[p][2] * 0.32, pd[p][3] * 0.30, 0, 0, 6.283);
+      tctx.fill();
+      tctx.restore();
+    }
+    // tepi jalan (talud tanah berumput)
+    TR(0, 242, 640, 6, '#544a38');
+    TR(0, 242, 640, 2, '#665a44');
+    TR(0, 248, 640, 2, '#221c14');
+    for (var v = 0; v < 60; v++) {
+      var vx = (v * 19) % 640;
+      var vh = 3 + (v * 5) % 7;
+      TR(vx, 243 - vh, 2, vh, (v % 3 === 0) ? '#4a5f38' : '#384a2c');
+    }
+
+    // rumput di tepi jalan
+    for (var t = 0; t < 44; t++) {
+      var tx = (t * 29) % 640;
+      var th = 3 + (t * 7) % 7;
+      TR(tx, 249 - th, 2, th, (t % 3 === 0) ? '#3d5030' : '#2f3f26');
+    }
+
+    // bayangan gelap dari bangunan
+    var sg = tctx.createLinearGradient(0, 252, 0, 300);
+    sg.addColorStop(0, 'rgba(0,0,0,.36)');
+    sg.addColorStop(1, 'rgba(0,0,0,0)');
+    tctx.fillStyle = sg;
+    tctx.fillRect(0, 252, 640, 48);
+  }
+
+  /* ---------- garis TKP kuning ---------- */
   function drawTape() {
-    var x1 = 334, y1 = 292, x2 = 636, y2 = 286;
+    var x1 = 300, y1 = 304, x2 = 636, y2 = 298;
 
-    // tiang
-    TR(x1 - 2, y1 - 8, 4, 62, '#39434f');
-    TR(x1 - 1, y1 - 8, 1, 62, '#4d5866');
-    TR(x2 - 2, y2 - 8, 4, 62, '#39434f');
-    TR(x2 - 1, y2 - 8, 1, 62, '#4d5866');
-    TR(x1 - 4, y1 - 10, 8, 4, '#4d5866');
-    TR(x2 - 4, y2 - 10, 8, 4, '#4d5866');
+    TR(x1 - 2, y1 - 8, 4, 58, '#4a4034');
+    TR(x1 - 1, y1 - 8, 1, 58, '#5e5242');
+    TR(x2 - 2, y2 - 8, 4, 58, '#4a4034');
+    TR(x2 - 1, y2 - 8, 1, 58, '#5e5242');
+    TR(x1 - 4, y1 - 10, 8, 4, '#5e5242');
+    TR(x2 - 4, y2 - 10, 8, 4, '#5e5242');
+    tctx.globalAlpha = 0.35;
+    tctx.fillStyle = '#000';
+    tctx.beginPath(); tctx.ellipse(x1, y1 + 50, 8, 3, 0, 0, 6.283); tctx.fill();
+    tctx.beginPath(); tctx.ellipse(x2, y2 + 50, 8, 3, 0, 0, 6.283); tctx.fill();
+    tctx.globalAlpha = 1;
 
-    // pita melengkung
-    var steps = 74;
+    var steps = 76;
     for (var i = 0; i <= steps; i++) {
       var t = i / steps;
       var x = x1 + (x2 - x1) * t;
-      var sag = Math.sin(t * Math.PI) * 15;
+      var sag = Math.sin(t * Math.PI) * 14;
       var y = y1 + (y2 - y1) * t + sag;
-      TR(x, y, 5, 7, '#f2c14e');
-      TR(x, y, 5, 1, '#ffdc84');
+      TR(x, y, 5, 7, '#e0b13c');
+      TR(x, y, 5, 1, '#f5cf74');
       if (i % 8 === 0) TR(x + 1, y + 2, 3, 3, '#2a2010');
     }
-
-    // pita kedua lebih rendah
-    for (var j = 0; j <= 60; j++) {
-      var t2 = j / 60;
+    for (var j = 0; j <= 62; j++) {
+      var t2 = j / 62;
       var x3 = x1 + (x2 - x1) * t2;
       var sag2 = Math.sin(t2 * Math.PI) * 10;
-      var y3 = y1 + 34 + sag2;
-      TR(x3, y3, 4, 5, '#d8ab3e');
+      var y3 = y1 + 32 + sag2;
+      TR(x3, y3, 4, 5, '#c69c34');
       if (j % 9 === 0) TR(x3 + 1, y3 + 1, 2, 2, '#2a2010');
     }
   }
 
-  /* ---------- gang sempit ---------- */
-  function drawDoorway() {
-    TR(288, 30, 42, 210, '#0a0c10');
-    TR(288, 30, 3, 210, '#14181f');
-    TR(327, 30, 3, 210, '#14181f');
-    // lampu kecil di dalam gang
-    tctx.globalAlpha = 0.5;
-    TR(306, 96, 8, 4, '#f2c14e');
-    tctx.globalAlpha = 0.10;
-    TR(296, 100, 28, 60, '#f2c14e');
-    tctx.globalAlpha = 1;
-    TR(290, 196, 38, 44, '#05070a');
-  }
-
-  /* ---------- minimarket ---------- */
-  function drawMiniMart() {
-    // gedung
-    TR(330, 16, 310, 224, '#20262f');
-    TR(330, 16, 310, 5, '#2e3745');
-    TR(330, 21, 310, 2, '#151a21');
-
-    // papan nama
-    TR(336, 27, 298, 50, '#0f1319');
-    TR(338, 29, 294, 46, '#a82f2a');
-    TR(338, 29, 294, 3, '#cf4a3d');
-    TR(338, 69, 294, 6, '#f2c14e');
-
-    // logo neon (kelap-kelip)
-    var f = flicker();
-    tctx.globalAlpha = f;
-    TR(346, 41, 22, 15, '#ffffff');
-    TR(346, 56, 22, 4, '#f2c14e');
-    TR(350, 36, 14, 5, '#ffffff');
-    TR(349, 39, 4, 6, '#ffffff');
-    TR(361, 39, 4, 6, '#ffffff');
-    TR(351, 45, 12, 2, '#a82f2a');
-    TR(351, 50, 12, 2, '#a82f2a');
-    tctx.globalAlpha = 1;
-    if (f > 0.5) {
-      tctx.globalAlpha = 0.22 * f;
-      TR(342, 33, 30, 28, '#ff8a70');
-      tctx.globalAlpha = 1;
-    }
-
-    pxText('MINI MART', 382, 43, 2, '#ffffff');
-
-    // fascia
-    TR(336, 77, 298, 8, '#2a323d');
-    TR(336, 77, 298, 1, '#3b4655');
-
-    // kanopi
-    for (var a = 0; a < 15; a++) {
-      TR(336 + a * 20, 85, 20, 12, (a % 2) ? '#e8e2d6' : '#a82f2a');
-    }
-    TR(336, 97, 300, 3, 'rgba(0,0,0,.42)');
-
-    // kaca
-    TR(336, 100, 298, 132, '#151b22');
-    TR(340, 103, 290, 126, '#0f2f33');
-
-    // lampu dalam
-    TR(348, 109, 68, 3, 'rgba(255,240,200,.55)');
-    TR(432, 109, 68, 3, 'rgba(255,240,200,.55)');
-    TR(516, 109, 100, 3, 'rgba(255,240,200,.55)');
-
-    // rak kiri
-    var cols = ['#d94b3f', '#e8a33d', '#4a9a5a', '#4a7fb8', '#e8e2d6', '#9b59b6'];
-    for (var r = 0; r < 3; r++) {
-      var sy = 122 + r * 34;
-      TR(344, sy + 20, 118, 3, '#0a2226');
-      for (var p = 0; p < 12; p++) {
-        var hh = 7 + ((p * 5 + r * 3) % 8);
-        TR(346 + p * 10, sy + 20 - hh, 8, hh, cols[(p + r) % 6]);
-      }
-    }
-    // rak kanan
-    for (var r2 = 0; r2 < 3; r2++) {
-      var sy2 = 122 + r2 * 34;
-      TR(530, sy2 + 20, 96, 3, '#0a2226');
-      for (var p2 = 0; p2 < 10; p2++) {
-        var hh2 = 7 + ((p2 * 7 + r2 * 3) % 8);
-        TR(532 + p2 * 10, sy2 + 20 - hh2, 8, hh2, cols[(p2 + r2 + 2) % 6]);
-      }
-    }
-
-    // pintu masuk
-    TR(466, 101, 58, 130, '#164a50');
-    TR(468, 103, 20, 126, 'rgba(190,240,245,.10)');
-    TR(464, 100, 3, 132, '#1b2027');
-    TR(523, 100, 3, 132, '#1b2027');
-    TR(506, 150, 12, 4, '#cfd6e0');
-
-    // tiang & alas
-    TR(336, 100, 4, 132, '#1b2027');
-    TR(630, 100, 4, 132, '#1b2027');
-    TR(336, 228, 298, 4, '#1b2027');
-
-    // stiker promo
-    TR(348, 116, 30, 18, '#f2c14e');
-    TR(351, 120, 24, 2, '#8a6b12');
-    TR(351, 125, 17, 2, '#8a6b12');
-    TR(351, 129, 21, 2, '#8a6b12');
-
-    // AC
-    TR(596, 105, 28, 11, '#c9d3de');
-    TR(598, 110, 24, 2, '#9aa6b4');
-
-    // cahaya tumpah ke jalan
+  /* ---------- pencahayaan ---------- */
+  function drawLighting() {
+    // ambient bulan (dingin, dari kanan atas)
     tctx.save();
     tctx.globalCompositeOperation = 'lighter';
-    var sp = tctx.createLinearGradient(0, 232, 0, 300);
-    sp.addColorStop(0, 'rgba(255,226,160,.24)');
-    sp.addColorStop(1, 'rgba(255,210,140,0)');
-    tctx.fillStyle = sp;
-    tctx.beginPath();
-    tctx.moveTo(338, 234); tctx.lineTo(630, 234);
-    tctx.lineTo(664, 302); tctx.lineTo(304, 302);
-    tctx.closePath(); tctx.fill();
+    var mg = tctx.createLinearGradient(640, 0, 180, 360);
+    mg.addColorStop(0, 'rgba(116,162,224,.13)');
+    mg.addColorStop(0.55, 'rgba(110,155,215,.05)');
+    mg.addColorStop(1, 'rgba(100,145,205,0)');
+    tctx.fillStyle = mg;
+    tctx.fillRect(0, 0, 640, 360);
     tctx.restore();
-  }
 
-  /* ---------- jalan ---------- */
-  function drawRoad() {
-    TR(0, 240, 640, 120, '#14181e');
-    TR(0, 240, 640, 8, '#20262f');
-    TR(0, 248, 640, 2, '#2a323d');
-    TR(0, 250, 640, 110, '#11151a');
-
-    for (var x = 0; x < 640; x += 52) TR(x, 336, 28, 4, 'rgba(226,220,196,.30)');
-    for (var i = 0; i < 26; i++) {
-      TR((i * 83) % 640, 256 + (i * 19) % 96, 10 + (i % 4) * 8, 1, 'rgba(255,255,255,.035)');
-    }
-
-    // basah / pantulan di area bawah kiri (di bawah tombol)
+    // strobo mobil polisi
+    var ph = (tTime * 2.1) % 1;
+    var isRed = ph < 0.5;
+    var amp = 0.13 + 0.11 * Math.abs(Math.sin(tTime * 7));
     tctx.save();
-    tctx.globalAlpha = 0.07;
-    TR(10, 300, 260, 46, '#9fc4e8');
-    tctx.globalAlpha = 0.05;
-    TR(30, 310, 200, 2, '#cfe4f8');
-    TR(60, 320, 150, 2, '#cfe4f8');
-    TR(20, 330, 220, 2, '#cfe4f8');
+    tctx.globalCompositeOperation = 'lighter';
+    var pg = tctx.createRadialGradient(502, 250, 4, 502, 250, 128);
+    pg.addColorStop(0, isRed ? 'rgba(232,86,74,' + amp.toFixed(3) + ')' : 'rgba(74,140,232,' + amp.toFixed(3) + ')');
+    pg.addColorStop(0.5, isRed ? 'rgba(232,86,74,' + (amp * 0.34).toFixed(3) + ')' : 'rgba(74,140,232,' + (amp * 0.34).toFixed(3) + ')');
+    pg.addColorStop(1, 'rgba(0,0,0,0)');
+    tctx.fillStyle = pg;
+    tctx.fillRect(320, 96, 320, 280);
     tctx.restore();
-
-    tctx.save();
-    tctx.globalAlpha = 0.18;
-    for (var p = 0; p < 8; p++) {
-      TR(330 + (p * 41) % 280, 262 + (p * 13) % 70, 14 + (p % 3) * 8, 2, '#ffd27a');
-    }
-    tctx.restore();
-
-    var sg = tctx.createLinearGradient(0, 250, 0, 322);
-    sg.addColorStop(0, 'rgba(0,0,0,.55)');
-    sg.addColorStop(1, 'rgba(0,0,0,0)');
-    tctx.fillStyle = sg;
-    tctx.fillRect(0, 250, 640, 72);
   }
 
   /* ---------- mobil polisi (menghadap kiri) ---------- */
   function drawCar() {
-    var x = 428, y = 240;
+    var x = 428, y = 246;
 
     tctx.globalAlpha = 0.5;
     TR(x + 4, y + 54, 164, 7, '#000');
@@ -1823,13 +1908,13 @@
     // sorot lampu depan ke kiri
     tctx.save();
     tctx.globalCompositeOperation = 'lighter';
-    var hg = tctx.createLinearGradient(x - 96, 0, x, 0);
+    var hg = tctx.createLinearGradient(x - 150, 0, x, 0);
     hg.addColorStop(0, 'rgba(255,240,190,0)');
     hg.addColorStop(1, 'rgba(255,240,190,.20)');
     tctx.fillStyle = hg;
     tctx.beginPath();
     tctx.moveTo(x + 2, y + 31); tctx.lineTo(x + 2, y + 38);
-    tctx.lineTo(x - 96, y + 56); tctx.lineTo(x - 96, y + 16);
+    tctx.lineTo(x - 150, y + 62); tctx.lineTo(x - 150, y + 8);
     tctx.closePath(); tctx.fill();
     tctx.restore();
   }
@@ -1840,8 +1925,15 @@
     var UNI = '#1f3a63', UNI2 = '#2a4c80';
     var HOOD = '#4a4f57', HOOD2 = '#383d44';
 
+    // bayangan kontak
+    tctx.globalAlpha = 0.58;
+    tctx.fillStyle = '#000';
+    tctx.beginPath(); tctx.ellipse(324, 252, 32, 6, 0, 0, 6.283); tctx.fill();
+    tctx.beginPath(); tctx.ellipse(365, 252, 32, 6, 0, 0, 6.283); tctx.fill();
+    tctx.globalAlpha = 1;
+
     /* tersangka */
-    var sx = 352, sy = 302;
+    var sx = 316, sy = 250;
     TR(sx + 1, sy - 6, 24, 6, '#0f1218');
     TR(sx + 4, sy - 22, 16, 17, '#2b3038');
     TR(sx - 1, sy - 44, 26, 24, HOOD);
@@ -1850,6 +1942,9 @@
     TR(sx + 25, sy - 28, 7, 6, SK);
     TR(sx + 3, sy - 58, 16, 16, SK);
     TR(sx + 1, sy - 60, 20, 7, '#221a14');
+    TR(sx + 6, sy - 50, 3, 2, '#14181f');
+    TR(sx + 13, sy - 50, 3, 2, '#14181f');
+    TR(sx + 6, sy - 45, 7, 1, '#b98f6c');
 
     /* borgol */
     TR(sx + 22, sy - 34, 20, 13, 'rgba(0,0,0,.45)');
@@ -1860,7 +1955,7 @@
     TR(sx + 32, sy - 32, 6, 1, '#ffffff');
 
     /* polisi */
-    var px = 386, py = 302;
+    var px = 357, py = 250;
     TR(px + 1, py - 6, 24, 6, '#0f1218');
     TR(px + 4, py - 22, 16, 17, '#16233a');
     TR(px - 1, py - 46, 26, 26, UNI);
@@ -1882,15 +1977,15 @@
     var D = '#05070a';
     var rim = 'rgba(255,236,200,.90)';
 
-    // backlight dari arah minimarket
+    // backlight bulan (dingin) dari kanan atas
     tctx.save();
     tctx.globalCompositeOperation = 'lighter';
-    var bg2 = tctx.createRadialGradient(302, 300, 8, 302, 300, 150);
-    bg2.addColorStop(0, 'rgba(255,216,152,.30)');
-    bg2.addColorStop(0.45, 'rgba(255,208,142,.14)');
-    bg2.addColorStop(1, 'rgba(255,200,130,0)');
+    var bg2 = tctx.createRadialGradient(318, 226, 8, 318, 226, 150);
+    bg2.addColorStop(0, 'rgba(146,184,236,.13)');
+    bg2.addColorStop(0.5, 'rgba(138,176,230,.05)');
+    bg2.addColorStop(1, 'rgba(130,170,224,0)');
     tctx.fillStyle = bg2;
-    tctx.fillRect(170, 168, 230, 190);
+    tctx.fillRect(188, 146, 214, 206);
     tctx.restore();
 
     // sorot senter ke tembok rumah
@@ -1958,7 +2053,7 @@
     TR(278, 252, 3, 40, D);
 
     // rim light dari toko (sisi kanan, dipatah-patah)
-    var rim2 = 'rgba(255,236,200,.58)';
+    var rim2 = 'rgba(180,210,246,.60)';
     TR(292, 200, 2, 12, rim2);
     TR(297, 213, 2, 5, rim2);
     TR(292, 219, 2, 9, rim2);
@@ -2015,21 +2110,6 @@
     tctx.globalAlpha = 1;
   }
 
-  /* ---------- penanda bukti ---------- */
-  function drawMarkers() {
-    var m = [[132, 250], [186, 244]];
-    for (var i = 0; i < m.length; i++) {
-      var x = m[i][0], y = m[i][1];
-      tctx.globalAlpha = 0.4;
-      TR(x - 6, y + 6, 14, 3, '#000');
-      tctx.globalAlpha = 1;
-      TR(x - 5, y - 6, 10, 4, '#f2c14e');
-      TR(x - 4, y - 2, 8, 8, '#f2c14e');
-      TR(x - 4, y + 2, 8, 1, '#b8912f');
-      TR(x - 1, y - 1, 2, 4, '#2a2010');
-    }
-  }
-
   /* ---------- hujan ---------- */
   function drawRain(dt) {
     tctx.strokeStyle = 'rgba(178,208,236,.55)';
@@ -2066,39 +2146,23 @@
     tTime += dt;
     var g = tctx;
 
-    var sky = g.createLinearGradient(0, 0, 0, 40);
-    sky.addColorStop(0, '#06080d');
-    sky.addColorStop(1, '#0d131c');
-    g.fillStyle = sky;
-    g.fillRect(0, 0, TW, 40);
-
-    g.fillStyle = '#0a0d13';
-    for (var i = 0; i < 10; i++) {
-      var bw = 42 + (i * 17) % 44;
-      var bh = 12 + (i * 31) % 22;
-      g.fillRect(20 + i * 62, 30 - bh, bw, bh);
-    }
-    for (var j = 0; j < 40; j++) {
-      var wx = 26 + (j * 53) % 588, wy = 4 + (j * 29) % 22;
-      g.fillStyle = (j % 6 === 0) ? 'rgba(255,214,140,.42)' : 'rgba(120,150,190,.12)';
-      g.fillRect(wx, wy, 2, 2);
-    }
+    drawSky();
 
     drawAbandonedHouse();
     applyLeftShade();
-    drawDoorway();
-    drawMiniMart();
+    drawLot();
     drawRoad();
-    drawCar();
     drawArrest();
+    drawCar();
     drawTape();
     drawDetective();
+    drawLighting();
     drawRain(dt);
 
     var vg = g.createRadialGradient(360, 190, 120, 360, 190, 430);
     vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(0.62, 'rgba(0,0,0,.24)');
-    vg.addColorStop(1, 'rgba(0,0,0,.76)');
+    vg.addColorStop(0.62, 'rgba(0,0,0,.16)');
+    vg.addColorStop(1, 'rgba(0,0,0,.60)');
     g.fillStyle = vg;
     g.fillRect(0, 0, TW, TH);
   }
