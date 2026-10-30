@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detektif Sandi — Kasus #01</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- ================= TITLE ================= -->
+  <section class="screen active" id="scr-title">
+    <canvas id="tcv" width="640" height="360"></canvas>
+    <div class="title-top">
+      <div class="stamp">CASE FILE #01 &middot; EASY</div>
+      <h1>DETECTIVE<span>CIPHER</span></h1>
+      <p class="tagline">A noir puzzle about codes</p>
+    </div>
+    <div class="title-actions">
+      <button class="btn primary big" id="btn-start">START INVESTIGATION</button>
+      <button class="btn big" id="btn-help">HOW TO PLAY</button>
+    </div>
+    <div class="title-credit">XI PPLG 4 &middot; SMK Telkom Purwokerto</div>
+  </section>
+
+  <!-- ================= BRIEF ================= -->
+  <section class="screen" id="scr-brief">
+    <div class="doc">
+      <div class="doc-head">
+        <span class="tag">LAPORAN KASUS #01</span>
+        <span class="tag ghost">EASY</span>
+      </div>
+      <h2>Pesan Terakhir di Lab</h2>
+      <div class="doc-body" id="brief-text"></div>
+      <div class="doc-foot">
+        <button class="btn" id="btn-brief-back">&larr; KEMBALI</button>
+        <button class="btn primary" id="btn-to-play">MASUK KE TKP &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PLAY ================= -->
+  <section class="screen" id="scr-play">
+    <canvas id="cv" width="320" height="180"></canvas>
+
+    <div class="p-top">
+      <span class="tag">TKP &middot; LAB KOMPUTER 2</span>
+      <span class="p-obj" id="objective">Cari bukti &middot; 0/3</span>
+      <span class="key-badge" id="key-badge">KUNCI LEMARI</span>
+      <span class="score">SKOR <b id="hud-score">1000</b></span>
+    </div>
+
+    <div class="p-prompt" id="prompt"><b>E</b><span id="prompt-label">Periksa</span></div>
+
+    <div class="p-dialog" id="dialog">
+      <div class="dlg-head"><span id="dlg-name">Monitor</span></div>
+      <div class="dlg-text" id="dlg-text"></div>
+      <div class="dlg-actions" id="dlg-actions"></div>
+    </div>
+
+    <div class="p-keys" id="p-keys">W A S D / panah untuk jalan &nbsp;&middot;&nbsp; E untuk interaksi</div>
+  </section>
+
+  <!-- ================= DESK ================= -->
+  <section class="screen" id="scr-desk">
+    <header class="hud">
+      <div class="hud-left">
+        <span class="tag">MEJA DEKRIPSI</span>
+        <span class="hud-hint">Isi tiap kolom: hasil f&#8315;&#185; dulu, lalu hasil g&#8315;&#185;</span>
+      </div>
+      <div class="hud-right">
+        <span class="score">SKOR <b id="hud-score-2">1000</b></span>
+        <button class="btn tiny" id="btn-desk-help">?</button>
+      </div>
+    </header>
+
+    <div class="formula-bar">
+      <div class="fx"><b>f(x)</b> = <span id="fx-f">???</span></div>
+      <div class="fx"><b>g(x)</b> = <span id="fx-g">???</span></div>
+      <div class="fx inv"><b>f&#8315;&#185;(y)</b> = <span id="fx-finv">???</span></div>
+      <div class="fx inv"><b>g&#8315;&#185;(y)</b> = <span id="fx-ginv">???</span></div>
+      <div class="fx note">c = f(g(x)) &nbsp;&rarr;&nbsp; x = g&#8315;&#185;(f&#8315;&#185;(c))</div>
+    </div>
+
+    <div class="cipher-wrap">
+      <div class="cipher-label" id="cipher-label">CIPHERTEKS</div>
+      <div class="cells" id="cells"></div>
+    </div>
+
+    <div class="work" id="work"></div>
+
+    <div class="desk-actions">
+      <button class="btn" id="btn-desk-back">&larr; KEMBALI KE TKP</button>
+      <button class="btn warn" id="btn-hint">PETUNJUK (&minus;100)</button>
+      <button class="btn primary" id="btn-check">PERIKSA JAWABAN</button>
+    </div>
+  </section>
+
+  <!-- ================= ACCUSE ================= -->
+  <section class="screen" id="scr-accuse">
+    <header class="hud">
+      <div class="hud-left">
+        <span class="tag">TUDUH TERSANGKA</span>
+        <span class="hud-hint">Salah tuduh &minus;250 poin</span>
+      </div>
+      <div class="hud-right">
+        <span class="score">SKOR <b id="hud-score-3">1000</b></span>
+      </div>
+    </header>
+
+    <div class="accuse-wrap">
+      <h2>Siapa pelakunya?</h2>
+      <div class="cards" id="suspect-cards"></div>
+      <div class="accuse-foot">
+        <button class="btn" id="btn-accuse-back">&larr; KEMBALI</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= END ================= -->
+  <section class="screen" id="scr-end">
+    <div class="end-wrap">
+      <div class="verdict" id="verdict-stamp">TERBUKTI</div>
+      <h2 id="end-title">Kasus Selesai</h2>
+      <p class="end-text" id="end-text"></p>
+      <div class="end-stats">
+        <div class="stat"><span>SKOR</span><b id="end-score">0</b></div>
+        <div class="stat"><span>PERINGKAT</span><b id="end-rank">-</b></div>
+      </div>
+      <div class="end-actions">
+        <button class="btn primary" id="btn-again">ULANGI KASUS</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ================= MODAL ================= -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <span class="tag" id="modal-tag">BUKTI</span>
+      <button class="modal-x" id="modal-x">&times;</button>
+    </div>
+    <h3 id="modal-title">-</h3>
+    <p id="modal-desc">-</p>
+    <div class="payload" id="modal-payload">-</div>
+    <div class="modal-foot">
+      <button class="btn primary" id="modal-ok">MENGERTI</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="err"></div>
+
+<script src="game.js"></script>
+</body>
+</html>
