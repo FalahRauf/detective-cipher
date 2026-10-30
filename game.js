@@ -1783,39 +1783,55 @@
     tctx.fillRect(0, 252, 640, 48);
   }
 
-  /* ---------- garis TKP kuning ---------- */
-  function drawTape() {
-    var x1 = 300, y1 = 304, x2 = 636, y2 = 298;
+  /* ---------- pita TKP di depan rumah ---------- */
+  function pxGlyph(ch, x, y, sc, col) {
+    var gl = FONT3[ch] || FONT3[' '];
+    tctx.fillStyle = col;
+    for (var r = 0; r < 5; r++) {
+      for (var c = 0; c < 3; c++) {
+        if (gl[r].charAt(c) === '1') tctx.fillRect(x + c * sc, y + r * sc, sc, sc);
+      }
+    }
+  }
 
-    TR(x1 - 2, y1 - 8, 4, 58, '#4a4034');
-    TR(x1 - 1, y1 - 8, 1, 58, '#5e5242');
-    TR(x2 - 2, y2 - 8, 4, 58, '#4a4034');
-    TR(x2 - 1, y2 - 8, 1, 58, '#5e5242');
-    TR(x1 - 4, y1 - 10, 8, 4, '#5e5242');
-    TR(x2 - 4, y2 - 10, 8, 4, '#5e5242');
+  function drawHouseTape() {
+    var x1 = -14, x2 = 302;
+    var yb = 218, sag = 10, H = 16;
+
+    function ty(x) {
+      var t = (x - x1) / (x2 - x1);
+      return yb + Math.sin(t * Math.PI) * sag;
+    }
+
+    // tiang
+    var p1 = ty(x1 + 10), p2 = ty(x2 - 10);
+    TR(x1 + 8, p1 - 6, 5, 62, '#4a4034');
+    TR(x1 + 9, p1 - 6, 1, 62, '#63574a');
+    TR(x2 - 12, p2 - 6, 5, 62, '#4a4034');
+    TR(x2 - 11, p2 - 6, 1, 62, '#63574a');
     tctx.globalAlpha = 0.35;
     tctx.fillStyle = '#000';
-    tctx.beginPath(); tctx.ellipse(x1, y1 + 50, 8, 3, 0, 0, 6.283); tctx.fill();
-    tctx.beginPath(); tctx.ellipse(x2, y2 + 50, 8, 3, 0, 0, 6.283); tctx.fill();
+    tctx.beginPath(); tctx.ellipse(x1 + 10, p1 + 56, 8, 3, 0, 0, 6.283); tctx.fill();
+    tctx.beginPath(); tctx.ellipse(x2 - 10, p2 + 56, 8, 3, 0, 0, 6.283); tctx.fill();
     tctx.globalAlpha = 1;
 
-    var steps = 76;
-    for (var i = 0; i <= steps; i++) {
-      var t = i / steps;
-      var x = x1 + (x2 - x1) * t;
-      var sag = Math.sin(t * Math.PI) * 14;
-      var y = y1 + (y2 - y1) * t + sag;
-      TR(x, y, 5, 7, '#e0b13c');
-      TR(x, y, 5, 1, '#f5cf74');
-      if (i % 8 === 0) TR(x + 1, y + 2, 3, 3, '#2a2010');
+    // pita kuning
+    for (var x = x1; x <= x2; x += 2) {
+      var y = ty(x);
+      TR(x, y, 3, H, '#e0b13c');
+      TR(x, y, 3, 2, '#f5cf74');
+      TR(x, y + H - 2, 3, 2, '#b8891c');
     }
-    for (var j = 0; j <= 62; j++) {
-      var t2 = j / 62;
-      var x3 = x1 + (x2 - x1) * t2;
-      var sag2 = Math.sin(t2 * Math.PI) * 10;
-      var y3 = y1 + 32 + sag2;
-      TR(x3, y3, 4, 5, '#c69c34');
-      if (j % 9 === 0) TR(x3 + 1, y3 + 1, 2, 2, '#2a2010');
+
+    // tulisan POLICE LINE DO NOT CROSS
+    var label = 'POLICE LINE DO NOT CROSS  ';
+    var adv = 8, startX = 6;
+    for (var i = 0; ; i++) {
+      var gx = startX + i * adv;
+      if (gx > x2 - 10) break;
+      var ch = label.charAt(i % label.length);
+      if (ch === ' ') continue;
+      pxGlyph(ch, gx, ty(gx) + 3, 2, '#241a08');
     }
   }
 
@@ -2154,7 +2170,7 @@
     drawRoad();
     drawArrest();
     drawCar();
-    drawTape();
+    drawHouseTape();
     drawDetective();
     drawLighting();
     drawRain(dt);
