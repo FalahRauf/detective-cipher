@@ -156,18 +156,99 @@ for (const id of ['easy', 'normal', 'hard']) {
   ok(!G.state.solved && G.state.score < sc0, 'jawaban salah: tidak solve, skor dipotong (' + sc0 + ' -> ' + G.state.score + ')');
 }
 
-/* ---------- smoke test cutscene CCTV ---------- */
-console.log('\n== CUTSCENE ==');
+/* ---------- alur pilih kasus: hover, popup, konfirmasi ---------- */
+console.log('\n== PILIH KASUS (jalanan + senter) ==');
+(function () {
+  let err = null;
+  try { G.selectTick(0.1); } catch (e) { err = e; }
+  ok(!err, 'layar jalanan tergambar tanpa error' + (err ? ' (' + err.message + ')' : ''));
+
+  G.selectMouse(190, 280);
+  ok(G.hoveredFig() === 'c1', 'senter di atas sosok 1 -> CASE 01 tersorot');
+  G.selectMouse(330, 280);
+  ok(G.hoveredFig() === 'c2', 'senter di atas sosok 2 -> CASE 02 tersorot');
+  G.selectMouse(60, 60);
+  ok(G.hoveredFig() === null, 'senter di langit -> tidak ada yang tersorot');
+
+  // klik sosok 1 -> popup kasus
+  G.selectMouse(190, 280);
+  document.getElementById('scv').dispatch('click');
+  ok(document.getElementById('cm-title').textContent === 'Rekaman 23.47', 'popup kasus terbuka: Rekaman 23.47');
+  ok(document.getElementById('cm-locked').style.display === 'none', 'CASE 01 tidak terkunci, tombol tingkat tampil');
+
+  // klik sosok 2 (terkunci)
+  G.selectMouse(330, 280);
+  document.getElementById('scv').dispatch('click');
+  ok(document.getElementById('cm-locked').style.display === '', 'CASE 02 tampil sebagai SEGERA');
+
+  // pilih CASE 01 lagi lalu mulai -> konfirmasi -> cutscene
+  G.selectMouse(190, 280);
+  document.getElementById('scv').dispatch('click');
+  ok(document.getElementById('confirm-modal').classList.contains('show') === false, 'konfirmasi belum muncul sebelum pilih tingkat');
+  document.getElementById('cf-tag').textContent = 'MODE HARD';
+  document.getElementById('cf-start').dispatch('click');
+  ok(G.screen() === 'scr-cutscene', 'MULAI KASUS -> langsung ke cutscene CCTV (brief dilewati)');
+})();
+
+/* ---------- smoke test kedua cutscene ---------- */
+console.log('\n== CUTSCENE CCTV + PAPAN KASUS ==');
 (function () {
   let err = null;
   try {
-    for (let t = 0; t <= 16.2; t += 0.1) G.cutTick(t);
+    for (let i = 0; i < 252; i++) G.cutTick(0.1);   // 25.2 detik — di bawah ambang auto-fade
   } catch (e) { err = e; }
-  ok(!err, 'cutscene berjalan 0-16 detik tanpa error' + (err ? ' (' + err.message + ')' : ''));
-  ok(document.getElementById('btn-cut-next').style.display === '', 'tombol LANJUT KE TKP muncul di akhir rekaman');
+  ok(!err, 'cutscene CCTV berjalan 0-25 detik tanpa error' + (err ? ' (' + err.message + ')' : ''));
+  ok(document.getElementById('btn-cut-next').style.display === '', 'tombol LANJUT muncul di akhir rekaman');
   ok(document.getElementById('cut-caption').textContent.length > 0, 'caption rekaman terisi');
+
+  err = null;
+  try {
+    for (let i = 0; i < 230; i++) G.boardTick(0.1); // 23.0 detik — di bawah ambang auto-fade
+  } catch (e) { err = e; }
+  ok(!err, 'papan kasus detektif berjalan 0-23 detik tanpa error' + (err ? ' (' + err.message + ')' : ''));
+  ok(document.getElementById('btn-board-next').style.display === '', 'tombol TURUN KE TKP muncul di akhir scene');
+  ok(document.getElementById('board-caption').textContent.length > 0, 'caption papan kasus terisi');
 })();
 
-console.log('\n==============================');
-console.log(fail === 0 ? 'SEMUA TES LULUS (' + pass + ' assertions)' : fail + ' TES GAGAL dari ' + (pass + fail));
-process.exit(fail === 0 ? 0 : 1);
+/* ---------- transisi fade: cutscene -> papan -> gameplay ---------- */
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+let finished = false;
+function finish() {
+  if (finished) return;
+  finished = true;
+  console.log('\n==============================');
+  console.log(fail === 0 ? 'SEMUA TES LULUS (' + pass + ' assertions)' : fail + ' TES GAGAL dari ' + (pass + fail));
+  process.exit(fail === 0 ? 0 : 1);
+}
+
+(async function () {
+  console.log('\n== TRANSISI FADE ==');
+  G.showScreen('scr-cutscene');
+  document.getElementById('btn-cut-next').dispatch('click');
+  ok(document.getElementById('fade').classList.contains('show'), 'LANJUT -> layar mulai fade-out');
+  ok(G.screen() === 'scr-cutscene', 'masih di cutscene selama fade-out');
+  await wait(480);
+  ok(G.screen() === 'scr-board', 'layar berganti ke papan kasus saat gelap');
+  ok(document.getElementById('fade').classList.contains('show'), 'layar masih gelap saat berganti');
+  await wait(480);
+  ok(!document.getElementById('fade').classList.contains('show'), 'fade-in selesai di papan kasus');
+
+  document.getElementById('btn-board-next').dispatch('click');
+  await wait(920);
+  ok(G.screen() === 'scr-play', 'TURUN KE TKP -> fade in langsung di gameplay');
+
+  // auto-advance: cutscene & papan berakhir sendiri dengan fade, tanpa klik
+  G.showScreen('scr-cutscene');
+  for (let i = 0; i < 266; i++) G.cutTick(0.1);   // 26.6 > 26.4 -> fade otomatis
+  ok(document.getElementById('fade').classList.contains('show'), 'cutscene selesai -> fade-out OTOMATIS tanpa klik');
+  await wait(480);
+  ok(G.screen() === 'scr-board', 'auto: berganti ke papan kasus saat gelap');
+  await wait(500);
+
+  for (let i = 0; i < 240; i++) G.boardTick(0.1); // 24.0 > 23.9 -> fade otomatis
+  await wait(480);
+  ok(G.screen() === 'scr-play', 'papan selesai -> fade-out OTOMATIS ke gameplay');
+
+  finish();
+})();
+setTimeout(finish, 6000); // pengaman kalau timer macet

@@ -44,13 +44,15 @@ python -m http.server 8000
 
 ## Alur Permainan
 
-1. **Pilih kasus & tingkat** — layar CASE FILES.
-2. **Briefing** — kasus dan target penyelidikan.
-3. **Cutscene CCTV** — rekaman kamera 02 pukul 23.47 (bisa dilewati dengan tombol LEWATI).
-4. **Investigasi TKP** — cari 3 petunjuk di lab (monitor, papan tulis, tempat sampah).
-5. **Meja Dekripsi** — pecahkan pesan terakhir Nayla, huruf per huruf (HARD: turunkan g(x) dulu).
-6. **Barang bukti** — pesan yang sudah dipecahkan menunjuk ke lokasi kunci.
-7. **Tuduh pelaku** — pilih dari daftar tersangka.
+1. **Pilih kasus di jalanan** — detektif menyapu jalan dengan senter; cahayanya mengikuti kursor.
+   Tiga sosok hitam = tiga kasus. Arahkan lampunya, lalu klik sosoknya.
+2. **Popup kasus & tingkat** — penjelasan singkat kasus, pilih EASY/NORMAL/HARD, konfirmasi mulai.
+3. **Cutscene CCTV** — rekaman kamera 02, pukul 23.41–23.47 (subtitle pelan, bisa dilewati).
+4. **Papan kasus detektif** — foto terpin, tali merah, dan deduksi yang menyambung.
+5. **Investigasi TKP** — cari 3 petunjuk di lab (monitor, papan tulis, tempat sampah).
+6. **Meja Dekripsi** — pecahkan pesan terakhir Nayla, huruf per huruf (HARD: turunkan g(x) dulu).
+7. **Barang bukti** — pesan yang sudah dipecahkan menunjuk ke lokasi kunci.
+8. **Tuduh pelaku** — pilih dari daftar tersangka.
 
 ## Matematika di Baliknya
 
@@ -79,7 +81,7 @@ Kunci jawaban lengkap **ketiga mode** ada di [`KUNCI-JAWABAN.md`](KUNCI-JAWABAN.
 ## Struktur Berkas
 
 ```
-index.html   — layar & markup (pilih kasus, brief, main, meja dekripsi, tuduh, ending)
+index.html   — layar & markup (jalanan pilih kasus, cutscene CCTV + papan kasus, main, meja dekripsi, tuduh, ending)
 style.css    — tema noir, layout 1280×720
 game.js      — mesin game, peta, puzzle, render pixel-art (data tingkat di blok DIFFS)
 KUNCI-JAWABAN.md — kunci jawaban EASY / NORMAL / HARD untuk guru
@@ -93,10 +95,11 @@ Semua grafis digambar lewat `<canvas>` — **tanpa aset eksternal**, jadi aman d
 ## Catatan Teknis
 
 - Stage dikunci 1280×720 lalu di-scale ke viewport, jadi aman untuk proyektor.
-- Menu utama dan cutscene CCTV memakai canvas 640×360 yang di-stretch dengan
-  `image-rendering: pixelated` supaya tetap tajam dan benar-benar pixel art.
-  Cutscene menggambar koridor, siluet pelaku (hitam total), grain/scanline, timestamp berdetak,
-  dan caption yang muncul huruf per huruf — semuanya prosedural, tanpa aset.
+- Menu utama, jalanan pilih kasus, cutscene CCTV, dan papan kasus detektif memakai canvas 640×360
+  yang di-stretch dengan `image-rendering: pixelated` supaya tetap tajam dan benar-benar pixel art.
+  Semua digambar prosedural tanpa aset: sorot senter di layar pilih kasus mengikuti kursor
+  (lubang cahaya + berkas kerucut), cutscene CCTV punya grain/scanline/timestamp berdetak,
+  dan papan kasus memakai polaroid + tali merah.
 - Pada mode NORMAL & HARD, cipherteks tampil **huruf besar-kecil campur** seperti teks acak
   (hanya tampilan — nilainya tetap dibaca tanpa memedulikan besar/kecil).
 - Cipherteks **dihitung otomatis** dari plainteks lewat fungsi tiap lapis — mengganti kunci

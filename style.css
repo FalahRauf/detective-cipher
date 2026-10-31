@@ -203,62 +203,41 @@ html, body {
   display: flex; justify-content: space-between;
 }
 
-/* ---------- select (pilih kasus & tingkat) ---------- */
-#scr-select { align-items: center; justify-content: center; }
-.select-wrap { width: 1060px; }
-.select-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.select-wrap h2 { font-size: 30px; font-weight: 800; letter-spacing: .04em; margin-bottom: 24px; }
-.case-list { display: flex; gap: 18px; align-items: stretch; }
-.case-card {
-  flex: 1;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: 22px 22px 20px;
-  display: flex; flex-direction: column;
-}
-.case-card.open { border-top: 3px solid var(--amber); }
-.case-card.open:hover { border-color: var(--amber); background: #141a24; }
-.case-card.locked { opacity: .45; }
-.case-no { font-size: 10px; letter-spacing: .26em; color: var(--amber); margin-bottom: 12px; }
-.case-card.locked .case-no { color: var(--dim); }
-.case-card h3 { font-size: 21px; font-weight: 700; margin-bottom: 10px; }
-.case-card p { font-size: 12.5px; line-height: 1.7; color: #a9b4c4; margin-bottom: 18px; flex: 1; }
-.diff-label { font-size: 10px; letter-spacing: .22em; color: var(--dim); margin-bottom: 10px; }
-.diff-row { display: flex; gap: 8px; }
-.diff-row .btn { flex: 1; padding: 10px 6px; font-size: 12px; }
-.case-card.locked .diff-label {
-  color: #8a6620;
-  border: 1px dashed var(--amber-dim);
-  display: inline-block;
-  padding: 5px 10px 5px 12px;
-  align-self: flex-start;
-  margin-bottom: 0;
+/* ---------- select: jalanan malam + senter ---------- */
+#scr-select { background: #04060a; }
+
+#scv {
+  position: absolute;
+  left: 0; top: 0;
+  width: 1280px; height: 720px;
+  image-rendering: pixelated;
+  display: block;
+  cursor: none;
 }
 
-/* ---------- derive g(x) di formula bar (HARD) ---------- */
-.fx.derive { border-color: var(--amber-dim); }
-.fx.derive input {
-  width: 38px;
-  font-family: Consolas, monospace;
-  font-size: 13px; font-weight: 700;
-  text-align: center;
-  color: var(--text);
-  background: #0a0e14;
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  padding: 3px 2px;
-  outline: none;
-  transition: border-color .12s;
+.select-back {
+  position: absolute;
+  left: 24px; top: 20px;
+  background: rgba(6,10,16,.6);
 }
-.fx.derive input:focus { border-color: var(--amber); }
-.fx.derive input.ok { border-color: var(--green); color: var(--green); }
-.fx.derive input.bad { border-color: var(--red); color: var(--red); }
-.fx .derive-note { color: #5f6b7d; margin-left: 8px; font-size: 11px; }
 
-/* ---------- cutscene CCTV ---------- */
-#scr-cutscene { background: #040604; }
+.select-hint {
+  position: absolute;
+  left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #8d99ab;
+  text-shadow: 0 2px 8px rgba(0,0,0,.95);
+  pointer-events: none;
+  white-space: nowrap;
+}
 
-#ccv {
+/* ---------- cutscene CCTV & papan kasus ---------- */
+#scr-cutscene, #scr-board { background: #040604; }
+
+#ccv, #bcv {
   position: absolute;
   left: 0; top: 0;
   width: 1280px; height: 720px;
@@ -288,13 +267,57 @@ html, body {
 }
 .cut-skip .btn { background: rgba(6,10,6,.6); }
 
-#btn-cut-next {
+#btn-cut-next, #btn-board-next {
   position: absolute;
   left: 50%; bottom: 36px;
   transform: translateX(-50%);
   display: none;
   box-shadow: 0 8px 22px rgba(0,0,0,.6);
 }
+
+/* ---------- popup kasus & konfirmasi ---------- */
+.modal-foot.split { justify-content: space-between; }
+
+.cm-diff-label {
+  font-size: 10px;
+  letter-spacing: .22em;
+  color: var(--dim);
+  margin-bottom: 10px;
+}
+#case-modal .diff-row .btn { flex: 1; }
+
+.cm-locked {
+  display: none;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d8a94a;
+  border: 1px dashed var(--amber-dim);
+  padding: 12px 14px;
+}
+
+/* ---------- derive g(x) di formula bar (HARD) ---------- */
+.fx.derive { border-color: var(--amber-dim); }
+.fx.derive input {
+  width: 38px;
+  font-family: Consolas, monospace;
+  font-size: 13px; font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  background: #0a0e14;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 3px 2px;
+  outline: none;
+  transition: border-color .12s;
+}
+.fx.derive input:focus { border-color: var(--amber); }
+.fx.derive input.ok { border-color: var(--green); color: var(--green); }
+.fx.derive input.bad { border-color: var(--red); color: var(--red); }
+.fx .derive-note { color: #5f6b7d; margin-left: 8px; font-size: 11px; }
+
+/* ---------- baris tombol tingkat (dipakai popup kasus) ---------- */
+.diff-row { display: flex; gap: 8px; }
+.diff-row .btn { padding: 10px 6px; font-size: 12px; }
 
 /* =========================================================
    PLAY  (canvas pixel art)
@@ -618,6 +641,17 @@ html, body {
 }
 .stat span { display: block; font-size: 10px; letter-spacing: .26em; color: var(--dim); margin-bottom: 8px; }
 .stat b { font-size: 32px; color: var(--amber); }
+
+/* ---------- overlay transisi fade ---------- */
+#fade {
+  position: absolute; inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+  z-index: 90;
+}
+#fade.show { opacity: 1; pointer-events: all; }
 
 /* =========================================================
    MODAL / TOAST / ERR

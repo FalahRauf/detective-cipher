@@ -128,14 +128,16 @@ Input `a = 3`, `b = 3` di meja dekripsi akan membuka kolom dekripsi. Salah isian
 
 ## Alur kasus (sama untuk semua mode)
 
-1. **Rekaman CCTV (cutscene)** → sosok hitam keluar lab pukul 23.47 memikul tas besar
-2. **Laptop meja guru** → `pesan.txt` terakhir Nayla (23.45) → cipherteks + buka meja dekripsi
-3. **Papan tulis** → fungsi yang Nayla tulis (NORMAL: sekaligus lapis paling dalam)
-4. **Tempat sampah** → kunci yang Nayla remas dan buang (HARD: hanya sisa komposisinya)
-5. **Meja dekripsi** → pesan terakhir Nayla terbaca
-6. **Pot tanaman** (dekat dispenser, sudut kanan bawah) → pot digeser → **kunci lemari** label "ARSIP"
-7. **Lemari arsip** → dibuka pakai kunci → **flashdisk "JANGAN FORMAT — BUKTI"**: salinan CCTV + catatan penguntit
-8. **Tuduh** → Pak Dedi
+1. **Pilih kasus di jalanan** — senter detektif mengikuti kursor; klik sosok hitam CASE 01
+2. **Cutscene CCTV** → sosok hitam keluar lab pukul 23.47 memikul tas besar
+3. **Papan kasus detektif** → deduksi: kartu akses 23.40, tas besar, Nayla
+4. **Laptop meja guru** → `pesan.txt` terakhir Nayla (23.45) → cipherteks + buka meja dekripsi
+5. **Papan tulis** → fungsi yang Nayla tulis (NORMAL: sekaligus lapis paling dalam)
+6. **Tempat sampah** → kunci yang Nayla remas dan buang (HARD: hanya sisa komposisinya)
+7. **Meja dekripsi** → pesan terakhir Nayla terbaca
+8. **Pot tanaman** (dekat dispenser, sudut kanan bawah) → pot digeser → **kunci lemari** label "ARSIP"
+9. **Lemari arsip** → dibuka pakai kunci → **flashdisk "JANGAN FORMAT — BUKTI"**: salinan CCTV + catatan penguntit
+10. **Tuduh** → Pak Dedi
 
 Alasannya: Pak Dedi mengaku pulang pukul 21.00, tapi kartu akses teknisinya sendiri tercatat tap masuk
 pukul 23.40 — tujuh menit sebelum sosok hitam itu membawa tas besar keluar lewat kamera. Nayla sendiri

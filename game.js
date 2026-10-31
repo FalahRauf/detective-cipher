@@ -68,8 +68,8 @@
               'Jadi f\u207b\u00b9(y) = 9(y \u2212 7) mod 26. Ingat: hasil 0 ditulis 26.',
         payload: 'f\u207b\u00b9(y) = 9(y \u2212 7) mod 26'
       },
-      brief: 'Mode <strong>EASY</strong> — pesan terakhir Nayla dienkripsi dua lapis. Meja dekripsi sudah ' +
-             'menampilkan invers kedua fungsi; tugasmu mengisi nilainya huruf per huruf.'
+      confirm: 'Mode EASY — pesan terakhir Nayla dienkripsi dua lapis. Meja dekripsi sudah menampilkan ' +
+               'invers kedua fungsi; tugasmu mengisi nilainya huruf per huruf.'
     },
     normal: {
       id: 'normal', label: 'NORMAL',
@@ -93,9 +93,9 @@
               'f\u207b\u00b9 dulu, baru g\u207b\u00b9, terakhir h\u207b\u00b9.',
         payload: 'x = h\u207b\u00b9(g\u207b\u00b9(f\u207b\u00b9(c)))'
       },
-      brief: 'Mode <strong>NORMAL</strong> — pesan terakhir Nayla dienkripsi <strong>tiga lapis</strong> ' +
-             '(komposisi tiga fungsi). Meja dekripsi hanya menampilkan fungsi aslinya; <strong>inversnya harus ' +
-             'kamu turunkan sendiri</strong>, lalu buka dari lapis terluar.'
+      confirm: 'Mode NORMAL — pesan terakhir Nayla dienkripsi tiga lapis (komposisi tiga fungsi). ' +
+               'Meja dekripsi hanya menampilkan fungsi aslinya; inversnya harus kamu turunkan sendiri, ' +
+               'lalu buka dari lapis terluar.'
     },
     hard: {
       id: 'hard', label: 'HARD',
@@ -119,9 +119,8 @@
               'lalu g\u207b\u00b9 dengan 3 \u00b7 9 = 27 \u2261 1 (mod 26).',
         payload: 'g(x) = 3x + 3'
       },
-      brief: 'Mode <strong>HARD</strong> — pesan Nayla dua lapis, tapi <strong>kunci g(x) hilang</strong>. ' +
-             'Yang tersisa hanya hasil komposisinya (f\u2218g)(x). Turunkan dulu g(x) di meja dekripsi ' +
-             'sebelum bisa mendekripsi.'
+      confirm: 'Mode HARD — pesan Nayla dua lapis, tapi kunci g(x) hilang. Yang tersisa hanya hasil ' +
+               'komposisinya (f\u2218g)(x) = 15x + 17. Turunkan dulu g(x) di meja dekripsi sebelum bisa mendekripsi.'
     }
   };
 
@@ -881,6 +880,8 @@
     $(id).classList.add('active');
     activeScreen = id;
     if (id !== 'scr-play') closeDialog();
+    $('case-modal').classList.remove('show');
+    $('confirm-modal').classList.remove('show');
   }
 
   function updateScore() {
@@ -1453,24 +1454,6 @@
     if (pk) pk.style.opacity = '1';
   }
 
-  function fillBrief() {
-    $('brief-text').innerHTML =
-      '<p>Pukul 05.30, pak penjaga menemukan pintu samping <strong>Lab Komputer 2</strong> tidak terkunci. ' +
-      '<strong>Nayla Anggraini</strong>, ketua OSIS yang terakhir terlihat di sekolah semalam, tidak pulang ' +
-      'semalam. Orang tuanya melapor pukul 02.00.</p>' +
-      '<p>Kamera 02 di koridor lantai dua merekam satu hal penting: pukul 23.47, <strong>sosok berjubah hitam ' +
-      'keluar dari lab memikul tas besar</strong>. Masuk dengan tangan kosong, keluar membawa sesuatu yang berat.</p>' +
-      '<p>Di laptop meja guru ada satu file terakhir: <em>pesan.txt</em>, diketik pukul 23.45 — dua menit sebelum ' +
-      'Nayla dibawa keluar. Isinya bukan kalimat, melainkan deretan huruf acak. Nayla sempat mengenkripsi pesannya ' +
-      'sendiri memakai materi komposisi fungsi, lalu memecah kuncinya: satu fungsi tertulis di papan tulis, ' +
-      'satu lagi dia remas dan buang ke tempat sampah.</p>' +
-      '<p>' + diff.brief + '</p>' +
-      '<p><strong>Tugasmu:</strong> putar rekamannya, pecahkan pesan terakhir Nayla di meja dekripsi, temukan ' +
-      'apa yang dia sembunyikan, lalu tentukan siapa pelakunya.</p>';
-    var tag = $('brief-diff');
-    if (tag) tag.textContent = diff.label;
-  }
-
   function setDifficulty(id) {
     diff = DIFFS[id] || DIFFS.easy;
     CASE = buildCase(diff);
@@ -1479,6 +1462,35 @@
   /* =========================================================
      15. EVENTS
      ========================================================= */
+  function startInvestigation() {
+    $('confirm-modal').classList.remove('show');
+    resetGame();
+    cutTime = 0;
+    boardTime = 0;
+    showScreen('scr-cutscene');
+  }
+
+  // fade-out -> ganti layar -> fade-in (dipakai transisi antar cutscene & ke gameplay)
+  var fading = false;
+  function fadeTo(fn) {
+    if (fading) return;
+    fading = true;
+    var f = $('fade');
+    f.classList.add('show');
+    setTimeout(function () {
+      fn();
+      setTimeout(function () {
+        f.classList.remove('show');
+        fading = false;
+      }, 380);
+    }, 380);
+  }
+
+  function showBoard() {
+    boardTime = 0;
+    showScreen('scr-board');
+  }
+
   function wire() {
     $('btn-start').addEventListener('click', function () { showScreen('scr-select'); });
     $('btn-help').addEventListener('click', function () {
@@ -1490,13 +1502,21 @@
         'c = f(g(x))  \u2192  x = g\u207b\u00b9(f\u207b\u00b9(c))', true);
     });
     $('btn-select-back').addEventListener('click', function () { showScreen('scr-title'); });
-    $('btn-brief-back').addEventListener('click', function () { showScreen('scr-select'); });
-    $('btn-to-play').addEventListener('click', function () {
-      cutTime = 0;
-      showScreen('scr-cutscene');
+
+    // cutscene CCTV -> (fade) -> papan kasus detektif
+    $('btn-cut-skip').addEventListener('click', function () { fadeTo(showBoard); });
+    $('btn-cut-next').addEventListener('click', function () { fadeTo(showBoard); });
+    // papan kasus -> (fade) -> TKP
+    $('btn-board-skip').addEventListener('click', function () { fadeTo(function () { showScreen('scr-play'); }); });
+    $('btn-board-next').addEventListener('click', function () { fadeTo(function () { showScreen('scr-play'); }); });
+
+    // popup kasus & konfirmasi mode
+    $('cm-x').addEventListener('click', function () { $('case-modal').classList.remove('show'); });
+    $('cf-cancel').addEventListener('click', function () {
+      $('confirm-modal').classList.remove('show');
     });
-    $('btn-cut-skip').addEventListener('click', function () { showScreen('scr-play'); });
-    $('btn-cut-next').addEventListener('click', function () { showScreen('scr-play'); });
+    $('cf-start').addEventListener('click', startInvestigation);
+
     $('btn-desk-help').addEventListener('click', function () { $('btn-help').click(); });
 
     $('btn-desk-back').addEventListener('click', function () {
@@ -1511,18 +1531,6 @@
     $('btn-check').addEventListener('click', checkAll);
     $('btn-accuse-back').addEventListener('click', function () { showScreen('scr-play'); });
     $('btn-again').addEventListener('click', function () { resetGame(); showScreen('scr-select'); });
-
-    var diffBtns = document.querySelectorAll('.diff-btn');
-    for (var db = 0; db < diffBtns.length; db++) {
-      (function (el) {
-        el.addEventListener('click', function () {
-          setDifficulty(el.getAttribute('data-diff'));
-          resetGame();
-          fillBrief();
-          showScreen('scr-brief');
-        });
-      })(diffBtns[db]);
-    }
 
     $('modal-x').addEventListener('click', function () {
       var wasSolve = modalEl.getAttribute('data-solve') === '1';
@@ -1570,6 +1578,15 @@
         cutTime += dt;
         drawCutscene();
         updateCutDom();
+      }
+      if (activeScreen === 'scr-board') {
+        boardTime += dt;
+        drawBoardScene();
+        updateBoardDom();
+      }
+      if (activeScreen === 'scr-select') {
+        selTime += dt;
+        drawSelectScene();
       }
       if (activeScreen === 'scr-title') drawTitle(dt);
       draw();
@@ -2491,24 +2508,31 @@
     return p2(Math.floor(t / 3600) % 24) + ':' + p2(Math.floor(t / 60) % 60) + ':' + p2(Math.floor(t) % 60);
   }
 
+  var CUT_END = 24.8;
+  var AUTO_DELAY = 1.6;   // jeda setelah caption terakhir selesai sebelum fade otomatis
   var CAPS = [
-    { t: 1.0,  s: 'Kamera 02 — koridor lantai dua. Satu-satunya kamera yang tidak dimatikan malam itu.' },
-    { t: 2.4,  s: 'Pukul 23.41 — sosok berjubah hitam masuk ke lab dengan tangan kosong.' },
-    { t: 7.8,  s: 'Pukul 23.47 — enam menit kemudian, sosok itu keluar memikul tas besar.' },
-    { t: 12.0, s: 'Tas itu tidak pernah terlihat keluar lagi. Sama seperti Nayla.' }
+    { t: 1.2,  s: 'Kamera 02 — koridor lantai dua.' },
+    { t: 3.6,  s: 'Pukul 23.41 — sosok hitam masuk, tangan kosong.' },
+    { t: 8.2,  s: 'Pukul 23.47 — keluar memikul tas besar.' },
+    { t: 12.4, s: 'Tas itu tidak pernah keluar. Sama seperti Nayla.' },
+    { t: 15.8, s: 'Di laptop lab ditemukan pesan terakhirnya: diketik pukul 23.45 — terenkripsi.' },
+    { t: 20.4, s: 'Nayla mengenkripsinya sendiri — supaya pelakunya tidak bisa membaca.' }
   ];
 
-  function updateCutDom() {
-    var el = $('cut-caption');
+  function typeCaption(caps, cps, t) {
     var cur = null;
-    for (var i = 0; i < CAPS.length; i++) if (cutTime >= CAPS[i].t) cur = CAPS[i];
-    if (cur) {
-      var n = Math.floor((cutTime - cur.t) * 34);
-      el.textContent = cur.s.slice(0, Math.min(cur.s.length, n));
-    } else {
-      el.textContent = '';
-    }
-    $('btn-cut-next').style.display = cutTime > 15 ? '' : 'none';
+    for (var i = 0; i < caps.length; i++) if (t >= caps[i].t) cur = caps[i];
+    if (!cur) return { txt: '', done: false };
+    var n = Math.floor((t - cur.t) * cps);
+    return { txt: cur.s.slice(0, Math.min(cur.s.length, n)), done: n >= cur.s.length };
+  }
+
+  function updateCutDom() {
+    var cap = typeCaption(CAPS, 18, cutTime);
+    $('cut-caption').textContent = cap.txt;
+    $('btn-cut-next').style.display = cutTime > CUT_END ? '' : 'none';
+    // selesai sendiri: jeda sejenak setelah caption terakhir, lalu fade tanpa klik
+    if (cutTime > CUT_END + AUTO_DELAY) fadeTo(showBoard);
   }
 
   function drawCutscene() {
@@ -2619,6 +2643,404 @@
   }
 
   /* =========================================================
+     17C. CUTSCENE 2 — papan kasus detektif (berpikir)
+     ========================================================= */
+  var bcv = null, bctx = null;
+  var boardTime = 0;
+  var BOARD_END = 22.3;
+
+  function BR(x, y, w, h, c) { bctx.fillStyle = c; bctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
+
+  function initBoard() {
+    bcv = $('bcv');
+    if (!bcv) return;
+    bctx = bcv.getContext('2d');
+    bctx.imageSmoothingEnabled = false;
+  }
+
+  function pxTextB(txt, x, y, sc, col) {
+    bctx.fillStyle = col;
+    for (var i = 0; i < txt.length; i++) {
+      var gl = FONT3[txt.charAt(i)] || FONT3[' '];
+      for (var r = 0; r < 5; r++) {
+        for (var c = 0; c < 3; c++) {
+          if (gl[r].charAt(c) === '1') bctx.fillRect(x + (i * 4 + c) * sc, y + r * sc, sc, sc);
+        }
+      }
+    }
+  }
+
+  var BOARD_CAPS = [
+    { t: 1.2,  s: 'Kartu akses tap masuk 23.40.' },
+    { t: 4.4,  s: 'Enam menit kemudian, kamera menangkap tas besar itu keluar.' },
+    { t: 9.2,  s: 'Dan satu-satunya yang tidak pulang malam itu... Nayla.' },
+    { t: 13.6, s: 'Pesan terakhirnya dia enkripsi sendiri. Dia tahu ada yang menguntit.' },
+    { t: 18.4, s: 'Kalau begitu, aku yang harus membacanya. Saatnya turun ke TKP.' }
+  ];
+
+  function updateBoardDom() {
+    var cap = typeCaption(BOARD_CAPS, 18, boardTime);
+    $('board-caption').textContent = cap.txt;
+    $('btn-board-next').style.display = boardTime > BOARD_END ? '' : 'none';
+    if (boardTime > BOARD_END + AUTO_DELAY) fadeTo(function () { showScreen('scr-play'); });
+  }
+
+  // polaroid + pin + label di papan gabus
+  var PINS = [
+    { x: 130, y: 100, kind: 'wajah', label: 'NAYLA' },
+    { x: 252, y: 86,  kind: 'tas',   label: 'TAS 23.47' },
+    { x: 348, y: 132, kind: 'kartu', label: 'KARTU 23.40' },
+    { x: 206, y: 190, kind: 'lab',   label: 'LAB 2' }
+  ];
+  var STRINGS = [[0, 1], [1, 2], [0, 3], [2, 3]];
+
+  function drawBoardPin(p) {
+    BR(p.x - 17, p.y - 17, 34, 42, '#e8e4da');           // kertas polaroid
+    BR(p.x - 14, p.y - 14, 28, 28, '#161c24');           // foto
+    if (p.kind === 'wajah') {
+      bctx.fillStyle = '#46536a';
+      bctx.beginPath(); bctx.arc(p.x, p.y - 4, 7, 0, 6.283); bctx.fill();
+      BR(p.x - 10, p.y + 4, 20, 9, '#39435a');
+    } else if (p.kind === 'tas') {
+      BR(p.x - 10, p.y - 8, 20, 14, '#05070a');
+      BR(p.x - 6, p.y - 12, 12, 5, '#05070a');
+    } else if (p.kind === 'kartu') {
+      BR(p.x - 11, p.y - 8, 22, 15, '#2a4c80');
+      BR(p.x - 11, p.y - 4, 22, 3, '#dfe6f0');
+      BR(p.x - 8, p.y + 2, 10, 2, '#8fb4dd');
+    } else {
+      BR(p.x - 9, p.y - 10, 18, 24, '#232d3a');
+      BR(p.x - 6, p.y - 4, 12, 18, '#39455a');
+      BR(p.x + 3, p.y + 3, 2, 2, '#f2c14e');
+    }
+    pxTextB(p.label, p.x - p.label.length * 2, p.y + 18, 1, '#3a352c');
+    bctx.fillStyle = '#c9a23e';                           // pin
+    bctx.beginPath(); bctx.arc(p.x, p.y - 19, 2.4, 0, 6.283); bctx.fill();
+  }
+
+  function drawBoardScene() {
+    if (!bctx) return;
+    var t = boardTime;
+
+    // ruangan gelap
+    BR(0, 0, 640, 320, '#0d100d');
+    BR(0, 320, 640, 40, '#080a08');
+
+    // papan gabus + bingkai kayu
+    BR(52, 32, 384, 232, '#2a1f12');
+    BR(60, 40, 368, 216, '#6b5433');
+    for (var n = 0; n < 170; n++) {
+      BR(62 + Math.random() * 364 | 0, 42 + Math.random() * 212 | 0, 2, 1,
+         Math.random() < 0.5 ? 'rgba(40,28,14,.35)' : 'rgba(150,120,74,.30)');
+    }
+
+    // tali merah menghubungkan pin
+    bctx.strokeStyle = '#b3402e';
+    bctx.lineWidth = 1.6;
+    for (var s = 0; s < STRINGS.length; s++) {
+      var a = PINS[STRINGS[s][0]], b2 = PINS[STRINGS[s][1]];
+      bctx.beginPath();
+      bctx.moveTo(a.x, a.y - 19);
+      bctx.quadraticCurveTo((a.x + b2.x) / 2, (a.y + b2.y) / 2 + 14, b2.x, b2.y - 19);
+      bctx.stroke();
+    }
+
+    // foto-foto terpasang
+    for (var pi = 0; pi < PINS.length; pi++) drawBoardPin(PINS[pi]);
+
+    // lampu meja hangat menyinari papan
+    var warm = bctx.createRadialGradient(240, 140, 24, 240, 140, 270);
+    warm.addColorStop(0, 'rgba(255,214,150,.16)');
+    warm.addColorStop(0.6, 'rgba(255,214,150,.06)');
+    warm.addColorStop(1, 'rgba(255,214,150,0)');
+    bctx.fillStyle = warm;
+    bctx.fillRect(0, 0, 640, 360);
+
+    // lampu meja di pojok kanan bawah
+    BR(596, 306, 34, 10, '#1a140c');                       // alas
+    BR(578, 274, 5, 36, '#1a140c');                        // tiang
+    BR(560, 268, 22, 9, '#1a140c');                        // kepala lampu
+    bctx.fillStyle = '#ffd89a';
+    bctx.beginPath(); bctx.arc(566, 280, 3.4, 0, 6.283); bctx.fill();
+
+    // detektif berpikir (siluet hitam, menghadap papan)
+    var x = 534, y = 344;
+    BR(x - 9, y - 30, 8, 30, '#000');                      // kaki
+    BR(x + 2, y - 30, 8, 30, '#000');
+    BR(x - 16, y - 74, 34, 46, '#000');                    // jas
+    BR(x - 11, y - 94, 22, 21, '#000');                    // kepala
+    BR(x - 17, y - 89, 34, 6, '#000');                     // bibir topi
+    BR(x - 13, y - 101, 26, 9, '#000');                    // mahkota topi
+    BR(x - 26, y - 64, 15, 8, '#000');                     // lengan atas
+    BR(x - 28, y - 78, 8, 16, '#000');                     // lengan bawah naik
+    BR(x - 28, y - 80, 7, 5, '#000');                      // tangan di dagu
+    // rim hangat dari lampu di sisi kiri jas
+    BR(x - 17, y - 72, 2, 40, 'rgba(255,214,150,.22)');
+    BR(x - 12, y - 92, 2, 18, 'rgba(255,214,150,.14)');
+
+    // grain tipis + vignette
+    for (var g = 0; g < 55; g++) {
+      bctx.globalAlpha = 0.03 + Math.random() * 0.07;
+      bctx.fillStyle = Math.random() < 0.5 ? '#cbb98a' : '#000';
+      bctx.fillRect(Math.random() * 640 | 0, Math.random() * 360 | 0, 2, 1);
+    }
+    bctx.globalAlpha = 1;
+    var vg = bctx.createRadialGradient(300, 170, 100, 300, 170, 350);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,.62)');
+    bctx.fillStyle = vg;
+    bctx.fillRect(0, 0, 640, 360);
+  }
+
+  /* =========================================================
+     17D. PILIH KASUS — jalanan malam, senter mengikuti kursor
+     ========================================================= */
+  var scv = null, sctx = null;
+  var selTime = 0;
+  var selMouse = { x: 320, y: 160 };
+  var CASE_FIGS = [
+    { id: 'c1', x: 190, y: 292, caseNo: 'CASE 01', title: 'REKAMAN 23.47' },
+    { id: 'c2', x: 330, y: 292, caseNo: 'CASE 02', title: 'BUKU BESAR PERPUS', segera: true },
+    { id: 'c3', x: 470, y: 292, caseNo: 'CASE 03', title: 'SERVER TERKUNCI', segera: true }
+  ];
+
+  var CASES_META = {
+    c1: { no: 'CASE FILE #01', title: 'Rekaman 23.47',
+          desc: 'Nayla, ketua OSIS, hilang — CCTV merekam sosok hitam membawa tas besar keluar dari lab pukul 23.47. Pecahkan pesan terakhirnya, temukan buktinya, tuduh pelakunya.',
+          locked: false },
+    c2: { no: 'CASE FILE #02', title: 'Buku Besar Perpustakaan',
+          desc: 'Koleksi langka menghilang dari perpustakaan. Urutan lapis enkripsinya bisa tertukar — jangan asal membalik fungsi.',
+          locked: true },
+    c3: { no: 'CASE FILE #03', title: 'Server Terkunci',
+          desc: 'File soal ujian dienkripsi dan salah satu kuncinya hilang total. Turunkan fungsi yang tidak diketahui.',
+          locked: true }
+  };
+
+  function TR3(x, y, w, h, c) { sctx.fillStyle = c; sctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
+
+  function pxTextS(txt, x, y, sc, col) {
+    sctx.fillStyle = col;
+    for (var i = 0; i < txt.length; i++) {
+      var gl = FONT3[txt.charAt(i)] || FONT3[' '];
+      for (var r = 0; r < 5; r++) {
+        for (var c = 0; c < 3; c++) {
+          if (gl[r].charAt(c) === '1') sctx.fillRect(x + (i * 4 + c) * sc, y + r * sc, sc, sc);
+        }
+      }
+    }
+  }
+
+  function initSelect() {
+    scv = $('scv');
+    if (!scv) return;
+    sctx = scv.getContext('2d');
+    sctx.imageSmoothingEnabled = false;
+    scv.addEventListener('mousemove', function (e) {
+      var r = scv.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      selMouse.x = (e.clientX - r.left) / r.width * 640;
+      selMouse.y = (e.clientY - r.top) / r.height * 360;
+    });
+    scv.addEventListener('click', function () {
+      var f = hoverCheck();
+      if (f) openCasePopup(f.id);
+    });
+  }
+
+  function hoverCheck() {
+    for (var i = 0; i < CASE_FIGS.length; i++) {
+      var f = CASE_FIGS[i];
+      if (selMouse.x > f.x - 26 && selMouse.x < f.x + 26 &&
+          selMouse.y > f.y - 64 && selMouse.y < f.y + 10) return f;
+    }
+    return null;
+  }
+
+  // sosok hitam berdiri diam (versi tanpa langkah)
+  function drawCtStand(x, y, sway) {
+    var yy = y + Math.sin(sway) * 0.8;
+    TR3(x - 6, yy - 22, 7, 22, '#000');
+    TR3(x + 1, yy - 22, 7, 22, '#000');
+    TR3(x - 10, yy - 47, 20, 26, '#000');
+    TR3(x - 7, yy - 63, 14, 16, '#000');
+    TR3(x - 8, yy - 58, 16, 5, '#000');
+  }
+
+  function drawSelDetective() {
+    var x = 74, y = 330;
+    TR3(x - 8, y - 24, 7, 24, '#000');                     // kaki
+    TR3(x + 1, y - 24, 7, 24, '#000');
+    TR3(x - 13, y - 56, 26, 34, '#000');                   // jas
+    TR3(x - 9, y - 74, 18, 19, '#000');                    // kepala
+    TR3(x - 14, y - 70, 28, 6, '#000');                    // bibir topi
+    TR3(x - 11, y - 80, 22, 8, '#000');                    // mahkota topi
+    TR3(x + 8, y - 52, 16, 6, '#000');                     // lengan ke depan
+    TR3(x + 20, y - 56, 10, 6, '#000');
+    TR3(x + 28, y - 60, 10, 5, '#11161c');                 // senter
+    TR3(x + 36, y - 59, 3, 3, '#ffe9b0');
+  }
+
+  function drawBeam(x0, y0, x1, y1) {
+    sctx.save();
+    sctx.globalCompositeOperation = 'lighter';
+    var ang = Math.atan2(y1 - y0, x1 - x0);
+    var len = Math.hypot(x1 - x0, y1 - y0) + 60;
+    var ex = x0 + Math.cos(ang) * len, ey = y0 + Math.sin(ang) * len;
+    var px2 = Math.cos(ang + Math.PI / 2), py2 = Math.sin(ang + Math.PI / 2);
+    var g = sctx.createLinearGradient(x0, y0, ex, ey);
+    g.addColorStop(0, 'rgba(255,242,205,.30)');
+    g.addColorStop(1, 'rgba(255,242,205,.04)');
+    sctx.fillStyle = g;
+    sctx.beginPath();
+    sctx.moveTo(x0, y0);
+    sctx.lineTo(ex + px2 * len * 0.13, ey + py2 * len * 0.13);
+    sctx.lineTo(ex - px2 * len * 0.13, ey - py2 * len * 0.13);
+    sctx.closePath();
+    sctx.fill();
+    var hg = sctx.createRadialGradient(x1, y1, 2, x1, y1, 28);
+    hg.addColorStop(0, 'rgba(255,246,220,.28)');
+    hg.addColorStop(1, 'rgba(255,246,220,0)');
+    sctx.fillStyle = hg;
+    sctx.beginPath();
+    sctx.arc(x1, y1, 28, 0, 6.283);
+    sctx.fill();
+    sctx.restore();
+  }
+
+  function drawCaseLabel(f) {
+    var w1 = f.caseNo.length * 8, w2 = f.title.length * 4;
+    var w = Math.max(w1, w2) + 20;
+    var h = f.segera ? 54 : 42;
+    var bx = f.x - w / 2, topY = f.y - 96;
+    TR3(bx, topY - 8, w, h, 'rgba(8,11,16,.90)');
+    TR3(bx, topY - 8, w, 2, 'rgba(242,181,68,.55)');
+    pxTextS(f.caseNo, f.x - w1 / 2, topY, 2, '#f2b544');
+    pxTextS(f.title, f.x - w2 / 2, topY + 14, 1, '#c3ccda');
+    if (f.segera) pxTextS('SEGERA', f.x - 12, topY + 26, 1, '#e05548');
+    TR3(f.x - 1, topY + h - 8, 2, 22, 'rgba(242,181,68,.4)');
+  }
+
+  function drawLampPost(x) {
+    TR3(x, 180, 4, 82, '#0b0e11');
+    TR3(x - 7, 176, 18, 5, '#0b0e11');
+    TR3(x - 3, 181, 10, 4, '#f2c14e');
+    sctx.save();
+    sctx.globalCompositeOperation = 'lighter';
+    sctx.globalAlpha = 0.10;
+    sctx.fillStyle = '#f2c14e';
+    sctx.beginPath();
+    sctx.ellipse(x + 2, 210, 26, 44, 0, 0, 6.283);
+    sctx.fill();
+    sctx.restore();
+  }
+
+  function drawSelectScene() {
+    if (!sctx) return;
+    var t = selTime, mx = selMouse.x, my = selMouse.y;
+
+    // langit + bintang + bulan
+    var sky = sctx.createLinearGradient(0, 0, 0, 250);
+    sky.addColorStop(0, '#05070d');
+    sky.addColorStop(1, '#0c1220');
+    sctx.fillStyle = sky;
+    sctx.fillRect(0, 0, 640, 250);
+    for (var s = 0; s < 46; s++) {
+      TR3((s * 97) % 640, (s * 41) % 100, 1, 1,
+          'rgba(207,224,245,' + (0.12 + 0.28 * Math.abs(Math.sin(t * 0.7 + s))).toFixed(2) + ')');
+    }
+    TR3(556, 24, 13, 13, '#dfe8f5');
+    TR3(553, 27, 19, 7, '#dfe8f5');
+
+    // siluet kota dengan jendela menyala
+    for (var b = 0; b < 9; b++) {
+      var bw = 58 + (b * 37) % 50, bh = 58 + (b * 53) % 92, bx2 = b * 74 - 12;
+      TR3(bx2, 240 - bh, bw, bh, '#0a0f16');
+      for (var w2 = 0; w2 < 6; w2++) {
+        if ((b * 7 + w2) % 3 === 0) {
+          TR3(bx2 + 8 + (w2 * 13) % (bw - 16), 240 - bh + 10 + (w2 * 23) % Math.max(20, bh - 34), 4, 6, 'rgba(242,181,68,.28)');
+        }
+      }
+    }
+
+    // trotoar + jalan
+    TR3(0, 238, 640, 20, '#1b1f24');
+    TR3(0, 258, 640, 102, '#15181c');
+    for (var d = 0; d < 8; d++) TR3(14 + d * 82, 306, 42, 4, 'rgba(200,190,120,.14)');
+
+    drawLampPost(88);
+    drawLampPost(566);
+
+    // tiga sosok hitam = tiga kasus (kelihatan saat tersapu cahaya)
+    for (var fi = 0; fi < CASE_FIGS.length; fi++) {
+      var f = CASE_FIGS[fi];
+      sctx.globalAlpha = 0.35;
+      TR3(f.x - 16, f.y - 3, 34, 4, '#000');
+      sctx.globalAlpha = 1;
+      drawCtStand(f.x, f.y - 2, t * 1.5 + fi * 2.1);
+    }
+
+    // kegelapan dengan lubang cahaya mengikuti kursor
+    var dk = sctx.createRadialGradient(mx, my, 24, mx, my, 175);
+    dk.addColorStop(0, 'rgba(3,5,8,0)');
+    dk.addColorStop(0.5, 'rgba(3,5,8,.40)');
+    dk.addColorStop(1, 'rgba(3,5,8,.88)');
+    sctx.fillStyle = dk;
+    sctx.fillRect(0, 0, 640, 360);
+
+    // berkas senter + inti terang
+    drawBeam(112, 272, mx, my);
+
+    // detektif + senter (selalu terlihat)
+    drawSelDetective();
+
+    // label kasus melayang saat disorot
+    var hf = hoverCheck();
+    if (hf) drawCaseLabel(hf);
+
+    // vignette
+    var vg = sctx.createRadialGradient(320, 180, 120, 320, 180, 380);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,.55)');
+    sctx.fillStyle = vg;
+    sctx.fillRect(0, 0, 640, 360);
+  }
+
+  function openCasePopup(id) {
+    var m = CASES_META[id];
+    if (!m) return;
+    $('cm-tag').textContent = m.no + ' \u00b7 ' + (m.locked ? 'SEGERA' : 'TERBUKA');
+    $('cm-title').textContent = m.title;
+    $('cm-desc').textContent = m.desc;
+    $('cm-locked').style.display = m.locked ? '' : 'none';
+    $('cm-diff-wrap').style.display = m.locked ? 'none' : '';
+    var wrap = $('cm-diffs');
+    wrap.innerHTML = '';
+    if (!m.locked) {
+      var list = ['easy', 'normal', 'hard'];
+      for (var i = 0; i < list.length; i++) {
+        (function (d) {
+          var b = document.createElement('button');
+          b.className = 'btn';
+          b.textContent = DIFFS[d].label;
+          b.addEventListener('click', function () {
+            setDifficulty(d);
+            $('case-modal').classList.remove('show');
+            openConfirm();
+          });
+          wrap.appendChild(b);
+        })(list[i]);
+      }
+    }
+    $('case-modal').classList.add('show');
+  }
+
+  function openConfirm() {
+    $('cf-tag').textContent = 'MODE ' + diff.label;
+    $('cf-text').textContent = diff.confirm + ' Kamu yakin ingin memainkan mode ini?';
+    $('confirm-modal').classList.add('show');
+  }
+
+  /* =========================================================
      18. BOOT
      ========================================================= */
   window.onerror = function (msg, src, line, col) {
@@ -2629,13 +3051,14 @@
   };
 
   setDifficulty('easy');
-  fillBrief();
   wire();
   resetGame();
   buildVignette();
   initDust();
   initTitle();
   initCutscene();
+  initBoard();
+  initSelect();
   fit();
   window.addEventListener('resize', fit);
   requestAnimationFrame(frame);
@@ -2650,6 +3073,11 @@
     closeDialog: closeDialog,
     drawCutscene: drawCutscene,
     cutTick: function (dt) { cutTime += dt; drawCutscene(); updateCutDom(); },
+    boardTick: function (dt) { boardTime += dt; drawBoardScene(); updateBoardDom(); },
+    selectTick: function (dt) { selTime += dt; drawSelectScene(); },
+    selectMouse: function (x, y) { selMouse.x = x; selMouse.y = y; },
+    hoveredFig: function () { var f = hoverCheck(); return f ? f.id : null; },
+    screen: function () { return activeScreen; },
     checkAll: checkAll, interact: interact, openDesk: openDesk,
     showScreen: showScreen, finish: finish,
     teleport: function (x, y) { player.x = x; player.y = y; },
