@@ -2,47 +2,160 @@
    DETEKTIF SANDI — Kasus #01 "Pesan Terakhir di Lab"
    Pixel-art top-down 16px, kamera mengikuti pemain.
 
-   Enkripsi dua lapis:  c = f(g(x))
-   f(x) = 3x + 7   ->  f⁻¹(y) = 9(y − 7) mod 26
-   g(x) = x + 5    ->  g⁻¹(y) = y − 5 mod 26
+   Enkripsi berlapis:  c = f(g(...(x)))   (2 lapis easy, 3 lapis normal)
+   Dekripsi selalu dari lapis terluar: x = ...⁻¹(g⁻¹(f⁻¹(c)))
+   Tiga tingkat: EASY / NORMAL / HARD (lihat DIFFS di bawah).
    ========================================================= */
 (function () {
   'use strict';
 
   /* =========================================================
-     1. MATH
+     1. MATH — mesin enkripsi berlapis (data-driven)
      ========================================================= */
   var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  var A = 3, B = 7;      // f(x) = Ax + B
-  var GB = 5;            // g(x) = x + GB
-  var AINV = 9;          // 3 * 9 = 27 ≡ 1 (mod 26)
 
   function m26(n) { var m = ((n % 26) + 26) % 26; return m === 0 ? 26 : m; }
-  function l2n(ch) { return LETTERS.indexOf(ch) + 1; }
+  function l2n(ch) { return LETTERS.indexOf(ch.toUpperCase()) + 1; }
   function n2l(n) { return LETTERS[n - 1]; }
-  function fInv(c) { return m26(AINV * (c - B)); }
-  function gInv(y) { return m26(y - GB); }
-  function encryptLetter(x) { return m26(A * m26(x + GB) + B); }
+  function ainv(a) { for (var i = 1; i < 26; i++) if ((a * i) % 26 === 1) return i; return 1; }
+
+  // Lapis disimpan dari LUAR ke DALAM: layers[0] dipakai terakhir saat enkripsi.
+  function encLayer(L, x) { return m26(L.a * x + L.b); }
+  function decLayer(L, y) { return m26(L.inv * (y - L.b)); }
+
+  function fxStr(L) {
+    return L.a === 1 ? ('x ' + (L.b < 0 ? '\u2212 ' + (-L.b) : '+ ' + L.b))
+                     : (L.a + 'x ' + (L.b < 0 ? '\u2212 ' + (-L.b) : '+ ' + L.b));
+  }
+  function finvStr(L) {
+    var inner = 'y ' + (L.b < 0 ? '+ ' + (-L.b) : '\u2212 ' + L.b);
+    return L.a === 1 ? inner + ' mod 26' : L.inv + '(' + inner + ') mod 26';
+  }
 
   /* =========================================================
-     2. DATA
+     2. DATA — tingkat kesulitan & kasus
      ========================================================= */
-  var CASE = {
-    cipher: 'CGLEW HW ROD',
-    plain: 'KUNCI DI POT',
-    culprit: 'dedi',
-    suspects: [
-      { id: 'rian',  name: 'Rian Pratama',   role: 'Siswa XI PPLG 4', initials: 'RP',
-        alibi: 'Mengaku di kantin sampai pukul 17.00. Dua orang saksi melihatnya.',
-        note: 'Tidak memegang kartu akses lab.' },
-      { id: 'dedi',  name: 'Pak Dedi',       role: 'Teknisi Lab',     initials: 'PD',
-        alibi: 'Mengaku sudah pulang sejak pukul 16.00 dan tidak kembali lagi.',
-        note: 'Kartu akses teknisi tercatat tap masuk 16.40.' },
-      { id: 'sinta', name: 'Sinta Maharani', role: 'Siswa XI PPLG 4', initials: 'SM',
-        alibi: 'Berada di perpustakaan, terekam CCTV dari 16.00 sampai 17.00.',
-        note: 'Tidak pernah memegang kunci lemari arsip.' }
-    ]
+  var SUSPECTS = [
+    { id: 'rian',  name: 'Rian Pratama',   role: 'Siswa XI PPLG 4', initials: 'RP',
+      alibi: 'Mengaku sudah di kos sejak pukul 20.30. Dua teman sekos membenarkan.',
+      note: 'Tidak punya kartu akses ke gedung setelah jam 22.00.' },
+    { id: 'dedi',  name: 'Pak Dedi',       role: 'Teknisi Lab',     initials: 'PD',
+      alibi: 'Mengaku sudah pulang sejak pukul 21.00 dan tidak kembali lagi.',
+      note: 'Kartu akses teknisi tercatat tap masuk pukul 23.40.' },
+    { id: 'sinta', name: 'Sinta Maharani', role: 'Siswa XI PPLG 4', initials: 'SM',
+      alibi: 'Terekam CCTV perpustakaan sampai pukul 22.00, lalu terlihat keluar gerbang.',
+      note: 'Tidak pernah memegang kunci lemari arsip.' }
+  ];
+
+  // clue: 'papan' | 'sampah' -> petunjuk yang membuka fungsi tsb; 'derive' -> harus diturunkan sendiri
+  var DIFFS = {
+    easy: {
+      id: 'easy', label: 'EASY',
+      plain: 'KUNCI DI POT',
+      layers: [
+        { name: 'f', a: 3, b: 7,  clue: 'papan'  },
+        { name: 'g', a: 1, b: 5,  clue: 'sampah' }
+      ],
+      showInverse: true,
+      cluePapan:  'Tulisan spidol belum terhapus — ditulis tergesa, ada inisial kecil <b>"N"</b> di sudutnya. ' +
+                  'Ini kunci <b>lapis luar</b> pesan Nayla.',
+      clueSampah: 'Kertas kusut di dasar tempat sampah. Nayla melemparnya supaya penguntitnya tidak menemukan ' +
+                  'kunci lengkapnya — ini kunci <b>lapis dalam</b>.',
+      hint: {
+        title: 'Cara menemukan f\u207b\u00b9',
+        desc: 'y = 3x + 7  \u2192  3x = y \u2212 7  \u2192  x = (y \u2212 7) / 3. ' +
+              'Karena 3 \u00b7 9 = 27 \u2261 1 (mod 26), membagi dengan 3 sama dengan mengalikan 9. ' +
+              'Jadi f\u207b\u00b9(y) = 9(y \u2212 7) mod 26. Ingat: hasil 0 ditulis 26.',
+        payload: 'f\u207b\u00b9(y) = 9(y \u2212 7) mod 26'
+      },
+      brief: 'Mode <strong>EASY</strong> — pesan terakhir Nayla dienkripsi dua lapis. Meja dekripsi sudah ' +
+             'menampilkan invers kedua fungsi; tugasmu mengisi nilainya huruf per huruf.'
+    },
+    normal: {
+      id: 'normal', label: 'NORMAL',
+      plain: 'CEK POT BUNGA',
+      layers: [
+        { name: 'f', a: 7, b: 3,  clue: 'papan'  },
+        { name: 'g', a: 1, b: 11, clue: 'sampah' },
+        { name: 'h', a: 1, b: -6, clue: 'papan'  }
+      ],
+      mixedCase: true,
+      showInverse: false,
+      cluePapan:  'Dua fungsi tertulis tergesa di papan: kunci <b>lapis luar</b> f(x), dan di pojok bawah papan ' +
+                  'kunci <b>lapis paling dalam</b> h(x). Inisial "N" kecil di sudutnya.',
+      clueSampah: 'Kertas kusut di dasar tempat sampah — kunci <b>lapis tengah</b>. Nayla memecah kuncinya ' +
+                  'supaya tidak ada satu orang pun yang bisa membacanya sendirian.',
+      hint: {
+        title: 'Membalik tiga lapis',
+        desc: 'Balik tiap fungsi satu-satu dulu: f(x) = 7x + 3 \u2192 f\u207b\u00b9(y) = 15(y \u2212 3) mod 26 ' +
+              '(karena 7 \u00b7 15 = 105 \u2261 1). g(x) = x + 11 \u2192 g\u207b\u00b9(y) = y \u2212 11. ' +
+              'h(x) = x \u2212 6 \u2192 h\u207b\u00b9(y) = y + 6. Lalu buka dari lapis terluar: ' +
+              'f\u207b\u00b9 dulu, baru g\u207b\u00b9, terakhir h\u207b\u00b9.',
+        payload: 'x = h\u207b\u00b9(g\u207b\u00b9(f\u207b\u00b9(c)))'
+      },
+      brief: 'Mode <strong>NORMAL</strong> — pesan terakhir Nayla dienkripsi <strong>tiga lapis</strong> ' +
+             '(komposisi tiga fungsi). Meja dekripsi hanya menampilkan fungsi aslinya; <strong>inversnya harus ' +
+             'kamu turunkan sendiri</strong>, lalu buka dari lapis terluar.'
+    },
+    hard: {
+      id: 'hard', label: 'HARD',
+      plain: 'DI BAWAH POT',
+      layers: [
+        { name: 'f', a: 5, b: 2, clue: 'papan'   },
+        { name: 'g', a: 3, b: 3, clue: 'derive'  }
+      ],
+      mixedCase: true,
+      showInverse: false,
+      composite: '(f \u2218 g)(x) = 15x + 17',
+      cluePapan:  'Tulisan spidol: kunci <b>lapis luar</b> f(x). Tapi tidak ada jejak g(x) di mana pun — ' +
+                  'Nayla menyembunyikannya terlalu baik.',
+      clueSampah: 'Kertas sobek di dasar tempat sampah — bagian yang memuat g(x) hilang. Yang tertulis hanya ' +
+                  'hasil komposisinya: <code>(f \u2218 g)(x) = 15x + 17</code>.',
+      hint: {
+        title: 'Menurunkan g(x)',
+        desc: '(f \u2218 g)(x) = f(g(x)) = 5\u00b7g(x) + 2 = 15x + 17. ' +
+              'Maka 5\u00b7g(x) = 15x + 15, sehingga g(x) = (15x + 15) / 5 = 3x + 3. ' +
+              'Setelah g ketemu, dekripsi seperti biasa: f\u207b\u00b9 dulu \u2014 5 \u00b7 21 = 105 \u2261 1 (mod 26) \u2014 ' +
+              'lalu g\u207b\u00b9 dengan 3 \u00b7 9 = 27 \u2261 1 (mod 26).',
+        payload: 'g(x) = 3x + 3'
+      },
+      brief: 'Mode <strong>HARD</strong> — pesan Nayla dua lapis, tapi <strong>kunci g(x) hilang</strong>. ' +
+             'Yang tersisa hanya hasil komposisinya (f\u2218g)(x). Turunkan dulu g(x) di meja dekripsi ' +
+             'sebelum bisa mendekripsi.'
+    }
   };
+
+  var diff = DIFFS.easy;
+  var CASE = null;   // dibangun oleh buildCase() saat difficulty dipilih
+
+  function buildCase(d) {
+    var layers = [];
+    for (var i = 0; i < d.layers.length; i++) {
+      var L = {};
+      for (var k in d.layers[i]) L[k] = d.layers[i][k];
+      L.inv = ainv(L.a);
+      layers.push(L);
+    }
+    // tampilan cipherteks "acak": NORMAL & HARD pakai huruf besar-kecil campur
+    // (deterministik dari posisi, nilai hurufnya tetap sama)
+    function caseChar(up, i) {
+      if (!d.mixedCase) return up;
+      return ((i * 53 + 17) % 7) < 3 ? up.toLowerCase() : up;
+    }
+    // enkripsi: lapis paling dalam dulu (ujung array) ke terluar (awal array)
+    var cipher = '';
+    for (var j = 0; j < d.plain.length; j++) {
+      var ch = d.plain.charAt(j);
+      if (ch === ' ') { cipher += ' '; continue; }
+      var x = l2n(ch);
+      for (var i2 = layers.length - 1; i2 >= 0; i2--) x = encLayer(layers[i2], x);
+      cipher += caseChar(n2l(x), j);
+    }
+    return {
+      diff: d, layers: layers, cipher: cipher, plain: d.plain,
+      culprit: 'dedi', suspects: SUSPECTS
+    };
+  }
 
   var CORE = ['monitor', 'papan', 'sampah'];
 
@@ -196,7 +309,7 @@
      5. STATE
      ========================================================= */
   var state = { collected: {}, solved: false, score: 1000, hintUsed: false,
-                potSlid: false, keyFound: false, cells: [] };
+                potSlid: false, keyFound: false, cells: [], gSolved: false };
   var potAnim = 0;   // 0..1 animasi pot digeser
   var player = { x: 216, y: 240, dir: 'down', moving: false, anim: 0 };
   var cam = { x: 0, y: 0 };
@@ -848,9 +961,9 @@
 
     if (id === 'monitor') {
       collect('monitor');
-      openDialog('KOMPUTER MEJA GURU',
-        'Satu-satunya file yang tersisa: <code>pesan.txt</code>. Isinya deretan huruf acak — ' +
-        'kemungkinan besar terenkripsi lebih dari satu lapis.',
+      openDialog('LAPTOP MEJA GURU',
+        'File terakhir yang diketik di laptop ini pukul <b>23.45</b>: <code>pesan.txt</code> — pesan terakhir ' +
+        'Nayla, dikirim ke grup OSIS. Isinya deretan huruf acak, terenkripsi lebih dari satu lapis.',
         [
           { label: 'Buka Meja Dekripsi', primary: true, fn: function () { closeDialog(); openDesk(); } },
           { label: 'Tutup', fn: closeDialog }
@@ -860,17 +973,22 @@
 
     if (id === 'papan') {
       collect('papan');
-      openDialog('PAPAN TULIS',
-        'Sisa spidol yang belum terhapus. Ini kunci <b>lapis luar</b> — fungsi yang dipakai terakhir saat enkripsi.',
-        [{ label: 'Catat: f(x) = 3x + 7', primary: true, fn: closeDialog }]);
+      openDialog('PAPAN TULIS', diff.cluePapan,
+        [{ label: 'Catat: ' + CASE.layers.map(function (L) {
+             return L.clue === 'papan' ? L.name + '(x) = ' + fxStr(L) : null;
+           }).filter(Boolean).join('  ·  '), primary: true, fn: closeDialog }]);
       return;
     }
 
     if (id === 'sampah') {
       collect('sampah');
-      openDialog('TEMPAT SAMPAH',
-        'Kertas kecil terlipat di dasar tempat sampah. Ini kunci <b>lapis dalam</b> — fungsi yang dipakai pertama saat enkripsi.',
-        [{ label: 'Catat: g(x) = x + 5', primary: true, fn: closeDialog }]);
+      var sLabel = diff.id === 'hard'
+        ? 'Catat: ' + diff.composite + ' (g(x) sobek)'
+        : 'Catat: ' + CASE.layers.map(function (L) {
+            return L.clue === 'sampah' ? L.name + '(x) = ' + fxStr(L) : null;
+          }).filter(Boolean).join('  ·  ');
+      openDialog('TEMPAT SAMPAH', diff.clueSampah,
+        [{ label: sLabel, primary: true, fn: closeDialog }]);
       return;
     }
 
@@ -889,12 +1007,12 @@
       }
       if (state.potSlid) {
         openDialog('POT TANAMAN',
-          'Di bawah pot ada <b>kunci kecil</b> dengan label "LEMARI ARSIP".',
+          'Di bawah pot ada <b>kunci kecil</b> dengan label "ARSIP" — Nayla yang menyembunyikannya.',
           [{ label: 'Ambil kunci', primary: true, fn: takeKey }]);
         return;
       }
       openDialog('POT TANAMAN',
-        'Kamu ingat pesannya: <code>KUNCI DI POT</code>. Pot ini kelihatan sedikit bergeser dari tempatnya.',
+        'Kamu mengingat pesan Nayla: <code>' + CASE.plain + '</code>. Pot besar di sudut ini kelihatan baru digeser.',
         [
           { label: 'Geser pot', primary: true, fn: function () {
               closeDialog();
@@ -903,7 +1021,7 @@
               setTimeout(function () {
                 if (activeScreen !== 'scr-play') return;
                 openDialog('POT TANAMAN',
-                  'Di bawah pot ada <b>kunci kecil</b> dengan label "LEMARI ARSIP".',
+                  'Di bawah pot ada <b>kunci kecil</b> dengan label "ARSIP".',
                   [{ label: 'Ambil kunci', primary: true, fn: takeKey }]);
               }, 750);
             } },
@@ -921,7 +1039,8 @@
       }
       collect('lemari');
       openDialog('LEMARI ARSIP',
-        'Kunci masuk dengan pas. Laci kedua terbuka — di dalamnya ada printout log pintu lab.',
+        'Kunci masuk dengan pas. Di dalamnya ada <b>flashdisk</b> berlabel "JANGAN FORMAT — BUKTI": salinan ' +
+        'rekaman CCTV dan catatan penguntit yang Nayla tulis selama seminggu terakhir.',
         [
           { label: 'Tuduh Tersangka', primary: true, fn: function () {
               closeDialog(); renderSuspects(); showScreen('scr-accuse');
@@ -947,16 +1066,19 @@
   /* =========================================================
      12. MEJA DEKRIPSI
      ========================================================= */
+  // Tiap sel punya rantai nilai: chain[0]=c, chain[i+1]=hasil langkah invers ke-i,
+  // chain[n]=angka plain. Field: (n-1) input angka + 1 input huruf.
   function buildCells() {
     var out = [];
+    var n = CASE.layers.length;
     for (var i = 0; i < CASE.cipher.length; i++) {
-      var ch = CASE.cipher[i];
+      var ch = CASE.cipher.charAt(i);
       if (ch === ' ') { out.push({ space: true }); continue; }
-      var cnum = l2n(ch);
-      var mid = fInv(cnum);
+      var chain = [l2n(ch)];
+      for (var s = 0; s < n; s++) chain.push(decLayer(CASE.layers[s], chain[s]));
       out.push({
-        space: false, c: ch, cnum: cnum, mid: mid, plain: n2l(gInv(mid)),
-        numEl: null, letEl: null, okNum: false, okLet: false, penalized: false
+        space: false, c: ch, chain: chain, plain: n2l(chain[n]),
+        fields: [], oks: [], penalized: false
       });
     }
     return out;
@@ -964,20 +1086,26 @@
 
   function renderCells() {
     cellsEl.innerHTML = '';
+    var n = CASE.layers.length;
     for (var i = 0; i < state.cells.length; i++) {
       (function (cell, idx) {
         var d = document.createElement('div');
         d.className = 'cell' + (cell.space ? ' gap' : '');
         if (!cell.space) {
           d.setAttribute('data-i', String(idx));
-          d.innerHTML =
-            '<div class="ciph">' + cell.c + '</div>' +
-            '<div class="fld"><span class="lbl">f&#8315;&#185;</span>' +
-            '<input class="in-num" type="text" inputmode="numeric" maxlength="2" autocomplete="off" spellcheck="false"></div>' +
-            '<div class="fld"><span class="lbl">g&#8315;&#185;</span>' +
-            '<input class="in-let" type="text" maxlength="1" autocomplete="off" spellcheck="false"></div>';
-          cell.numEl = d.querySelector('.in-num');
-          cell.letEl = d.querySelector('.in-let');
+          var html = '<div class="ciph">' + cell.c + '</div>';
+          for (var s = 0; s < n - 1; s++) {
+            html += '<div class="fld"><span class="lbl">' + CASE.layers[s].name + '&#8315;&#185;</span>' +
+                    '<input class="in-num" type="text" inputmode="numeric" maxlength="2" autocomplete="off" spellcheck="false"></div>';
+          }
+          html += '<div class="fld"><span class="lbl">' + CASE.layers[n - 1].name + '&#8315;&#185;</span>' +
+                  '<input class="in-let" type="text" maxlength="1" autocomplete="off" spellcheck="false"></div>';
+          d.innerHTML = html;
+          var inputs = d.querySelectorAll('input');
+          cell.fields = [];
+          for (var f = 0; f < inputs.length; f++) cell.fields.push(inputs[f]);
+          cell.oks = [];
+          for (var o = 0; o < n; o++) cell.oks.push(false);
           wireCell(cell, idx);
         }
         cellsEl.appendChild(d);
@@ -995,50 +1123,41 @@
   }
 
   function wireCell(cell, idx) {
-    cell.numEl.addEventListener('input', function () {
-      var v = cell.numEl.value.replace(/[^0-9]/g, '').slice(0, 2);
-      cell.numEl.value = v;
-      cell.numEl.classList.remove('ok', 'bad');
-      if (v.length === 2) {
-        var n = nextIndex(idx);
-        if (n >= 0) state.cells[n].numEl.focus();
-      }
-      renderWork(idx);
-    });
-    cell.numEl.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); cell.letEl.focus(); }
-      else if (e.key === 'ArrowLeft') {
-        var p = prevIndex(idx);
-        if (p >= 0) { e.preventDefault(); state.cells[p].letEl.focus(); }
-      }
-    });
-    cell.letEl.addEventListener('input', function () {
-      var v = cell.letEl.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1);
-      cell.letEl.value = v;
-      cell.letEl.classList.remove('ok', 'bad');
-      if (v.length === 1) {
-        var n = nextIndex(idx);
-        if (n >= 0) state.cells[n].numEl.focus();
-      }
-      renderWork(idx);
-    });
-    cell.letEl.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowLeft') {
-        var p = prevIndex(idx);
-        if (p >= 0) { e.preventDefault(); state.cells[p].numEl.focus(); }
-      } else if (e.key === 'ArrowRight') {
-        var n = nextIndex(idx);
-        if (n >= 0) { e.preventDefault(); state.cells[n].numEl.focus(); }
-      }
-    });
-    cell.numEl.addEventListener('focus', function () { renderWork(idx); });
-    cell.letEl.addEventListener('focus', function () { renderWork(idx); });
-  }
+    var last = cell.fields.length - 1;
 
-  function subStep(mid) {
-    var raw = mid - GB;
-    if (raw <= 0) return mid + ' &minus; ' + GB + ' = ' + raw + ' &equiv; ' + m26(raw) + ' (mod 26)';
-    return mid + ' &minus; ' + GB + ' = ' + raw;
+    function focusNext(fi) {
+      if (fi < last) { cell.fields[fi + 1].focus(); return; }
+      var n = nextIndex(idx);
+      if (n >= 0) state.cells[n].fields[0].focus();
+    }
+    function focusPrev(fi) {
+      if (fi > 0) { cell.fields[fi - 1].focus(); return; }
+      var p = prevIndex(idx);
+      if (p >= 0) {
+        var pc = state.cells[p];
+        pc.fields[pc.fields.length - 1].focus();
+      }
+    }
+
+    for (var fi = 0; fi <= last; fi++) {
+      (function (field, i2) {
+        var isNum = i2 < last;
+        field.addEventListener('input', function () {
+          var v = isNum
+            ? field.value.replace(/[^0-9]/g, '').slice(0, 2)
+            : field.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1);
+          field.value = v;
+          field.classList.remove('ok', 'bad');
+          if (v.length === (isNum ? 2 : 1)) focusNext(i2);
+          renderWork(idx);
+        });
+        field.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); focusNext(i2); }
+          else if (e.key === 'ArrowLeft') { e.preventDefault(); focusPrev(i2); }
+        });
+        field.addEventListener('focus', function () { renderWork(idx); });
+      })(cell.fields[fi], fi);
+    }
   }
 
   function renderWork(i) {
@@ -1047,81 +1166,162 @@
       workEl.innerHTML = '<div class="work-idle">Klik salah satu kolom untuk melihat langkah pengerjaannya.</div>';
       return;
     }
-    var raw1 = AINV * (cell.cnum - B);
-    var s1 = 'f&#8315;&#185;(' + cell.cnum + ') = ' + AINV + '(' + cell.cnum + ' &minus; ' + B + ') = ' + raw1 +
-             ' &equiv; <b>' + (cell.okNum ? cell.mid : '?') + '</b> (mod 26)';
-    var s2;
-    if (!cell.okNum) s2 = 'g&#8315;&#185;(?) = ? &minus; ' + GB + ' = ? &rarr; ?';
-    else if (!cell.okLet) s2 = 'g&#8315;&#185;(' + cell.mid + ') = ' + subStep(cell.mid) + ' &rarr; <b>?</b>';
-    else s2 = 'g&#8315;&#185;(' + cell.mid + ') = ' + subStep(cell.mid) + ' &rarr; <b>' + cell.plain + '</b>';
-    workEl.innerHTML =
-      '<div class="step"><i>Langkah 1</i><span>' + s1 + '</span></div>' +
-      '<div class="step"><i>Langkah 2</i><span>' + s2 + '</span></div>';
+    var html = '';
+    for (var s = 0; s < CASE.layers.length; s++) {
+      var L = CASE.layers[s];
+      var y = cell.chain[s], res = cell.chain[s + 1];
+      var known = cell.oks[s];
+      var body;
+      if (!cell.oks.slice(0, s).every(Boolean)) {
+        body = L.name + '\u207b\u00b9(?) = ? \u2192 <b>?</b>';
+      } else if (L.a === 1) {
+        var target = y + ' ' + (L.b < 0 ? '+ ' + (-L.b) : '\u2212 ' + L.b);
+        var raw = y - L.b;
+        var wraps = raw <= 0 || raw > 26;
+        body = L.name + '\u207b\u00b9(' + y + ') = ' + target + ' = ' + raw +
+               (wraps ? ' \u2261 <b>' + res + '</b> (mod 26)' : ' \u2192 <b>' + (known ? res : '?') + '</b>');
+      } else {
+        var rawMul = L.inv * (y - L.b);
+        body = L.name + '\u207b\u00b9(' + y + ') = ' + L.inv + '(' + target + ') = ' + rawMul +
+               ' \u2261 <b>' + (known ? res : '?') + '</b> (mod 26)';
+      }
+      html += '<div class="step"><i>Langkah ' + (s + 1) + '</i><span>' + body + '</span></div>';
+    }
+    workEl.innerHTML = html;
   }
 
   function keysComplete() { return !!state.collected.papan && !!state.collected.sampah; }
 
+  function clueKnown(L) {
+    if (L.clue === 'derive') return state.gSolved;
+    return !!state.collected[L.clue];
+  }
+
+  function deskReady() {
+    if (!keysComplete()) return false;
+    for (var i = 0; i < CASE.layers.length; i++) {
+      if (CASE.layers[i].clue === 'derive' && !state.gSolved) return false;
+    }
+    return true;
+  }
+
+  function buildFormulaBar() {
+    var bar = $('formula-bar');
+    var html = '';
+    for (var i = 0; i < CASE.layers.length; i++) {
+      var L = CASE.layers[i];
+      var known = clueKnown(L);
+      if (L.clue === 'derive' && known) {
+        html += '<div class="fx"><b>g(x)</b> = <span>' + fxStr(L) + '</span></div>';
+      } else if (L.clue === 'derive') {
+        html += '<div class="fx derive" id="derive-box">' +
+                  '<b>g(x)</b> = <input id="derive-a" type="text" maxlength="2" inputmode="numeric">x + ' +
+                  '<input id="derive-b" type="text" maxlength="3" inputmode="numeric">' +
+                  '<span class="derive-note">dari ' + CASE.diff.composite + '</span>' +
+                '</div>';
+      } else {
+        html += '<div class="fx' + (known ? '' : ' locked') + '"><b>' + L.name + '(x)</b> = <span>' +
+                (known ? fxStr(L) : '???') + '</span></div>';
+      }
+      if (diff.showInverse) {
+        html += '<div class="fx inv' + (known ? '' : ' locked') + '"><b>' + L.name + '\u207b\u00b9(y)</b> = <span>' +
+                (known ? finvStr(L) : '???') + '</span></div>';
+      }
+    }
+    html += '<div class="fx note">' + chainNote() + '</div>';
+    bar.innerHTML = html;
+
+    if ($('derive-a')) {
+      var aEl = $('derive-a'), bEl = $('derive-b');
+      function checkDerive() {
+        var av = aEl.value.replace(/[^0-9]/g, '').slice(0, 2);
+        var bv = bEl.value.replace(/[^0-9]/g, '').slice(0, 3);
+        aEl.value = av; bEl.value = bv;
+        if (av === '' || bv === '') return;
+        var ok = parseInt(av, 10) === CASE.layers[1].a && parseInt(bv, 10) === CASE.layers[1].b;
+        aEl.classList.toggle('ok', ok); bEl.classList.toggle('ok', ok);
+        aEl.classList.toggle('bad', !ok); bEl.classList.toggle('bad', !ok);
+        if (ok && !state.gSolved) {
+          state.gSolved = true;
+          toast('g(x) = ' + fxStr(CASE.layers[1]) + ' \u2014 kunci ditemukan');
+          updateObjective();
+          buildFormulaBar();
+          updateDeskLocks();
+        }
+      }
+      aEl.addEventListener('input', checkDerive);
+      bEl.addEventListener('input', checkDerive);
+    }
+  }
+
+  function chainNote() {
+    var fwd = [], rev = [];
+    for (var i = 0; i < CASE.layers.length; i++) {
+      fwd.push(CASE.layers[i].name);
+      rev.push(CASE.layers[i].name + '\u207b\u00b9');
+    }
+    return 'c = ' + fwd.join('(') + '(x' + ')'.repeat(CASE.layers.length) +
+           ' \u2192 x = ' + rev.join('(') + '(c' + ')'.repeat(CASE.layers.length);
+  }
+
   function updateDeskLocks() {
-    var hasF = !!state.collected.papan;
-    var hasG = !!state.collected.sampah;
-    var complete = hasF && hasG;
+    var complete = deskReady();
 
-    $('fx-f').textContent    = hasF ? '3x + 7' : '???';
-    $('fx-g').textContent    = hasG ? 'x + 5' : '???';
-    $('fx-finv').textContent = hasF ? '9(y \u2212 7) mod 26' : '???';
-    $('fx-ginv').textContent = hasG ? 'y \u2212 5 mod 26' : '???';
+    $('desk-hint').textContent = diff.id === 'hard'
+      ? 'Turunkan g(x) dari (f\u2218g)(x), lalu isi f\u207b\u00b9 \u2192 g\u207b\u00b9 tiap huruf'
+      : 'Isi tiap kolom mengikuti urutan lapisan: ' +
+        CASE.layers.map(function (L) { return L.name + '\u207b\u00b9'; }).join(' \u2192 ');
 
-    $('fx-f').parentElement.classList.toggle('locked', !hasF);
-    $('fx-g').parentElement.classList.toggle('locked', !hasG);
-    $('fx-finv').parentElement.classList.toggle('locked', !hasF);
-    $('fx-ginv').parentElement.classList.toggle('locked', !hasG);
-
-    $('cipher-label').textContent = complete ? 'CIPHERTEKS' : 'CIPHERTEKS — KUNCI BELUM LENGKAP';
+    $('cipher-label').textContent = complete ? 'CIPHERTEKS'
+      : (keysComplete() ? 'CIPHERTEKS \u2014 TURUNKAN g(x) DULU' : 'CIPHERTEKS \u2014 KUNCI BELUM LENGKAP');
     $('cipher-label').classList.toggle('locked', !complete);
     $('btn-check').disabled = !complete;
 
     for (var i = 0; i < state.cells.length; i++) {
       var c = state.cells[i];
       if (c.space) continue;
-      c.numEl.disabled = !complete;
-      c.letEl.disabled = !complete;
+      for (var f = 0; f < c.fields.length; f++) c.fields[f].disabled = !complete;
     }
   }
 
   function openDesk() {
+    buildFormulaBar();
     updateDeskLocks();
     renderWork(-1);
     showScreen('scr-desk');
-    if (keysComplete()) {
+    if (deskReady()) {
       for (var i = 0; i < state.cells.length; i++) {
-        if (!state.cells[i].space) { state.cells[i].numEl.focus(); break; }
+        if (!state.cells[i].space) { state.cells[i].fields[0].focus(); break; }
       }
     }
   }
 
   function checkAll() {
-    if (!keysComplete()) return;
+    if (!deskReady()) return;
     var allOk = true, wrongNow = 0;
 
     for (var i = 0; i < state.cells.length; i++) {
       var cell = state.cells[i];
       if (cell.space) continue;
+      var cellOk = true, cellFilled = false;
 
-      var nv = cell.numEl.value.trim();
-      var lv = cell.letEl.value.trim().toUpperCase();
-      var nOk = nv !== '' && parseInt(nv, 10) === cell.mid;
-      var lOk = lv !== '' && lv === cell.plain;
+      for (var s = 0; s < CASE.layers.length; s++) {
+        var field = cell.fields[s];
+        var v = field.value.trim();
+        var isNum = s < CASE.layers.length - 1;
+        var ok = isNum
+          ? (v !== '' && parseInt(v, 10) === cell.chain[s + 1])
+          : (v !== '' && v.toUpperCase() === cell.plain);
+        cell.oks[s] = ok;
+        field.classList.toggle('ok', ok);
+        field.classList.toggle('bad', !ok && v !== '');
+        if (!ok) cellOk = false;
+        if (v !== '') cellFilled = true;
+      }
 
-      cell.okNum = nOk;
-      cell.okLet = lOk;
-      cell.numEl.classList.toggle('ok', nOk);
-      cell.numEl.classList.toggle('bad', !nOk && nv !== '');
-      cell.letEl.classList.toggle('ok', lOk);
-      cell.letEl.classList.toggle('bad', !lOk && lv !== '');
-
-      if (!nOk || !lOk) {
+      if (!cellOk) {
         allOk = false;
-        if ((nv !== '' || lv !== '') && !cell.penalized) { cell.penalized = true; wrongNow++; }
+        if (cellFilled && !cell.penalized) { cell.penalized = true; wrongNow++; }
       }
     }
 
@@ -1137,7 +1337,7 @@
 
     for (var k = 0; k < state.cells.length; k++) {
       var c2 = state.cells[k];
-      if (!c2.space && (!c2.okNum || !c2.okLet)) { c2.numEl.focus(); break; }
+      if (!c2.space && c2.oks.indexOf(false) >= 0) { c2.fields[0].focus(); break; }
     }
   }
 
@@ -1146,7 +1346,7 @@
     updateObjective();
     modalEl.setAttribute('data-solve', '1');
     openModal('SANDI TERPECAHKAN', 'Pesan berhasil dibaca',
-      'Dua lapis enkripsi terbuka dengan urutan terbalik: f⁻¹ dulu, baru g⁻¹. ' +
+      'Semua lapis enkripsi terbuka dengan urutan terbalik — lapis terluar dibuka lebih dulu. ' +
       'Pesannya menunjuk ke sebuah benda di ruangan ini, bukan ke orang.',
       CASE.plain, false);
   }
@@ -1157,11 +1357,7 @@
       state.score = Math.max(0, state.score - 100);
       updateScore();
     }
-    openModal('PETUNJUK', 'Cara menemukan f\u207b\u00b9',
-      'y = 3x + 7  \u2192  3x = y \u2212 7  \u2192  x = (y \u2212 7) / 3.  ' +
-      'Karena 3 \u00b7 9 = 27 \u2261 1 (mod 26), membagi dengan 3 sama dengan mengalikan 9. ' +
-      'Jadi f\u207b\u00b9(y) = 9(y \u2212 7) mod 26. Ingat: hasil 0 ditulis 26.',
-      'f\u207b\u00b9(y) = 9(y \u2212 7) mod 26', true);
+    openModal('PETUNJUK', diff.hint.title, diff.hint.desc, diff.hint.payload, true);
   }
 
   /* =========================================================
@@ -1203,16 +1399,18 @@
     if (win) {
       stamp.textContent = 'TERBUKTI';
       stamp.className = 'verdict';
-      $('end-title').textContent = 'Kasus Selesai';
+      $('end-title').textContent = 'Kasus Selesai — Nayla Ditemukan';
       $('end-text').textContent =
-        'Pak Dedi memakai kartu aksesnya sendiri pukul 16.40, jauh setelah ia mengaku pulang. ' +
-        'Laptop inventaris ditemukan di dalam lemari arsip, dan pesan terenkripsi itu adalah catatan ' +
-        'yang ia tinggalkan untuk mengingat sandi lemari.';
+        'Flashdisk Nayla berisi catatan yang menunjuk satu nama: selama seminggu, orang yang sama selalu ada ' +
+        'di sekolah setiap dia pulang malam. Dan semalam, kartu akses teknisi tercatat tap masuk pukul 23.40 — ' +
+        'tujuh menit sebelum sosok hitam itu membawa tas besar keluar lewat kamera. Pak Dedi mengaku pulang ' +
+        'pukul 21.00. Nayla ditemukan di gudang alat kebersihan dekat rumahnya, selamat dan seger setelah ' +
+        'dicek di klinik.';
     } else {
       stamp.textContent = 'SALAH TUDUH';
       stamp.className = 'verdict bad';
       $('end-title').textContent = 'Pelaku Lolos';
-      $('end-text').textContent = 'Alibi orang yang kamu tuduh tidak terbantahkan. Pelakunya lolos malam itu.';
+      $('end-text').textContent = 'Alibi orang yang kamu tuduh tidak terbantahkan. Pelakunya menghilang sebelum fajar.';
     }
     $('end-score').textContent = String(state.score);
     $('end-rank').textContent = rankOf(state.score);
@@ -1236,6 +1434,7 @@
     state.hintUsed = false;
     state.potSlid = false;
     state.keyFound = false;
+    state.gSolved = false;
     potAnim = 0;
     state.cells = buildCells();
     renderCells();
@@ -1243,6 +1442,7 @@
     updateScore();
     updateObjective();
     updateKeyBadge();
+    buildFormulaBar();
     updateDeskLocks();
     player.x = 216; player.y = 240; player.dir = 'down'; player.moving = false; player.anim = 0;
     cam.x = Math.round(Math.max(0, Math.min(WORLD_W - VW, player.x - VW / 2)));
@@ -1255,44 +1455,74 @@
 
   function fillBrief() {
     $('brief-text').innerHTML =
-      '<p>Pukul 07.10 pagi, <strong>Pak Rahmat</strong> menemukan Lab Komputer 2 dalam keadaan tidak terkunci. ' +
-      'Satu unit laptop inventaris sekolah hilang dari meja guru.</p>' +
-      '<p>Di komputer yang terakhir dipakai, hanya ada satu file bernama <em>pesan.txt</em>. Isinya bukan kalimat — ' +
-      'melainkan deretan huruf acak.</p>' +
-      '<p>Di sekitar meja ada dua catatan lain: sebuah fungsi tertinggal di papan tulis, dan sebuah sticky note ' +
-      'terlipat di dasar tempat sampah. Keduanya tampak seperti kunci.</p>' +
-      '<p><strong>Tugasmu:</strong> jalan-jalan di lab, kumpulkan bukti, pecahkan pesannya di meja dekripsi, ' +
-      'lalu tuduh pelakunya.</p>';
+      '<p>Pukul 05.30, pak penjaga menemukan pintu samping <strong>Lab Komputer 2</strong> tidak terkunci. ' +
+      '<strong>Nayla Anggraini</strong>, ketua OSIS yang terakhir terlihat di sekolah semalam, tidak pulang ' +
+      'semalam. Orang tuanya melapor pukul 02.00.</p>' +
+      '<p>Kamera 02 di koridor lantai dua merekam satu hal penting: pukul 23.47, <strong>sosok berjubah hitam ' +
+      'keluar dari lab memikul tas besar</strong>. Masuk dengan tangan kosong, keluar membawa sesuatu yang berat.</p>' +
+      '<p>Di laptop meja guru ada satu file terakhir: <em>pesan.txt</em>, diketik pukul 23.45 — dua menit sebelum ' +
+      'Nayla dibawa keluar. Isinya bukan kalimat, melainkan deretan huruf acak. Nayla sempat mengenkripsi pesannya ' +
+      'sendiri memakai materi komposisi fungsi, lalu memecah kuncinya: satu fungsi tertulis di papan tulis, ' +
+      'satu lagi dia remas dan buang ke tempat sampah.</p>' +
+      '<p>' + diff.brief + '</p>' +
+      '<p><strong>Tugasmu:</strong> putar rekamannya, pecahkan pesan terakhir Nayla di meja dekripsi, temukan ' +
+      'apa yang dia sembunyikan, lalu tentukan siapa pelakunya.</p>';
+    var tag = $('brief-diff');
+    if (tag) tag.textContent = diff.label;
+  }
+
+  function setDifficulty(id) {
+    diff = DIFFS[id] || DIFFS.easy;
+    CASE = buildCase(diff);
   }
 
   /* =========================================================
      15. EVENTS
      ========================================================= */
   function wire() {
-    $('btn-start').addEventListener('click', function () { resetGame(); showScreen('scr-brief'); });
+    $('btn-start').addEventListener('click', function () { showScreen('scr-select'); });
     $('btn-help').addEventListener('click', function () {
       openModal('CARA MAIN', 'Alur penyelidikan',
         '1. Jalan dengan WASD atau tombol panah.  2. Dekati objek, tekan E untuk memeriksa.  ' +
         '3. Kumpulkan cipherteks dan kedua fungsi.  4. Buka meja dekripsi dari komputer.  ' +
-        '5. Untuk tiap huruf, hitung f⁻¹ dulu lalu g⁻¹.  6. Buka lemari arsip, lalu tuduh tersangka.',
+        '5. Untuk tiap huruf, buka lapis terluar dulu: f⁻¹, lalu lapis berikutnya, sampai huruf aslinya.  ' +
+        '6. Buka lemari arsip, lalu tuduh tersangka.',
         'c = f(g(x))  \u2192  x = g\u207b\u00b9(f\u207b\u00b9(c))', true);
     });
-    $('btn-brief-back').addEventListener('click', function () { showScreen('scr-title'); });
-    $('btn-to-play').addEventListener('click', function () { showScreen('scr-play'); });
+    $('btn-select-back').addEventListener('click', function () { showScreen('scr-title'); });
+    $('btn-brief-back').addEventListener('click', function () { showScreen('scr-select'); });
+    $('btn-to-play').addEventListener('click', function () {
+      cutTime = 0;
+      showScreen('scr-cutscene');
+    });
+    $('btn-cut-skip').addEventListener('click', function () { showScreen('scr-play'); });
+    $('btn-cut-next').addEventListener('click', function () { showScreen('scr-play'); });
     $('btn-desk-help').addEventListener('click', function () { $('btn-help').click(); });
 
     $('btn-desk-back').addEventListener('click', function () {
       showScreen('scr-play');
       if (state.solved && !state.keyFound) {
         openDialog('KAMU MENGINGAT SESUATU',
-          'Sandi dari pesan itu: <code>KUNCI DI POT</code>. Coba periksa pot tanaman di dekat dispenser, sudut kanan bawah.',
+          'Sandi dari pesan itu: <code>' + CASE.plain + '</code>. Coba periksa pot tanaman di dekat dispenser, sudut kanan bawah.',
           [{ label: 'Ke pot', primary: true, fn: closeDialog }]);
       }
     });
     $('btn-hint').addEventListener('click', showHint);
     $('btn-check').addEventListener('click', checkAll);
     $('btn-accuse-back').addEventListener('click', function () { showScreen('scr-play'); });
-    $('btn-again').addEventListener('click', function () { resetGame(); showScreen('scr-title'); });
+    $('btn-again').addEventListener('click', function () { resetGame(); showScreen('scr-select'); });
+
+    var diffBtns = document.querySelectorAll('.diff-btn');
+    for (var db = 0; db < diffBtns.length; db++) {
+      (function (el) {
+        el.addEventListener('click', function () {
+          setDifficulty(el.getAttribute('data-diff'));
+          resetGame();
+          fillBrief();
+          showScreen('scr-brief');
+        });
+      })(diffBtns[db]);
+    }
 
     $('modal-x').addEventListener('click', function () {
       var wasSolve = modalEl.getAttribute('data-solve') === '1';
@@ -1301,7 +1531,7 @@
         modalEl.removeAttribute('data-solve');
         showScreen('scr-play');
         openDialog('KAMU MENGINGAT SESUATU',
-          'Sandi dari pesan itu: <code>KUNCI DI POT</code>. Coba periksa pot tanaman di dekat dispenser, sudut kanan bawah.',
+          'Sandi dari pesan itu: <code>' + CASE.plain + '</code>. Coba periksa pot tanaman di dekat dispenser, sudut kanan bawah.',
           [{ label: 'Ke pot', primary: true, fn: closeDialog }]);
       }
     });
@@ -1335,6 +1565,11 @@
       if (activeScreen === 'scr-play') {
         if (!dialogOpen) update(dt);
         updateDust(dt);
+      }
+      if (activeScreen === 'scr-cutscene') {
+        cutTime += dt;
+        drawCutscene();
+        updateCutDom();
       }
       if (activeScreen === 'scr-title') drawTitle(dt);
       draw();
@@ -1379,7 +1614,19 @@
     'U': ['101', '101', '101', '101', '111'],
     'D': ['110', '101', '101', '101', '110'],
     'G': ['011', '100', '101', '101', '011'],
-    'H': ['101', '101', '111', '101', '101']
+    'H': ['101', '101', '111', '101', '101'],
+    '0': ['111', '101', '101', '101', '111'],
+    '1': ['010', '110', '010', '010', '111'],
+    '2': ['111', '001', '111', '100', '111'],
+    '3': ['111', '001', '011', '001', '111'],
+    '4': ['101', '101', '111', '001', '001'],
+    '5': ['111', '100', '111', '001', '111'],
+    '6': ['111', '100', '111', '101', '111'],
+    '7': ['111', '001', '010', '010', '010'],
+    '8': ['111', '101', '111', '101', '111'],
+    '9': ['111', '101', '111', '001', '111'],
+    ':': ['000', '010', '000', '010', '000'],
+    '.': ['000', '000', '000', '000', '010']
   };
 
   function pxText(txt, x, y, sc, col) {
@@ -2184,6 +2431,194 @@
   }
 
   /* =========================================================
+     17B. CUTSCENE CCTV — rekaman malam kejadian
+     ========================================================= */
+  var ccv = null, cctx = null;
+  var cutTime = 0;
+
+  function TR2(x, y, w, h, c) { cctx.fillStyle = c; cctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
+
+  function initCutscene() {
+    ccv = $('ccv');
+    if (!ccv) return;
+    cctx = ccv.getContext('2d');
+    cctx.imageSmoothingEnabled = false;
+  }
+
+  function pxTextC(txt, x, y, sc, col) {
+    cctx.fillStyle = col;
+    for (var i = 0; i < txt.length; i++) {
+      var gl = FONT3[txt.charAt(i)] || FONT3[' '];
+      for (var r = 0; r < 5; r++) {
+        for (var c = 0; c < 3; c++) {
+          if (gl[r].charAt(c) === '1') cctx.fillRect(x + (i * 4 + c) * sc, y + r * sc, sc, sc);
+        }
+      }
+    }
+  }
+
+  // siluet pelaku: benar-benar hitam total, tanpa detail
+  function drawCtFig(x, y, ph, carry) {
+    var amp = carry ? 2.2 : 1.2;
+    var yy = y + Math.sin(ph * 2) * amp;
+    var sw = Math.sin(ph * 2) * 5;
+    // kaki (langkah bergantian)
+    TR2(x - 6 + sw, yy - 21, 7, 21, '#000');
+    TR2(x + 1 - sw, yy - 21, 7, 21, '#000');
+    // badan
+    TR2(x - 10, yy - 46, 20, 26, '#000');
+    // kepala + tudung
+    TR2(x - 7, yy - 62, 14, 16, '#000');
+    TR2(x - 8, yy - 57, 16, 5, '#000');
+    if (carry) {
+      // tas besar bergantung di depan pinggul — jelas lebih lebar dari badan
+      TR2(x - 22, yy - 34, 44, 22, '#000');
+      TR2(x - 16, yy - 38, 32, 6, '#000');
+      TR2(x - 14, yy - 44, 4, 7, '#000');
+      TR2(x + 10, yy - 44, 4, 7, '#000');
+    } else {
+      // lengan kosong
+      TR2(x - 14, yy - 44, 5, 18, '#000');
+      TR2(x + 9, yy - 44, 5, 18, '#000');
+    }
+  }
+
+  function ctClock() {
+    var t = cutTime < 7.0
+      ? 23 * 3600 + 41 * 60 + 7 + cutTime
+      : 23 * 3600 + 47 * 60 + 13 + (cutTime - 7.0);
+    function p2(n) { return (n < 10 ? '0' : '') + n; }
+    return p2(Math.floor(t / 3600) % 24) + ':' + p2(Math.floor(t / 60) % 60) + ':' + p2(Math.floor(t) % 60);
+  }
+
+  var CAPS = [
+    { t: 1.0,  s: 'Kamera 02 — koridor lantai dua. Satu-satunya kamera yang tidak dimatikan malam itu.' },
+    { t: 2.4,  s: 'Pukul 23.41 — sosok berjubah hitam masuk ke lab dengan tangan kosong.' },
+    { t: 7.8,  s: 'Pukul 23.47 — enam menit kemudian, sosok itu keluar memikul tas besar.' },
+    { t: 12.0, s: 'Tas itu tidak pernah terlihat keluar lagi. Sama seperti Nayla.' }
+  ];
+
+  function updateCutDom() {
+    var el = $('cut-caption');
+    var cur = null;
+    for (var i = 0; i < CAPS.length; i++) if (cutTime >= CAPS[i].t) cur = CAPS[i];
+    if (cur) {
+      var n = Math.floor((cutTime - cur.t) * 34);
+      el.textContent = cur.s.slice(0, Math.min(cur.s.length, n));
+    } else {
+      el.textContent = '';
+    }
+    $('btn-cut-next').style.display = cutTime > 15 ? '' : 'none';
+  }
+
+  function drawCutscene() {
+    if (!cctx) return;
+    var t = cutTime;
+    var jy = (Math.random() < 0.05) ? ((Math.random() * 2 | 0) - 1) : 0;
+    cctx.save();
+    cctx.translate(0, jy);
+
+    // koridor: dinding, lantai, plafon
+    TR2(0, 0, 640, 262, '#141b15');
+    TR2(0, 262, 640, 98, '#0b0f0b');
+    for (var fl = 0; fl < 6; fl++) TR2(0, 262 + fl * 16, 640, 1, 'rgba(200,220,200,.045)');
+    TR2(0, 0, 640, 24, '#0a0f0a');
+    TR2(0, 24, 640, 2, '#1d251d');
+
+    // lampu koridor redup
+    TR2(292, 24, 56, 7, '#0d120d');
+    TR2(298, 31, 44, 4, '#394b39');
+    cctx.globalAlpha = 0.07;
+    cctx.fillStyle = '#9db59d';
+    cctx.beginPath();
+    cctx.ellipse(320, 120, 140, 100, 0, 0, 6.283);
+    cctx.fill();
+    cctx.globalAlpha = 0.06;
+    cctx.beginPath();
+    cctx.ellipse(320, 118, 80, 60, 0, 0, 6.283);
+    cctx.fill();
+    cctx.globalAlpha = 1;
+
+    // pintu lab (kiri) — terbuka saat sosok keluar
+    var doorOpen = t >= 7.1;
+    TR2(112, 92, 100, 172, '#040704');
+    if (doorOpen) {
+      TR2(120, 100, 84, 164, '#1a231a');
+      TR2(120, 100, 84, 3, '#394b39');
+    } else {
+      TR2(120, 100, 84, 164, '#0b100b');
+      TR2(120, 100, 84, 2, '#232d23');
+    }
+    TR2(196, 176, 6, 6, '#2c382c'); // handle
+
+    // jendela kelas di kanan
+    TR2(420, 84, 130, 76, '#040704');
+    TR2(428, 92, 114, 60, '#0e130e');
+    TR2(483, 92, 4, 60, '#040704');
+    TR2(428, 120, 114, 3, '#040704');
+    // papan pengumuman OSIS
+    TR2(190, 120, 90, 56, '#0a0e0a');
+    TR2(196, 126, 78, 3, '#1c261c');
+    TR2(196, 134, 62, 3, '#161f16');
+    TR2(196, 142, 70, 3, '#1c261c');
+
+    // sosok hitam
+    var fx = null, carry = false, spd = 9;
+    if (t >= 1.2 && t < 4.4) { fx = 700 - (t - 1.2) * 152; }                                  // masuk
+    else if (t >= 7.5 && t < 11.4) { fx = 132 + (t - 7.5) * 155; carry = true; spd = 7.2; }   // keluar bawa tas
+    if (fx !== null) {
+      cctx.globalAlpha = 0.4;
+      TR2(carry ? fx - 24 : fx - 17, 256, carry ? 48 : 38, 5, '#000');
+      cctx.globalAlpha = 1;
+      drawCtFig(fx, 256, t * spd, carry);
+    }
+    cctx.restore();
+
+    // grain
+    for (var n = 0; n < 120; n++) {
+      cctx.globalAlpha = 0.04 + Math.random() * 0.12;
+      cctx.fillStyle = Math.random() < 0.5 ? '#c8d8c8' : '#000';
+      cctx.fillRect(Math.random() * 640 | 0, Math.random() * 360 | 0, 1 + (Math.random() * 2 | 0), 1);
+    }
+    cctx.globalAlpha = 1;
+
+    // scanlines
+    for (var sy = 0; sy < 360; sy += 3) TR2(0, sy, 640, 1, 'rgba(0,0,0,.10)');
+
+    // glitch di tiap potongan rekaman
+    if ((t > 4.35 && t < 4.7) || (t > 7.0 && t < 7.35)) {
+      for (var g = 0; g < 9; g++) {
+        TR2(0, Math.random() * 360 | 0, 640, 2 + Math.random() * 7, 'rgba(200,225,200,' + (0.06 + Math.random() * 0.14) + ')');
+      }
+    }
+    // statis awal (belum sinyal)
+    if (t < 0.9) {
+      for (var s2 = 0; s2 < 800; s2++) {
+        TR2(Math.random() * 640 | 0, Math.random() * 360 | 0, 2, 2, Math.random() < 0.5 ? '#93a393' : '#0a0d0a');
+      }
+    }
+
+    // vignette
+    var vg = cctx.createRadialGradient(320, 180, 90, 320, 180, 345);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,.68)');
+    cctx.fillStyle = vg;
+    cctx.fillRect(0, 0, 640, 360);
+
+    // OSD kamera
+    pxTextC('CAM 02', 14, 12, 2, 'rgba(226,238,226,.85)');
+    if (Math.floor(t * 2) % 2 === 0) {
+      cctx.fillStyle = '#e05548';
+      cctx.beginPath();
+      cctx.arc(17, 34, 4, 0, 6.283);
+      cctx.fill();
+      pxTextC('REC', 26, 31, 2, 'rgba(226,238,226,.85)');
+    }
+    pxTextC(ctClock(), 640 - 76, 30, 2, 'rgba(226,238,226,.72)');
+    pxTextC('KORIDOR LANTAI 2', 14, 342, 1, 'rgba(200,212,200,.5)');
+  }
+
+  /* =========================================================
      18. BOOT
      ========================================================= */
   window.onerror = function (msg, src, line, col) {
@@ -2193,20 +2628,28 @@
     e.textContent = msg + '  @' + line + ':' + col;
   };
 
+  setDifficulty('easy');
   fillBrief();
   wire();
   resetGame();
   buildVignette();
   initDust();
   initTitle();
+  initCutscene();
   fit();
   window.addEventListener('resize', fit);
   requestAnimationFrame(frame);
 
   /* test hooks */
   window.GAME = {
-    state: state, CASE: CASE, player: player, cam: cam, grid: grid,
+    get CASE() { return CASE; },
+    state: state, DIFFS: DIFFS, player: player, cam: cam, grid: grid,
     INTERACTABLES: INTERACTABLES,
+    setDifficulty: setDifficulty,
+    resetGame: resetGame,
+    closeDialog: closeDialog,
+    drawCutscene: drawCutscene,
+    cutTick: function (dt) { cutTime += dt; drawCutscene(); updateCutDom(); },
     checkAll: checkAll, interact: interact, openDesk: openDesk,
     showScreen: showScreen, finish: finish,
     teleport: function (x, y) { player.x = x; player.y = y; },
@@ -2216,7 +2659,17 @@
     derivedPlain: function () {
       return state.cells.map(function (c) { return c.space ? ' ' : c.plain; }).join('');
     },
-    encryptLetter: encryptLetter,
+    encrypt: function (s) {
+      var out = '';
+      for (var i = 0; i < s.length; i++) {
+        var ch = s.charAt(i);
+        if (ch === ' ') { out += ' '; continue; }
+        var x = l2n(ch);
+        for (var k = CASE.layers.length - 1; k >= 0; k--) x = encLayer(CASE.layers[k], x);
+        out += n2l(x);
+      }
+      return out;
+    },
     reachableMap: function () {
       var seen = {};
       var start = [Math.floor(player.x / T), Math.floor(player.y / T)];

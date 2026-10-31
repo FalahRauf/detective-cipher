@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Detektif Sandi — Kasus #01</title>
+<title>Detektif Sandi — Rekaman 23.47</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
   <section class="screen active" id="scr-title">
     <canvas id="tcv" width="640" height="360"></canvas>
     <div class="title-top">
-      <div class="stamp">CASE FILE #01 &middot; EASY</div>
+      <div class="stamp">CASE FILES &middot; 3 KASUS &middot; 9 MODE</div>
       <h1>DETECTIVE<span>CIPHER</span></h1>
       <p class="tagline">A noir puzzle about codes</p>
     </div>
@@ -25,20 +25,70 @@
     <div class="title-credit">XI PPLG 4 &middot; SMK Telkom Purwokerto</div>
   </section>
 
+  <!-- ================= SELECT ================= -->
+  <section class="screen" id="scr-select">
+    <div class="select-wrap">
+      <div class="select-head">
+        <span class="tag">DAFTAR KASUS</span>
+        <button class="btn tiny" id="btn-select-back">&larr; MENU</button>
+      </div>
+      <h2>PILIH KASUS &amp; TINGKAT</h2>
+      <div class="case-list">
+
+        <div class="case-card open">
+          <div class="case-no">CASE FILE #01 &middot; TERBUKA</div>
+          <h3>Rekaman 23.47</h3>
+          <p>Ketua OSIS hilang malam ini. CCTV merekam sosok hitam membawa tas besar keluar dari lab. Pecahkan pesan terakhir Nayla, temukan buktinya, tuduh pelakunya.</p>
+          <div class="diff-label">TINGKAT KESULITAN</div>
+          <div class="diff-row">
+            <button class="btn diff-btn" data-diff="easy">EASY</button>
+            <button class="btn diff-btn" data-diff="normal">NORMAL</button>
+            <button class="btn diff-btn" data-diff="hard">HARD</button>
+          </div>
+        </div>
+
+        <div class="case-card locked">
+          <div class="case-no">CASE FILE #02</div>
+          <h3>Buku Besar Perpustakaan</h3>
+          <p>Koleksi langka menghilang. Kali ini urutan lapis enkripsinya bisa tertukar — jangan asal balik.</p>
+          <div class="diff-label">SEGERA</div>
+        </div>
+
+        <div class="case-card locked">
+          <div class="case-no">CASE FILE #03</div>
+          <h3>Server Terkunci</h3>
+          <p>File soal ujian dienkripsi dan salah satu kuncinya hilang total. Turunkan fungsi yang tidak diketahui.</p>
+          <div class="diff-label">SEGERA</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- ================= BRIEF ================= -->
   <section class="screen" id="scr-brief">
     <div class="doc">
       <div class="doc-head">
         <span class="tag">LAPORAN KASUS #01</span>
-        <span class="tag ghost">EASY</span>
+        <span class="tag ghost" id="brief-diff">EASY</span>
       </div>
-      <h2>Pesan Terakhir di Lab</h2>
+      <h2>Rekaman 23.47</h2>
       <div class="doc-body" id="brief-text"></div>
       <div class="doc-foot">
         <button class="btn" id="btn-brief-back">&larr; KEMBALI</button>
-        <button class="btn primary" id="btn-to-play">MASUK KE TKP &rarr;</button>
+        <button class="btn primary" id="btn-to-play">PUTAR REKAMAN CCTV &rarr;</button>
       </div>
     </div>
+  </section>
+
+  <!-- ================= CUTSCENE CCTV ================= -->
+  <section class="screen" id="scr-cutscene">
+    <canvas id="ccv" width="640" height="360"></canvas>
+    <div class="cut-caption" id="cut-caption"></div>
+    <div class="cut-skip">
+      <button class="btn tiny" id="btn-cut-skip">LEWATI &raquo;</button>
+    </div>
+    <button class="btn primary" id="btn-cut-next">LANJUT KE TKP &rarr;</button>
   </section>
 
   <!-- ================= PLAY ================= -->
@@ -68,7 +118,7 @@
     <header class="hud">
       <div class="hud-left">
         <span class="tag">MEJA DEKRIPSI</span>
-        <span class="hud-hint">Isi tiap kolom: hasil f&#8315;&#185; dulu, lalu hasil g&#8315;&#185;</span>
+        <span class="hud-hint" id="desk-hint">Isi tiap kolom mengikuti urutan lapisan</span>
       </div>
       <div class="hud-right">
         <span class="score">SKOR <b id="hud-score-2">1000</b></span>
@@ -76,13 +126,7 @@
       </div>
     </header>
 
-    <div class="formula-bar">
-      <div class="fx"><b>f(x)</b> = <span id="fx-f">???</span></div>
-      <div class="fx"><b>g(x)</b> = <span id="fx-g">???</span></div>
-      <div class="fx inv"><b>f&#8315;&#185;(y)</b> = <span id="fx-finv">???</span></div>
-      <div class="fx inv"><b>g&#8315;&#185;(y)</b> = <span id="fx-ginv">???</span></div>
-      <div class="fx note">c = f(g(x)) &nbsp;&rarr;&nbsp; x = g&#8315;&#185;(f&#8315;&#185;(c))</div>
-    </div>
+    <div class="formula-bar" id="formula-bar"></div>
 
     <div class="cipher-wrap">
       <div class="cipher-label" id="cipher-label">CIPHERTEKS</div>
