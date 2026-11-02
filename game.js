@@ -64,14 +64,14 @@
       layers: [ { a: 3, b: 7 }, { a: 1, b: 5 } ],
       clueCount: 2,
       confirm: 'Mode EASY \u2014 pesan Nayla dienkripsi dua lapis. Cari pesannya dan kuncinya di lab, ' +
-               'lalu jalankan alat enkripsi untuk membuktikan sandinya.'
+               'lalu buka sandinya dengan alat dekripsi di komputer guru.'
     },
     normal: {
       id: 'normal', label: 'NORMAL',
       layers: [ { a: 3, b: 7 }, { a: 1, b: 5 }, { a: 1, b: -6 } ],
       clueCount: 2,
       confirm: 'Mode NORMAL \u2014 tiga lapis komposisi fungsi. Kuncinya lebih panjang, ' +
-               'tapi alat enkripsinya tetap satu.'
+               'tapi alatnya tetap satu.'
     },
     hard: {
       id: 'hard', label: 'HARD',
@@ -109,6 +109,16 @@
 
   function pickOne(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+  // tampilkan sandi dengan huruf besar-kecil campur supaya terbaca seperti teks acak
+  function scrambleCase(s) {
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i);
+      out += (ch !== ' ' && ((i * 7 + 3) % 5 < 2)) ? ch.toLowerCase() : ch;
+    }
+    return out;
+  }
+
   function buildCase(d) {
     var layers = [];
     for (var i = 0; i < d.layers.length; i++) {
@@ -127,7 +137,7 @@
     }
 
     var clues = [];
-    clues.push({ id: 'msg', kind: 'msg', title: 'PESAN ASLI', body: plain });
+    clues.push({ id: 'msg', kind: 'msg', title: 'PESAN TERENKRIPSI', body: scrambleCase(cipher) });
 
     if (d.clueCount >= 3) {
       var mid = Math.ceil(layers.length / 2);
@@ -193,7 +203,7 @@
 
   // Setiap barang bisa diperiksa. Dua/tiga di antaranya menyimpan petunjuk (diacak tiap main).
   var INTERACTABLES = [
-    { id: 'monitor',  x: 200, y: 118, range: 34, label: 'Pakai alat enkripsi', title: 'KOMPUTER GURU' },
+    { id: 'monitor',  x: 200, y: 118, range: 34, label: 'Pakai alat dekripsi', title: 'KOMPUTER GURU' },
     { id: 'papan',    x: 200, y: 62,  range: 36, label: 'Periksa papan tulis',  title: 'PAPAN TULIS',
       flavor: 'Sisa materi jaringan minggu lalu. Ada tulisan "praktek jumat" yang sudah setengah terhapus.' },
     { id: 'sampah',   x: 263, y: 132, range: 30, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
@@ -348,7 +358,7 @@
      5. STATE
      ========================================================= */
   var state = { collected: {}, score: 1000, found: {}, clueMap: {},
-                encrypted: false, potSlid: false, keyFound: false,
+                decrypted: false, potSlid: false, keyFound: false,
                 win: false, picked: null };
   var potAnim = 0;   // 0..1 animasi pot digeser
   var player = { x: 216, y: 240, dir: 'down', moving: false, anim: 0 };
@@ -887,7 +897,7 @@
     for (var i = 0; i < INTERACTABLES.length; i++) {
       var it = INTERACTABLES[i];
       // pot baru bisa diperiksa setelah sandi terpecahkan
-      if (it.id === 'pot' && !state.encrypted) continue;
+      if (it.id === 'pot' && !state.decrypted) continue;
       var d = Math.sqrt((player.x - it.x) * (player.x - it.x) + (player.y - it.y) * (player.y - it.y));
       if (d < it.range && d < bd) { bd = d; best = it; }
     }
@@ -969,7 +979,7 @@
     if (!CASE) return;
     var n = cluesFound();
     if (n < CASE.clues.length) { el.innerHTML = 'Cari petunjuk &middot; ' + n + '/' + CASE.clues.length; return; }
-    if (!state.encrypted) { el.innerHTML = 'Jalankan <b>alat enkripsi</b> di komputer guru'; return; }
+    if (!state.decrypted) { el.innerHTML = 'Buka pesan di <b>alat dekripsi</b>'; return; }
     if (!state.keyFound) { el.innerHTML = 'Periksa <b>pot</b> di sudut ruangan'; return; }
     if (!state.collected.lemari) { el.innerHTML = 'Buka <b>lemari arsip</b>'; return; }
     el.innerHTML = 'Interogasi <b>tersangka</b>';
@@ -1010,7 +1020,7 @@
   }
 
   function checkAllClues() {
-    if (cluesFound() >= CASE.clues.length && !state.encrypted) {
+    if (cluesFound() >= CASE.clues.length && !state.decrypted) {
       toast('Petunjuk lengkap \u00b7 jalankan alat di komputer guru');
     }
   }
@@ -1020,18 +1030,18 @@
     var p = propById(id);
     if (!p) return;
 
-    /* ---- alat enkripsi ---- */
+    /* ---- alat dekripsi ---- */
     if (id === 'monitor') {
       var n = cluesFound();
       if (n < CASE.clues.length) {
         openDialog('KOMPUTER GURU',
-          'Ini alat enkripsi yang dipakai Nayla. Layarnya menunggu dua hal: <b>pesan asli</b> dan ' +
+          'Alat dekripsi yang dipakai Nayla. Layarnya menunggu dua hal: <b>pesan terenkripsi</b> dan ' +
           '<b>kunci fungsinya</b>. Kamu baru punya <b>' + n + '/' + CASE.clues.length + '</b> petunjuk.',
           [{ label: 'Cari dulu', fn: closeDialog }]);
         return;
       }
       openDialog('KOMPUTER GURU',
-        'Semua bahan sudah lengkap. Alat ini bisa dijalankan sekarang.',
+        'Pesan terenkripsi dan kuncinya sudah lengkap. Alat ini bisa dijalankan sekarang.',
         [
           { label: 'Buka alat', primary: true, fn: function () { closeDialog(); openTool(); } },
           { label: 'Tutup', fn: closeDialog }
@@ -1046,7 +1056,7 @@
           [{ label: 'Tutup', fn: closeDialog }]);
         return;
       }
-      if (!state.encrypted) {
+      if (!state.decrypted) {
         openDialog('POT TANAMAN',
           'Pot besar berisi tanah, cukup berat. Belum ada alasan untuk menggesernya.',
           [{ label: 'Tutup', fn: closeDialog }]);
@@ -1059,7 +1069,7 @@
         return;
       }
       openDialog('POT TANAMAN',
-        'Sandi yang kamu jalankan tadi cocok dengan catatan ini: <code>' + CASE.plain + '</code>. ' +
+        'Pesan yang baru kamu buka berbunyi: <code>' + CASE.plain + '</code>. ' +
         'Pot besar di sudut ini kelihatan baru digeser.',
         [
           { label: 'Geser pot', primary: true, fn: function () {
@@ -1120,7 +1130,8 @@
       state.found[clue.id] = true;
       updateObjective();
       var lead = clue.kind === 'msg'
-        ? 'Di baliknya ada lipatan kertas kecil. Tulisan tangan Nayla, masih basah:'
+        ? 'Di baliknya ada lipatan kertas kecil. Bukan tulisan tangan \u2014 deretan huruf acak ' +
+          'yang ditulis Nayla lewat alat dekripsi:'
         : 'Ada sobekan kertas dengan rumus tertulis rapi:';
       openDialog(p.title,
         lead + '<div class="found-clue">' + escHtml(clue.body) + '</div>',
@@ -1175,38 +1186,40 @@
       var f = parseFnBody(body);
       if (!f) continue;
       f.name = nm ? nm[1] : FN_NAMES[out.length] || '?';
+      f.inv = ainv(f.a);
       out.push(f);
     }
     return out;
   }
 
-  function encryptWith(plain, fns) {
+  // buka lapis dari terluar (baris pertama kunci) ke terdalam
+  function decryptWith(cipher, fns) {
     var out = '';
-    for (var i = 0; i < plain.length; i++) {
-      var ch = plain.charAt(i).toUpperCase();
+    for (var i = 0; i < cipher.length; i++) {
+      var ch = cipher.charAt(i).toUpperCase();
       if (ch === ' ') { out += ' '; continue; }
       if (ch < 'A' || ch > 'Z') return null;
       var v = l2n(ch);
-      for (var j = fns.length - 1; j >= 0; j--) v = m26(fns[j].a * v + fns[j].b);
+      for (var j = 0; j < fns.length; j++) v = m26(fns[j].inv * (v - fns[j].b));
       out += n2l(v);
     }
     return out;
   }
 
   function openTool() {
-    toolOK = !!state.encrypted;
+    toolOK = !!state.decrypted;
     $('in-msg').value = '';
     $('in-key').value = '';
     $('tool-out').textContent = '\u2014';
     $('tool-steps').innerHTML = '';
     $('tool-msg').textContent = '';
     $('tool-msg').className = 'tool-msg';
-    $('btn-tool-done').style.display = state.encrypted ? '' : 'none';
-    if (state.encrypted) {
-      $('in-msg').value = CASE.plain;
+    $('btn-tool-done').style.display = state.decrypted ? '' : 'none';
+    if (state.decrypted) {
+      $('in-msg').value = scrambleCase(CASE.cipher);
       $('in-key').value = [composeLine(CASE.layers)].concat(keyLines(CASE.layers, 0, CASE.layers.length)).join('\n');
       $('tool-out').textContent = CASE.cipher;
-      $('tool-msg').textContent = 'Sandi sudah pernah kamu jalankan di sini.';
+      $('tool-msg').textContent = 'Pesan ini sudah pernah kamu buka di sini.';
       $('tool-msg').className = 'tool-msg good';
     }
     renderEvidence();
@@ -1277,16 +1290,16 @@
     el.focus();
   }
 
-  function renderSteps(plain, fns) {
+  function renderSteps(cipher, fns) {
     var html = '', shown = 0;
-    for (var i = 0; i < plain.length && shown < 4; i++) {
-      var ch = plain.charAt(i);
+    for (var i = 0; i < cipher.length && shown < 4; i++) {
+      var ch = cipher.charAt(i);
       if (ch === ' ') continue;
       var v = l2n(ch);
       var parts = ['<b>' + ch + '</b>(' + v + ')'];
-      for (var j = fns.length - 1; j >= 0; j--) {
-        v = m26(fns[j].a * v + fns[j].b);
-        parts.push(fns[j].name + ' \u2192 ' + v);
+      for (var j = 0; j < fns.length; j++) {
+        v = m26(fns[j].inv * (v - fns[j].b));
+        parts.push(fns[j].name + '\u207b\u00b9 \u2192 ' + v);
       }
       parts.push('<span class="st-c">' + n2l(v) + '</span>');
       html += parts.join(' &middot; ') + '<br>';
@@ -1295,11 +1308,11 @@
     $('tool-steps').innerHTML = html;
   }
 
-  function runEncrypt() {
+  function runDecrypt() {
     var msgEl = $('tool-msg'), outEl = $('tool-out');
-    var plain = $('in-msg').value.toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!plain) {
-      msgEl.textContent = 'Pesan masih kosong \u2014 tempel dulu pesan yang kamu temukan.';
+    var raw = $('in-msg').value.toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!raw) {
+      msgEl.textContent = 'Pesan terenkripsi masih kosong \u2014 tempel dulu yang kamu temukan.';
       msgEl.className = 'tool-msg bad';
       return;
     }
@@ -1323,21 +1336,21 @@
       }
     }
 
-    var res = encryptWith(plain, fns);
-    if (!res) { msgEl.textContent = 'Pesan cuma boleh huruf dan spasi.'; msgEl.className = 'tool-msg bad'; return; }
+    var res = decryptWith(raw, fns);
+    if (!res) { msgEl.textContent = 'Sandi cuma boleh huruf dan spasi.'; msgEl.className = 'tool-msg bad'; return; }
     outEl.textContent = res;
 
-    if (res === CASE.cipher) {
+    if (res === CASE.plain) {
       toolOK = true;
-      state.encrypted = true;
-      msgEl.textContent = 'Cocok dengan catatan sistem. Sandi berhasil dijalankan.';
+      state.decrypted = true;
+      msgEl.textContent = 'Pesan terbaca. Sandi ini menunjuk satu lokasi di ruangan.';
       msgEl.className = 'tool-msg good';
       $('btn-tool-done').style.display = '';
-      renderSteps(plain, fns);
+      renderSteps(raw, fns);
       updateObjective();
     } else {
       toolOK = false;
-      msgEl.textContent = 'Hasilnya tidak cocok dengan catatan sistem \u2014 cek urutan lapisnya.';
+      msgEl.textContent = 'Hasilnya belum jadi kalimat \u2014 cek urutan lapisnya.';
       msgEl.className = 'tool-msg bad';
       $('btn-tool-done').style.display = 'none';
       $('tool-steps').innerHTML = '';
@@ -1723,7 +1736,7 @@
     state.collected = {};
     state.found = {};
     state.score = 1000;
-    state.encrypted = false;
+    state.decrypted = false;
     state.potSlid = false;
     state.keyFound = false;
     state.win = false;
@@ -1786,8 +1799,8 @@
       openModal('CARA MAIN', 'Alur penyelidikan',
         '1. Jalan dengan WASD atau panah, tekan E untuk memeriksa barang.  ' +
         '2. Semua barang bisa diperiksa \u2014 sebagian menyimpan petunjuk, sisanya cuma alasan.  ' +
-        '3. Kumpulkan PESAN dan KUNCI fungsinya.  ' +
-        '4. Buka alat enkripsi di komputer guru, tempel pesan + kunci, lalu jalankan.  ' +
+        '3. Kumpulkan PESAN TERENKRIPSI dan KUNCI fungsinya.  ' +
+        '4. Buka alat dekripsi di komputer guru, tempel sandi + kunci, lalu jalankan.  ' +
         '5. Sandi yang cocok menunjuk lokasi kunci.  ' +
         '6. Buka lemari arsip, lalu pilih tersangka di ruang interogasi.',
         'c = f(g(x))  \u2192  x = g\u207b\u00b9(f\u207b\u00b9(c))', true);
@@ -1812,11 +1825,11 @@
     $('btn-tool-done').addEventListener('click', function () {
       showScreen('scr-play');
       openDialog('KAMU MENGINGAT SESUATU',
-        'Sandi yang kamu jalankan cocok dengan catatan ini: <code>' + CASE.plain + '</code>. ' +
+        'Pesan yang baru kamu buka berbunyi: <code>' + CASE.plain + '</code>. ' +
         'Coba periksa pot tanaman di sudut ruangan.',
         [{ label: 'Ke pot', primary: true, fn: closeDialog }]);
     });
-    $('btn-encrypt').addEventListener('click', runEncrypt);
+    $('btn-encrypt').addEventListener('click', runDecrypt);
     var pastes = document.querySelectorAll('.tool-paste');
     for (var pi = 0; pi < pastes.length; pi++) {
       (function (el) {
@@ -3371,7 +3384,7 @@
     hoveredFig: function () { var f = hoverCheck(); return f ? f.id : null; },
     screen: function () { return activeScreen; },
     interact: interact, openTool: openTool, openInterro: openInterro,
-    runEncrypt: runEncrypt, parseFns: parseFns, encryptWith: encryptWith,
+    runDecrypt: runDecrypt, parseFns: parseFns, decryptWith: decryptWith,
     placeClues: placeClues, cluesFound: cluesFound, propById: propById,
     copyClue: copyClue, pasteClue: pasteClue, chooseSuspect: chooseSuspect,
     takeKey: takeKey,

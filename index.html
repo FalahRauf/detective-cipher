@@ -74,12 +74,12 @@
     <div class="p-keys" id="p-keys">W A S D / panah untuk jalan &nbsp;&middot;&nbsp; E untuk interaksi</div>
   </section>
 
-  <!-- ================= ALAT ENKRIPSI ================= -->
+  <!-- ================= ALAT DEKRIPSI ================= -->
   <section class="screen" id="scr-tool">
     <header class="hud">
       <div class="hud-left">
-        <span class="tag">ALAT ENKRIPSI</span>
-        <span class="hud-hint" id="tool-hint">Tempel pesan &amp; kunci yang kamu temukan, lalu jalankan</span>
+        <span class="tag">ALAT DEKRIPSI</span>
+        <span class="hud-hint" id="tool-hint">Tempel pesan terenkripsi &amp; kuncinya, lalu jalankan</span>
       </div>
       <div class="hud-right">
         <span class="score">SKOR <b id="hud-score-2">1000</b></span>
@@ -89,11 +89,11 @@
     <div class="tool-wrap">
       <div class="tool-main">
         <div class="tool-box">
-          <label class="tool-label">PESAN (teks asli)
+          <label class="tool-label">PESAN TERENKRIPSI
             <button class="btn tiny tool-paste" data-target="in-msg">TEMPEL</button>
           </label>
           <textarea id="in-msg" class="tool-input" rows="3" spellcheck="false"
-                    placeholder="tempel pesan yang kamu temukan di sini..."></textarea>
+                    placeholder="tempel deretan huruf acak yang kamu temukan..."></textarea>
         </div>
 
         <div class="tool-box">
@@ -105,12 +105,12 @@
         </div>
 
         <div class="tool-run">
-          <button class="btn primary" id="btn-encrypt">ENKRIPSI &rarr;</button>
+          <button class="btn primary" id="btn-encrypt">DEKRIPSI &rarr;</button>
           <span class="tool-msg" id="tool-msg"></span>
         </div>
 
         <div class="tool-out-wrap" id="tool-out-wrap">
-          <div class="tool-out-label">HASIL ENKRIPSI</div>
+          <div class="tool-out-label">HASIL DEKRIPSI</div>
           <div class="tool-out" id="tool-out">&mdash;</div>
           <div class="tool-steps" id="tool-steps"></div>
         </div>

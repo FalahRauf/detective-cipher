@@ -60,7 +60,7 @@ Karena perhitungan per huruf sudah dipegang alat, penilaian bergeser ke **pemaha
 1. **Apakah siswa menemukan pesan dan kunci yang benar** — bukan menebak barang secara acak.
    Semua barang bisa diperiksa; yang tidak menyimpan petunjuk memberi alasan kenapa kosong.
 2. **Apakah siswa menempelkan kunci pada urutan yang benar.** Alat menolak dengan pesan
-   *"Hasilnya tidak cocok dengan catatan sistem — cek urutan lapisnya"* kalau urutannya terbalik.
+   *"Hasilnya belum jadi kalimat — cek urutan lapisnya"* kalau urutannya terbalik.
    Ini justru inti materinya: `c = f(g(x))` tidak sama dengan `c = g(f(x))`.
 3. **Apakah siswa bisa menjelaskan kenapa urutan itu penting** — tanyakan langsung saat presentasi.
 
@@ -74,9 +74,9 @@ tidak sesuai jumlah lapis mode.
 1. Menu → pilih kasus di jalanan (senter mengikuti kursor) → pilih tingkat.
 2. Cutscene CCTV → papan kasus → turun ke TKP.
 3. Periksa barang-barang di lab. Dua (atau tiga) di antaranya menyimpan **pesan** dan **kunci**.
-4. Buka **alat enkripsi** di komputer guru, tempel pesan + kunci, jalankan.
+4. Buka **alat dekripsi** di komputer guru, tempel sandi + kunci, jalankan.
    Hasilnya harus cocok dengan catatan sistem.
-5. Sandi yang cocok menunjuk **pot** di sudut ruangan → geser pot → ambil kunci.
+5. Hasilnya berbunyi *"KUNCI … DI POT"* → menunjuk **pot** di sudut ruangan → geser pot → ambil kunci.
 6. Buka **lemari arsip** → flashdisk bukti.
 7. **Ruang interogasi** — tiga tersangka duduk diborgol. Sorot dengan lampu, klik untuk memilih.
    - Pelaku benar → cutscene pengakuan → ending **TERBUKTI**.
@@ -88,8 +88,8 @@ tidak sesuai jumlah lapis mode.
 
 - **Alat bilang "jumlah fungsi belum pas"** → sobekan kunci belum lengkap, atau ada baris lain
   yang ikut tertempel. Cukup tempel ulang bagian `f(x) = …` saja.
-- **Alat bilang "tidak cocok dengan catatan sistem"** → urutan baris terbalik. Coba tukar.
-- **Pot tidak bisa digeser** → enkripsi belum berhasil dijalankan.
+- **Alat bilang "belum jadi kalimat"** → urutan baris terbalik. Coba tukar.
+- **Pot tidak bisa digeser** → sandi belum berhasil dibuka.
 - **Lemari tidak bisa dibuka** → kunci belum diambil dari bawah pot.
 
 ---
@@ -103,7 +103,7 @@ tidak sesuai jumlah lapis mode.
 - **Kenapa koefisien harus koprima dengan 26?** Agar fungsinya punya invers. Karena itu dipakai
   3, 5, 7 — bukan 2 atau 13.
 - **Kenapa sandi menunjuk pot, bukan langsung lemari?** Supaya matematikanya jadi gerbang wajib,
-  bukan opsional. Tanpa enkripsi berhasil, pot tidak bisa digeser.
+  bukan opsional. Tanpa sandi berhasil dibuka, pot tidak bisa digeser.
 
 ---
 

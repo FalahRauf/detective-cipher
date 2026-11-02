@@ -127,10 +127,10 @@ const keyText = C2.clues.filter(c => c.kind === 'key').map(c => c.body).join('\n
 const fns = G.parseFns(keyText);
 ok(fns.length === C2.layers.length, 'parseFns membaca ' + fns.length + ' fungsi dari teks kunci');
 ok(fns[0].a === C2.layers[0].a && fns[0].b === C2.layers[0].b, 'koefisien fungsi pertama terbaca benar');
-ok(G.encryptWith(C2.plain, fns) === C2.cipher, 'encryptWith(kunci benar) = cipher kasus');
+ok(G.decryptWith(C2.cipher, fns) === C2.plain, 'decryptWith(sandi, kunci benar) = pesan asli');
 
 const swapped = fns.slice().reverse();
-ok(G.encryptWith(C2.plain, swapped) !== C2.cipher, 'urutan lapis kebalik -> sandi berbeda');
+ok(G.decryptWith(C2.cipher, swapped) !== C2.plain, 'urutan lapis kebalik -> hasil bukan pesan asli');
 
 ok(G.parseFns('f(x)=3x+7\ng(x)=x+5').length === 2, 'parser menerima format tanpa spasi');
 ok(G.parseFns('3x + 7\nx - 4').length === 2, 'parser menerima baris tanpa nama fungsi');
@@ -158,11 +158,11 @@ for (const id of clueIds) { G.interact(id); G.closeDialog(); }
 ok(G.cluesFound() === C3.clues.length, 'semua petunjuk terkumpul (' + G.cluesFound() + '/' + C3.clues.length + ')');
 
 G.openTool();
-document.getElementById('in-msg').value = C3.plain;
+document.getElementById('in-msg').value = C3.cipher;
 document.getElementById('in-key').value = C3.clues.filter(c => c.kind === 'key').map(c => c.body).join('\n');
-G.runEncrypt();
-ok(G.state.encrypted === true, 'enkripsi lewat alat berhasil');
-ok(document.getElementById('tool-out').textContent === C3.cipher, 'hasil di layar = cipher kasus');
+G.runDecrypt();
+ok(G.state.decrypted === true, 'dekripsi lewat alat berhasil');
+ok(document.getElementById('tool-out').textContent === C3.plain, 'hasil di layar = pesan asli');
 
 G.state.potSlid = true;
 G.interact('pot');
