@@ -52,12 +52,14 @@ function fn(L) {
   return a;
 }
 
+for (let ci = 0; ci < 3; ci++) {
 for (const id of ['easy', 'normal', 'hard']) {
+  G.setCase(ci);
   G.setDifficulty(id);
   G.resetGame();
   const C = G.CASE;
 
-  console.log('\n### Mode ' + id.toUpperCase() + '  (' + C.layers.length + ' lapis)');
+  console.log('\n### Kasus ' + (ci + 1) + ' · ' + G.CUR.title + ' — ' + id.toUpperCase() + ' (' + C.layers.length + ' lapis)');
   console.log('');
   console.log('| Lapis | Fungsi |');
   console.log('|---|---|');
@@ -81,4 +83,5 @@ for (const id of ['easy', 'normal', 'hard']) {
     }
     console.log('| **' + ch + '** (' + l2n(ch) + ') | ' + steps.join(' | ') + ' | **' + n2l(v) + '** |');
   }
+}
 }

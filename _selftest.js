@@ -31,6 +31,7 @@ function makeEl(tag) {
     removeAttribute(k) { delete el.attributes[k]; },
     addEventListener(ev, fn) { (listeners[ev] = listeners[ev] || []).push(fn); },
     dispatch(ev) { (listeners[ev] || []).forEach(fn => fn({ key: '', preventDefault() {} })); },
+    dispatchEvent(ev) { el.dispatch((ev && ev.type) || 'input'); return true; },
     focus() {}, click() { el.dispatch('click'); },
     appendChild() {},
     querySelector() { return makeEl('div'); },
@@ -164,13 +165,11 @@ G.runDecrypt();
 ok(G.state.decrypted === true, 'dekripsi lewat alat berhasil');
 ok(document.getElementById('tool-out').textContent === C3.plain, 'hasil di layar = pesan asli');
 
-G.state.potSlid = true;
-G.interact('pot');
-G.takeKey();
-ok(G.state.keyFound === true, 'kunci lemari didapat dari pot');
+ok(G.resolveLock('pot') === 'ok', 'kunci didapat dari pot');
+ok(G.state.keyFound === true, 'kunci tercatat');
 
-G.interact('lemari');
-ok(G.state.collected.lemari === true, 'lemari arsip terbuka');
+ok(G.resolveLock('lemari') === 'ok', 'lemari arsip terbuka');
+ok(G.state.collected.evidence === true, 'bukti tercatat');
 
 G.openInterro();
 ok(G.screen() === 'scr-interro', 'layar interogasi tampil');
@@ -220,7 +219,8 @@ console.log('\n== PILIH KASUS (jalanan + senter) ==');
   // klik sosok 2 (terkunci)
   G.selectMouse(330, 280);
   document.getElementById('scv').dispatch('click');
-  ok(document.getElementById('cm-locked').style.display === '', 'CASE 02 tampil sebagai SEGERA');
+  ok(document.getElementById('cm-title').textContent.indexOf('Buku Besar') >= 0, 'CASE 02 bisa dibuka');
+  document.getElementById('cm-x').click();
 
   // pilih CASE 01 lagi lalu mulai -> konfirmasi -> cutscene
   G.selectMouse(190, 280);
@@ -289,6 +289,44 @@ function finish() {
   for (let i = 0; i < 240; i++) G.boardTick(0.1); // 24.0 > 23.9 -> fade otomatis
   await wait(480);
   ok(G.screen() === 'scr-play', 'papan selesai -> fade-out OTOMATIS ke gameplay');
+
+
+  /* ---------- tiga kasus x tiga mode: alur penuh ---------- */
+  for (let ci = 0; ci < 3; ci++) {
+    for (const d of ['easy', 'normal', 'hard']) {
+      const tag = 'kasus ' + (ci + 1) + ' ' + d;
+      G.setCase(ci);
+      G.setDifficulty(d);
+      G.resetGame();
+      const C = G.CASE;
+      ok(C.suspects.length === 3, tag + ': 3 tersangka');
+      ok(C.clues.length === (G.CUR.clueCount[d] || 0) || C.clues.length >= 2, tag + ': jumlah petunjuk sesuai');
+      ok(C.layers.every(L => gcdN(L.a, 26) === 1), tag + ': semua koefisien koprima 26');
+
+      Object.keys(G.state.clueMap).forEach(id => { G.interact(id); G.closeDialog(); });
+      ok(G.cluesFound() === C.clues.length, tag + ': semua petunjuk terkumpul');
+
+      G.openTool();
+      G.pasteClue('in-msg');
+      G.pasteClue('in-key');
+      G.runDecrypt();
+      ok(G.state.decrypted === true, tag + ': dekripsi berhasil');
+      ok(document.getElementById('tool-out').textContent === C.plain, tag + ': hasil = pesan asli');
+
+      const steps = [];
+      G.CUR.quest.locks.forEach(L => steps.push(G.resolveLock(L.at)));
+      ok(steps.every(x => x === 'ok'), tag + ': ' + steps.length + ' kunci terbuka berurutan');
+      ok(G.state.collected.evidence === true, tag + ': bukti didapat');
+
+      G.openInterro();
+      const idx = C.suspects.findIndex(s => s.id === C.culprit);
+      ok(idx >= 0, tag + ': pelaku ada di daftar tersangka');
+      G.chooseSuspect(idx);
+      ok(G.screen() === 'scr-verdict' && G.state.win === true, tag + ': vonis menang');
+      G.finish(true);
+      ok(G.screen() === 'scr-end', tag + ': layar akhir tampil');
+    }
+  }
 
   finish();
 })();
