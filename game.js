@@ -222,13 +222,13 @@
       flavor: 'Coretan jadwal piket di permukaan meja. Tidak lebih dari itu.' },
     { id: 'meja4',    x: 320, y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 4',
       flavor: 'Kursinya ditarik agak jauh dari meja, seperti ditinggal buru-buru. Tapi tidak ada apa-apa.' },
-    { id: 'jam',      x: 120, y: 54,  range: 32, label: 'Periksa jam dinding',   title: 'JAM DINDING',
+    { id: 'jam',      x: 306, y: 28,  range: 42, label: 'Periksa jam dinding',   title: 'JAM DINDING',
       flavor: 'Jamnya berhenti di 23.12. Baterainya mati sejak lama \u2014 ini bukan petunjuk.' },
-    { id: 'ac',       x: 300, y: 54,  range: 32, label: 'Periksa AC',            title: 'AC',
+    { id: 'ac',       x: 399, y: 26,  range: 44, label: 'Periksa AC',            title: 'AC',
       flavor: 'Masih dingin dan berdebu. Filternya belum dibersihkan sejak awal semester.' },
     { id: 'kabel',    x: 150, y: 240, range: 28, label: 'Periksa kabel lantai',  title: 'KABEL LANTAI',
       flavor: 'Kabel LAN berserakan. Satu ujung lepas, tapi colokannya memang sudah longgar.' },
-    { id: 'poster',   x: 352, y: 54,  range: 30, label: 'Periksa poster',        title: 'POSTER TATA TERTIB',
+    { id: 'poster',   x: 341, y: 30,  range: 40, label: 'Periksa poster',        title: 'POSTER TATA TERTIB',
       flavor: 'Sudut bawahnya terkelupas dan lembap. Isinya cuma aturan pemakaian lab.' },
     { id: 'pot',      x: 404, y: 240, range: 32, label: 'Periksa pot tanaman',   title: 'POT TANAMAN' },
     { id: 'lemari',   x: 368, y: 110, range: 32, label: 'Buka lemari arsip',     title: 'LEMARI ARSIP' },
@@ -649,10 +649,28 @@
   }
 
   function drawClock() {
-    R(298, 10, 16, 16, '#2b3644');
-    R(299, 11, 14, 14, '#d5dee9');
-    R(305, 13, 2, 6, '#2b3644');
-    R(306, 18, 4, 1, '#2b3644');
+    // bayangan di dinding
+    R(296, 8, 20, 20, 'rgba(0,0,0,.28)');
+    // cincin gelap (bentuk lingkaran kasar)
+    R(301, 6, 10, 1, '#1c2531');
+    R(301, 25, 10, 1, '#1c2531');
+    R(299, 8, 2, 16, '#1c2531');
+    R(311, 8, 2, 16, '#1c2531');
+    R(299, 8, 14, 16, '#1c2531');
+    // muka jam
+    R(301, 9, 10, 14, '#e8eef6');
+    R(302, 8, 8, 1, '#e8eef6');
+    R(302, 24, 8, 1, '#e8eef6');
+    // angka 12/3/6/9
+    R(305, 10, 2, 1, '#9aa6b4');
+    R(305, 22, 2, 1, '#9aa6b4');
+    R(302, 15, 1, 2, '#9aa6b4');
+    R(309, 15, 1, 2, '#9aa6b4');
+    // jarum jam + menit
+    R(305, 11, 2, 6, '#232d3a');
+    R(306, 16, 4, 2, '#232d3a');
+    // poros merah
+    R(305, 16, 2, 2, '#c0392b');
   }
 
   function drawPoster() {
