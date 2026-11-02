@@ -2695,25 +2695,25 @@
   var STRINGS = [[0, 1], [1, 2], [0, 3], [2, 3]];
 
   function drawBoardPin(p) {
-    BR(p.x - 17, p.y - 17, 34, 42, '#e8e4da');           // kertas polaroid
-    BR(p.x - 14, p.y - 14, 28, 28, '#161c24');           // foto
+    BR(p.x - 23, p.y - 17, 46, 46, '#e8e4da');           // kertas polaroid
+    BR(p.x - 19, p.y - 14, 38, 28, '#161c24');           // foto
     if (p.kind === 'wajah') {
       bctx.fillStyle = '#46536a';
-      bctx.beginPath(); bctx.arc(p.x, p.y - 4, 7, 0, 6.283); bctx.fill();
-      BR(p.x - 10, p.y + 4, 20, 9, '#39435a');
+      bctx.beginPath(); bctx.arc(p.x, p.y - 6, 8, 0, 6.283); bctx.fill();
+      BR(p.x - 12, p.y + 2, 24, 10, '#39435a');
     } else if (p.kind === 'tas') {
-      BR(p.x - 10, p.y - 8, 20, 14, '#05070a');
-      BR(p.x - 6, p.y - 12, 12, 5, '#05070a');
+      BR(p.x - 12, p.y - 8, 24, 16, '#05070a');
+      BR(p.x - 7, p.y - 13, 14, 6, '#05070a');
     } else if (p.kind === 'kartu') {
-      BR(p.x - 11, p.y - 8, 22, 15, '#2a4c80');
-      BR(p.x - 11, p.y - 4, 22, 3, '#dfe6f0');
-      BR(p.x - 8, p.y + 2, 10, 2, '#8fb4dd');
+      BR(p.x - 13, p.y - 8, 26, 17, '#2a4c80');
+      BR(p.x - 13, p.y - 4, 26, 3, '#dfe6f0');
+      BR(p.x - 9, p.y + 2, 12, 2, '#8fb4dd');
     } else {
-      BR(p.x - 9, p.y - 10, 18, 24, '#232d3a');
-      BR(p.x - 6, p.y - 4, 12, 18, '#39455a');
-      BR(p.x + 3, p.y + 3, 2, 2, '#f2c14e');
+      BR(p.x - 11, p.y - 11, 22, 26, '#232d3a');
+      BR(p.x - 7, p.y - 5, 14, 20, '#39455a');
+      BR(p.x + 4, p.y + 3, 2, 2, '#f2c14e');
     }
-    pxTextB(p.label, p.x - p.label.length * 2, p.y + 18, 1, '#3a352c');
+    pxTextB(p.label, p.x - p.label.length * 2, p.y + 19, 1, '#3a352c');
     bctx.fillStyle = '#c9a23e';                           // pin
     bctx.beginPath(); bctx.arc(p.x, p.y - 19, 2.4, 0, 6.283); bctx.fill();
   }
@@ -2735,14 +2735,17 @@
     }
 
     // tali merah menghubungkan pin
-    bctx.strokeStyle = '#b3402e';
-    bctx.lineWidth = 1.6;
-    for (var s = 0; s < STRINGS.length; s++) {
-      var a = PINS[STRINGS[s][0]], b2 = PINS[STRINGS[s][1]];
-      bctx.beginPath();
-      bctx.moveTo(a.x, a.y - 19);
-      bctx.quadraticCurveTo((a.x + b2.x) / 2, (a.y + b2.y) / 2 + 14, b2.x, b2.y - 19);
-      bctx.stroke();
+    for (var sh = 0; sh < 2; sh++) {
+      bctx.strokeStyle = sh ? '#b3402e' : 'rgba(40,20,10,.45)';
+      bctx.lineWidth = sh ? 1.6 : 2.2;
+      var dy = sh ? 0 : 1.5;
+      for (var s = 0; s < STRINGS.length; s++) {
+        var a = PINS[STRINGS[s][0]], b2 = PINS[STRINGS[s][1]];
+        bctx.beginPath();
+        bctx.moveTo(a.x, a.y - 19 + dy);
+        bctx.quadraticCurveTo((a.x + b2.x) / 2, (a.y + b2.y) / 2 + 16 + dy, b2.x, b2.y - 19 + dy);
+        bctx.stroke();
+      }
     }
 
     // foto-foto terpasang
