@@ -74,54 +74,78 @@
     <div class="p-keys" id="p-keys">W A S D / panah untuk jalan &nbsp;&middot;&nbsp; E untuk interaksi</div>
   </section>
 
-  <!-- ================= DESK ================= -->
-  <section class="screen" id="scr-desk">
+  <!-- ================= ALAT ENKRIPSI ================= -->
+  <section class="screen" id="scr-tool">
     <header class="hud">
       <div class="hud-left">
-        <span class="tag">MEJA DEKRIPSI</span>
-        <span class="hud-hint" id="desk-hint">Isi tiap kolom mengikuti urutan lapisan</span>
+        <span class="tag">ALAT ENKRIPSI</span>
+        <span class="hud-hint" id="tool-hint">Tempel pesan &amp; kunci yang kamu temukan, lalu jalankan</span>
       </div>
       <div class="hud-right">
         <span class="score">SKOR <b id="hud-score-2">1000</b></span>
-        <button class="btn tiny" id="btn-desk-help">?</button>
       </div>
     </header>
 
-    <div class="formula-bar" id="formula-bar"></div>
+    <div class="tool-wrap">
+      <div class="tool-main">
+        <div class="tool-box">
+          <label class="tool-label">PESAN (teks asli)
+            <button class="btn tiny tool-paste" data-target="in-msg">TEMPEL</button>
+          </label>
+          <textarea id="in-msg" class="tool-input" rows="3" spellcheck="false"
+                    placeholder="tempel pesan yang kamu temukan di sini..."></textarea>
+        </div>
 
-    <div class="cipher-wrap">
-      <div class="cipher-label" id="cipher-label">CIPHERTEKS</div>
-      <div class="cells" id="cells"></div>
+        <div class="tool-box">
+          <label class="tool-label">KUNCI / FUNGSI
+            <button class="btn tiny tool-paste" data-target="in-key">TEMPEL</button>
+          </label>
+          <textarea id="in-key" class="tool-input mono" rows="4" spellcheck="false"
+                    placeholder="tempel fungsinya di sini, satu fungsi per baris..."></textarea>
+        </div>
+
+        <div class="tool-run">
+          <button class="btn primary" id="btn-encrypt">ENKRIPSI &rarr;</button>
+          <span class="tool-msg" id="tool-msg"></span>
+        </div>
+
+        <div class="tool-out-wrap" id="tool-out-wrap">
+          <div class="tool-out-label">HASIL ENKRIPSI</div>
+          <div class="tool-out" id="tool-out">&mdash;</div>
+          <div class="tool-steps" id="tool-steps"></div>
+        </div>
+      </div>
+
+      <aside class="tool-side">
+        <div class="tool-side-head">BUKTI DITEMUKAN</div>
+        <div class="tool-ev" id="tool-evidence"></div>
+      </aside>
     </div>
 
-    <div class="work" id="work"></div>
-
     <div class="desk-actions">
-      <button class="btn" id="btn-desk-back">&larr; KEMBALI KE TKP</button>
-      <button class="btn warn" id="btn-hint">PETUNJUK (&minus;100)</button>
-      <button class="btn primary" id="btn-check">PERIKSA JAWABAN</button>
+      <button class="btn" id="btn-tool-back">&larr; KEMBALI KE TKP</button>
+      <button class="btn primary" id="btn-tool-done" style="display:none">BUKTI COCOK &middot; LANJUT &rarr;</button>
     </div>
   </section>
 
-  <!-- ================= ACCUSE ================= -->
-  <section class="screen" id="scr-accuse">
-    <header class="hud">
-      <div class="hud-left">
-        <span class="tag">TUDUH TERSANGKA</span>
-        <span class="hud-hint">Salah tuduh &minus;250 poin</span>
-      </div>
-      <div class="hud-right">
-        <span class="score">SKOR <b id="hud-score-3">1000</b></span>
-      </div>
-    </header>
-
-    <div class="accuse-wrap">
-      <h2>Siapa pelakunya?</h2>
-      <div class="cards" id="suspect-cards"></div>
-      <div class="accuse-foot">
-        <button class="btn" id="btn-accuse-back">&larr; KEMBALI</button>
-      </div>
+  <!-- ================= INTEROGASI ================= -->
+  <section class="screen" id="scr-interro">
+    <canvas id="icv" width="640" height="360"></canvas>
+    <div class="interro-head">
+      <span class="tag">RUANG INTEROGASI</span>
+      <span class="interro-hint">Arahkan lampu ke tersangka, lalu klik untuk memilih</span>
     </div>
+    <button class="btn tiny interro-back" id="btn-interro-back">&larr; KEMBALI KE TKP</button>
+  </section>
+
+  <!-- ================= CUTSCENE VONIS ================= -->
+  <section class="screen" id="scr-verdict">
+    <canvas id="vcv" width="640" height="360"></canvas>
+    <div class="cut-caption" id="vd-caption"></div>
+    <div class="cut-skip">
+      <button class="btn tiny" id="btn-vd-skip">LEWATI &raquo;</button>
+    </div>
+    <button class="btn primary" id="btn-vd-next">LIHAT HASIL &rarr;</button>
   </section>
 
   <!-- ================= END ================= -->

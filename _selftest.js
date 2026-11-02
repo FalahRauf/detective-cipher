@@ -81,80 +81,121 @@ function ok(cond, msg) {
   else { fail++; console.log('  FAIL  ' + msg); }
 }
 
-/* ---------- uji math murni per difficulty ---------- */
+/* ---------- uji enkripsi & alur baru ---------- */
+function gcdN(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a; }
+function cipherOf(plain, layers) {
+  let out = '';
+  for (const ch of plain) {
+    if (ch === ' ') { out += ' '; continue; }
+    let v = ch.charCodeAt(0) - 64;
+    for (let k = layers.length - 1; k >= 0; k--) {
+      v = (layers[k].a * v + layers[k].b) % 26;
+      if (v <= 0) v += 26;
+    }
+    out += String.fromCharCode(64 + v);
+  }
+  return out;
+}
+
 for (const id of ['easy', 'normal', 'hard']) {
-  console.log('\n== DIFFICULTY: ' + id.toUpperCase() + ' ==');
+  console.log('\n== MODE ' + id.toUpperCase() + ' ==');
   G.setDifficulty(id);
   G.resetGame();
   const C = G.CASE;
 
-  ok(C.cipher.toUpperCase() === G.encrypt(C.plain), 'cipher = enkripsi(plain)  [' + C.cipher + ']');
-  ok(G.derivedPlain() === C.plain, 'rantai dekripsi menghasilkan plain  [' + G.derivedPlain() + ']');
+  ok(C.cipher === cipherOf(C.plain, C.layers), 'cipher = enkripsi(plain)  [' + C.cipher + ']');
+  ok(C.layers.length === (id === 'easy' ? 2 : 3), 'jumlah lapis = ' + C.layers.length);
 
-  // tampilan cipherteks: NORMAL & HARD huruf besar-kecil campur, EASY bersih
-  const hasLower = /[a-z]/.test(C.cipher);
-  if (id === 'easy') ok(!hasLower, 'EASY: cipherteks huruf besar semua');
-  else ok(hasLower, id.toUpperCase() + ': cipherteks huruf besar-kecil campur (seperti teks acak)');
+  let cop = true;
+  for (const L of C.layers) if (gcdN(L.a, 26) !== 1) cop = false;
+  ok(cop, 'semua koefisien koprima dengan 26');
 
-  // semua koefisien a koprima dengan 26 dan inversnya benar
-  let invOk = true;
-  for (const L of C.layers) {
-    let has = false;
-    for (let i = 1; i < 26; i++) if ((L.a * i) % 26 === 1 && i === L.inv) has = true;
-    if (!has) invOk = false;
-  }
-  ok(invOk, 'semua lapis punya invers mod 26 yang valid');
+  const wantClues = (id === 'hard') ? 3 : 2;
+  ok(C.clues.length === wantClues, 'jumlah petunjuk = ' + C.clues.length);
+  ok(Object.keys(G.state.clueMap).length === wantClues,
+     'petunjuk ditempatkan di ' + wantClues + ' barang acak');
 
-  // flow: kunci dari papan & sampah (tutup dialog antar interaksi, seperti pemain)
-  G.interact('papan'); G.closeDialog();
-  G.interact('sampah'); G.closeDialog();
-  ok(G.state.collected.papan && G.state.collected.sampah, 'kunci f & g terkumpul');
-
-  G.openDesk();
-
-  // HARD: turunkan g lewat input derive sungguhan
-  if (id === 'hard') {
-    const a = document.getElementById('derive-a');
-    const b = document.getElementById('derive-b');
-    ok(!!a && !!b, 'input derive g(x) tampil di formula bar');
-    a.value = '9'; b.value = '3'; a.dispatch('input');
-    ok(!G.state.gSolved, 'tebakan g salah -> belum terbuka');
-    a.value = '3'; a.dispatch('input'); b.value = '3'; b.dispatch('input');
-    ok(G.state.gSolved, 'g(x) = 3x + 3 diterima -> gSolved');
-  }
-
-  ok(document.getElementById('btn-check').disabled === false, 'tombol PERIKSA aktif');
-
-  // isi semua jawaban benar
-  for (const cell of G.state.cells) {
-    if (cell.space) continue;
-    cell.fields.forEach((f, s) => {
-      f.value = (s < C.layers.length - 1) ? String(cell.chain[s + 1]) : cell.plain;
-    });
-  }
-  G.checkAll();
-  ok(G.state.solved === true, 'sandi terpecahkan dengan jawaban benar');
-
-  // alur barang bukti sampai tuduh
-  G.state.keyFound = true;
-  G.interact('lemari');
-  ok(!!G.state.collected.lemari, 'lemari terbuka setelah kunci');
-  G.finish(true);
-  ok(document.getElementById('verdict-stamp').textContent === 'TERBUKTI', 'ending TERBUKTI tampil');
-
-  // reset lalu uji jalur jawaban salah
-  G.resetGame();
-  G.state.collected.papan = true; G.state.collected.sampah = true;
-  if (id === 'hard') G.state.gSolved = true;
-  G.openDesk();
-  const sc0 = G.state.score;
-  for (const cell of G.state.cells) {
-    if (cell.space) continue;
-    cell.fields.forEach(f => { f.value = '1'; });
-  }
-  G.checkAll();
-  ok(!G.state.solved && G.state.score < sc0, 'jawaban salah: tidak solve, skor dipotong (' + sc0 + ' -> ' + G.state.score + ')');
+  const banned = Object.keys(G.state.clueMap).filter(k => ['monitor', 'pot', 'lemari', 'door'].indexOf(k) >= 0);
+  ok(banned.length === 0, 'petunjuk tidak menempel di alat/pot/lemari/pintu');
 }
+
+console.log('\n== ALAT ENKRIPSI ==');
+G.setDifficulty('easy');
+G.resetGame();
+const C2 = G.CASE;
+const keyText = C2.clues.filter(c => c.kind === 'key').map(c => c.body).join('\n');
+const fns = G.parseFns(keyText);
+ok(fns.length === C2.layers.length, 'parseFns membaca ' + fns.length + ' fungsi dari teks kunci');
+ok(fns[0].a === C2.layers[0].a && fns[0].b === C2.layers[0].b, 'koefisien fungsi pertama terbaca benar');
+ok(G.encryptWith(C2.plain, fns) === C2.cipher, 'encryptWith(kunci benar) = cipher kasus');
+
+const swapped = fns.slice().reverse();
+ok(G.encryptWith(C2.plain, swapped) !== C2.cipher, 'urutan lapis kebalik -> sandi berbeda');
+
+ok(G.parseFns('f(x)=3x+7\ng(x)=x+5').length === 2, 'parser menerima format tanpa spasi');
+ok(G.parseFns('3x + 7\nx - 4').length === 2, 'parser menerima baris tanpa nama fungsi');
+ok(G.parseFns('c = f(g(x))\nf(x) = 3x + 7\ng(x) = x + 5').length === 2, 'baris komposisi tidak dihitung sebagai fungsi');
+
+console.log('\n== ALUR LENGKAP ==');
+G.setDifficulty('normal');
+G.resetGame();
+G.showScreen('scr-play');
+const C3 = G.CASE;
+const clueIds = Object.keys(G.state.clueMap);
+ok(G.cluesFound() === 0, 'awal: 0 petunjuk');
+
+const plainProp = G.INTERACTABLES.find(p =>
+  clueIds.indexOf(p.id) < 0 && ['monitor', 'pot', 'lemari', 'door'].indexOf(p.id) < 0);
+G.interact(plainProp.id);
+ok(!!plainProp.flavor, 'barang tanpa petunjuk tetap bisa diperiksa (' + plainProp.id + ')');
+G.closeDialog();
+
+G.interact('pot');
+ok(!G.state.potSlid, 'pot belum bisa digeser sebelum enkripsi');
+G.closeDialog();
+
+for (const id of clueIds) { G.interact(id); G.closeDialog(); }
+ok(G.cluesFound() === C3.clues.length, 'semua petunjuk terkumpul (' + G.cluesFound() + '/' + C3.clues.length + ')');
+
+G.openTool();
+document.getElementById('in-msg').value = C3.plain;
+document.getElementById('in-key').value = C3.clues.filter(c => c.kind === 'key').map(c => c.body).join('\n');
+G.runEncrypt();
+ok(G.state.encrypted === true, 'enkripsi lewat alat berhasil');
+ok(document.getElementById('tool-out').textContent === C3.cipher, 'hasil di layar = cipher kasus');
+
+G.state.potSlid = true;
+G.interact('pot');
+G.takeKey();
+ok(G.state.keyFound === true, 'kunci lemari didapat dari pot');
+
+G.interact('lemari');
+ok(G.state.collected.lemari === true, 'lemari arsip terbuka');
+
+G.openInterro();
+ok(G.screen() === 'scr-interro', 'layar interogasi tampil');
+ok(G.hitSeat(158, 240) === 0 && G.hitSeat(482, 240) === 2, 'tiga kursi terdeteksi klik');
+ok(G.hitSeat(600, 60) === -1, 'klik di luar tersangka tidak memilih');
+
+G.chooseSuspect(1);
+ok(G.screen() === 'scr-verdict', 'pilih tersangka -> cutscene vonis');
+ok(G.state.win === true, 'tersangka benar -> vonis benar');
+
+G.finish(true);
+ok(G.screen() === 'scr-end', 'ending tampil');
+ok(document.getElementById('verdict-stamp').textContent === 'TERBUKTI', 'stempel TERBUKTI');
+
+G.resetGame();
+G.openInterro();
+G.chooseSuspect(0);
+ok(G.state.win === false, 'tersangka salah -> vonis salah');
+ok(G.state.score === 750, 'salah tuduh memotong 250 poin (' + G.state.score + ')');
+
+console.log('\n== ACAK TIAP MAIN ==');
+G.setDifficulty('easy');
+const seen = new Set();
+for (let i = 0; i < 12; i++) { G.resetGame(); seen.add(Object.keys(G.state.clueMap).sort().join('+')); }
+ok(seen.size > 1, 'penempatan petunjuk berubah-ubah tiap main (' + seen.size + ' variasi dari 12 kali)');
 
 /* ---------- alur pilih kasus: hover, popup, konfirmasi ---------- */
 console.log('\n== PILIH KASUS (jalanan + senter) ==');

@@ -47,115 +47,110 @@
       note: 'Tidak pernah memegang kunci lemari arsip.' }
   ];
 
-  // clue: 'papan' | 'sampah' -> petunjuk yang membuka fungsi tsb; 'derive' -> harus diturunkan sendiri
+  // Pesan selalu menunjuk ke pot. Dipilih acak tiap kali main.
+  var MESSAGES = [
+    'KUNCI DI POT',
+    'KUNCI LEMARI DI POT',
+    'AMBIL KUNCI DI POT',
+    'KUNCI ARSIP DI POT',
+    'KUNCI ADA DI POT'
+  ];
+
+  var FN_NAMES = ['f', 'g', 'h', 'k'];
+
   var DIFFS = {
     easy: {
       id: 'easy', label: 'EASY',
-      plain: 'KUNCI DI POT',
-      layers: [
-        { name: 'f', a: 3, b: 7,  clue: 'papan'  },
-        { name: 'g', a: 1, b: 5,  clue: 'sampah' }
-      ],
-      showInverse: true,
-      cluePapan:  'Tulisan spidol belum terhapus — ditulis tergesa, ada inisial kecil <b>"N"</b> di sudutnya. ' +
-                  'Ini kunci <b>lapis luar</b> pesan Nayla.',
-      clueSampah: 'Kertas kusut di dasar tempat sampah. Nayla melemparnya supaya penguntitnya tidak menemukan ' +
-                  'kunci lengkapnya — ini kunci <b>lapis dalam</b>.',
-      hint: {
-        title: 'Cara menemukan f\u207b\u00b9',
-        desc: 'y = 3x + 7  \u2192  3x = y \u2212 7  \u2192  x = (y \u2212 7) / 3. ' +
-              'Karena 3 \u00b7 9 = 27 \u2261 1 (mod 26), membagi dengan 3 sama dengan mengalikan 9. ' +
-              'Jadi f\u207b\u00b9(y) = 9(y \u2212 7) mod 26. Ingat: hasil 0 ditulis 26.',
-        payload: 'f\u207b\u00b9(y) = 9(y \u2212 7) mod 26'
-      },
-      confirm: 'Mode EASY — pesan terakhir Nayla dienkripsi dua lapis. Meja dekripsi sudah menampilkan ' +
-               'invers kedua fungsi; tugasmu mengisi nilainya huruf per huruf.'
+      layers: [ { a: 3, b: 7 }, { a: 1, b: 5 } ],
+      clueCount: 2,
+      confirm: 'Mode EASY \u2014 pesan Nayla dienkripsi dua lapis. Cari pesannya dan kuncinya di lab, ' +
+               'lalu jalankan alat enkripsi untuk membuktikan sandinya.'
     },
     normal: {
       id: 'normal', label: 'NORMAL',
-      plain: 'CEK POT BUNGA',
-      layers: [
-        { name: 'f', a: 7, b: 3,  clue: 'papan'  },
-        { name: 'g', a: 1, b: 11, clue: 'sampah' },
-        { name: 'h', a: 1, b: -6, clue: 'papan'  }
-      ],
-      mixedCase: true,
-      showInverse: false,
-      cluePapan:  'Dua fungsi tertulis tergesa di papan: kunci <b>lapis luar</b> f(x), dan di pojok bawah papan ' +
-                  'kunci <b>lapis paling dalam</b> h(x). Inisial "N" kecil di sudutnya.',
-      clueSampah: 'Kertas kusut di dasar tempat sampah — kunci <b>lapis tengah</b>. Nayla memecah kuncinya ' +
-                  'supaya tidak ada satu orang pun yang bisa membacanya sendirian.',
-      hint: {
-        title: 'Membalik tiga lapis',
-        desc: 'Balik tiap fungsi satu-satu dulu: f(x) = 7x + 3 \u2192 f\u207b\u00b9(y) = 15(y \u2212 3) mod 26 ' +
-              '(karena 7 \u00b7 15 = 105 \u2261 1). g(x) = x + 11 \u2192 g\u207b\u00b9(y) = y \u2212 11. ' +
-              'h(x) = x \u2212 6 \u2192 h\u207b\u00b9(y) = y + 6. Lalu buka dari lapis terluar: ' +
-              'f\u207b\u00b9 dulu, baru g\u207b\u00b9, terakhir h\u207b\u00b9.',
-        payload: 'x = h\u207b\u00b9(g\u207b\u00b9(f\u207b\u00b9(c)))'
-      },
-      confirm: 'Mode NORMAL — pesan terakhir Nayla dienkripsi tiga lapis (komposisi tiga fungsi). ' +
-               'Meja dekripsi hanya menampilkan fungsi aslinya; inversnya harus kamu turunkan sendiri, ' +
-               'lalu buka dari lapis terluar.'
+      layers: [ { a: 3, b: 7 }, { a: 1, b: 5 }, { a: 1, b: -6 } ],
+      clueCount: 2,
+      confirm: 'Mode NORMAL \u2014 tiga lapis komposisi fungsi. Kuncinya lebih panjang, ' +
+               'tapi alat enkripsinya tetap satu.'
     },
     hard: {
       id: 'hard', label: 'HARD',
-      plain: 'DI BAWAH POT',
-      layers: [
-        { name: 'f', a: 5, b: 2, clue: 'papan'   },
-        { name: 'g', a: 3, b: 3, clue: 'derive'  }
-      ],
-      mixedCase: true,
-      showInverse: false,
-      composite: '(f \u2218 g)(x) = 15x + 17',
-      cluePapan:  'Tulisan spidol: kunci <b>lapis luar</b> f(x). Tapi tidak ada jejak g(x) di mana pun — ' +
-                  'Nayla menyembunyikannya terlalu baik.',
-      clueSampah: 'Kertas sobek di dasar tempat sampah — bagian yang memuat g(x) hilang. Yang tertulis hanya ' +
-                  'hasil komposisinya: <code>(f \u2218 g)(x) = 15x + 17</code>.',
-      hint: {
-        title: 'Menurunkan g(x)',
-        desc: '(f \u2218 g)(x) = f(g(x)) = 5\u00b7g(x) + 2 = 15x + 17. ' +
-              'Maka 5\u00b7g(x) = 15x + 15, sehingga g(x) = (15x + 15) / 5 = 3x + 3. ' +
-              'Setelah g ketemu, dekripsi seperti biasa: f\u207b\u00b9 dulu \u2014 5 \u00b7 21 = 105 \u2261 1 (mod 26) \u2014 ' +
-              'lalu g\u207b\u00b9 dengan 3 \u00b7 9 = 27 \u2261 1 (mod 26).',
-        payload: 'g(x) = 3x + 3'
-      },
-      confirm: 'Mode HARD — pesan Nayla dua lapis, tapi kunci g(x) hilang. Yang tersisa hanya hasil ' +
-               'komposisinya (f\u2218g)(x) = 15x + 17. Turunkan dulu g(x) di meja dekripsi sebelum bisa mendekripsi.'
+      layers: [ { a: 5, b: 2 }, { a: 3, b: 3 }, { a: 1, b: -4 } ],
+      clueCount: 3,
+      confirm: 'Mode HARD \u2014 kuncinya disobek jadi dua bagian dan disimpan terpisah. ' +
+               'Kamu harus menemukan pesannya plus kedua sobekan kunci sebelum alat bisa jalan.'
     }
   };
 
   var diff = DIFFS.easy;
-  var CASE = null;   // dibangun oleh buildCase() saat difficulty dipilih
+  var CASE = null;
+
+  function fnStr(L) {
+    var s;
+    if (L.a === 1) s = 'x';
+    else if (L.a === -1) s = '-x';
+    else s = L.a + 'x';
+    if (L.b > 0) s += ' + ' + L.b;
+    else if (L.b < 0) s += ' \u2212 ' + Math.abs(L.b);
+    return s;
+  }
+
+  function keyLines(layers, from, to) {
+    var out = [];
+    for (var i = from; i < to; i++) out.push(FN_NAMES[i] + '(x) = ' + fnStr(layers[i]));
+    return out;
+  }
+
+  function composeLine(layers) {
+    var s = 'x';
+    for (var i = layers.length - 1; i >= 0; i--) s = FN_NAMES[i] + '(' + s + ')';
+    return 'c = ' + s;
+  }
+
+  function pickOne(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
   function buildCase(d) {
     var layers = [];
     for (var i = 0; i < d.layers.length; i++) {
-      var L = {};
-      for (var k in d.layers[i]) L[k] = d.layers[i][k];
-      L.inv = ainv(L.a);
-      layers.push(L);
+      layers.push({ name: FN_NAMES[i], a: d.layers[i].a, b: d.layers[i].b, inv: ainv(d.layers[i].a) });
     }
-    // tampilan cipherteks "acak": NORMAL & HARD pakai huruf besar-kecil campur
-    // (deterministik dari posisi, nilai hurufnya tetap sama)
-    function caseChar(up, i) {
-      if (!d.mixedCase) return up;
-      return ((i * 53 + 17) % 7) < 3 ? up.toLowerCase() : up;
-    }
+    var plain = pickOne(MESSAGES);
+
     // enkripsi: lapis paling dalam dulu (ujung array) ke terluar (awal array)
     var cipher = '';
-    for (var j = 0; j < d.plain.length; j++) {
-      var ch = d.plain.charAt(j);
+    for (var j = 0; j < plain.length; j++) {
+      var ch = plain.charAt(j);
       if (ch === ' ') { cipher += ' '; continue; }
       var x = l2n(ch);
-      for (var i2 = layers.length - 1; i2 >= 0; i2--) x = encLayer(layers[i2], x);
-      cipher += caseChar(n2l(x), j);
+      for (var k = layers.length - 1; k >= 0; k--) x = encLayer(layers[k], x);
+      cipher += n2l(x);
     }
+
+    var clues = [];
+    clues.push({ id: 'msg', kind: 'msg', title: 'PESAN ASLI', body: plain });
+
+    if (d.clueCount >= 3) {
+      var mid = Math.ceil(layers.length / 2);
+      clues.push({
+        id: 'key1', kind: 'key', title: 'KUNCI \u2014 SOBEKAN A',
+        body: [composeLine(layers)].concat(keyLines(layers, 0, mid)).join('\n')
+      });
+      clues.push({
+        id: 'key2', kind: 'key', title: 'KUNCI \u2014 SOBEKAN B',
+        body: keyLines(layers, mid, layers.length).join('\n')
+      });
+    } else {
+      clues.push({
+        id: 'key1', kind: 'key', title: 'KUNCI',
+        body: [composeLine(layers)].concat(keyLines(layers, 0, layers.length)).join('\n')
+      });
+    }
+
     return {
-      diff: d, layers: layers, cipher: cipher, plain: d.plain,
-      culprit: 'dedi', suspects: SUSPECTS
+      diff: d, layers: layers, plain: plain, cipher: cipher,
+      clues: clues, culprit: 'dedi', suspects: SUSPECTS
     };
   }
-
   var CORE = ['monitor', 'papan', 'sampah'];
 
   /* =========================================================
@@ -196,14 +191,59 @@
     }
   })();
 
+  // Setiap barang bisa diperiksa. Dua/tiga di antaranya menyimpan petunjuk (diacak tiap main).
   var INTERACTABLES = [
-    { id: 'monitor', x: 200, y: 118, range: 32, label: 'Periksa komputer' },
-    { id: 'papan',   x: 200, y: 62,  range: 34, label: 'Periksa papan tulis' },
-    { id: 'sampah',  x: 263, y: 132, range: 30, label: 'Periksa tempat sampah' },
-    { id: 'pot',     x: 404, y: 240, range: 32, label: 'Periksa pot tanaman' },
-    { id: 'lemari',  x: 368, y: 110, range: 32, label: 'Buka lemari arsip' },
-    { id: 'door',    x: 208, y: 276, range: 30, label: 'Pintu keluar' }
+    { id: 'monitor',  x: 200, y: 118, range: 34, label: 'Pakai alat enkripsi', title: 'KOMPUTER GURU' },
+    { id: 'papan',    x: 200, y: 62,  range: 36, label: 'Periksa papan tulis',  title: 'PAPAN TULIS',
+      flavor: 'Sisa materi jaringan minggu lalu. Ada tulisan "praktek jumat" yang sudah setengah terhapus.' },
+    { id: 'sampah',   x: 263, y: 132, range: 30, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
+      flavor: 'Bungkus snack, sobekan kertas tugas, dan satu gelas plastik. Tidak ada yang berguna.' },
+    { id: 'rak',      x: 48,  y: 110, range: 36, label: 'Periksa rak buku',      title: 'RAK BUKU',
+      flavor: 'Buku manual jaringan berdebu. Satu slot kosong, tapi lapisan debunya rata \u2014 sudah lama.' },
+    { id: 'printer',  x: 336, y: 100, range: 32, label: 'Periksa printer',       title: 'PRINTER',
+      flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering dan menguning.' },
+    { id: 'dispenser',x: 392, y: 214, range: 30, label: 'Periksa dispenser',     title: 'DISPENSER',
+      flavor: 'Galon hampir habis. Cuma tetesan air di lantai, bukan jejak kaki.' },
+    { id: 'meja1',    x: 80,  y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 1',
+      flavor: 'Ada tulisan "JANGAN DUDUK SINI" pakai tip-ex. Laci kosong.' },
+    { id: 'meja2',    x: 160, y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 2',
+      flavor: 'Serutan pensil dan satu penghapus karet. Monitor masih menyala di halaman login.' },
+    { id: 'meja3',    x: 240, y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 3',
+      flavor: 'Coretan jadwal piket di permukaan meja. Tidak lebih dari itu.' },
+    { id: 'meja4',    x: 320, y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 4',
+      flavor: 'Kursinya ditarik agak jauh dari meja, seperti ditinggal buru-buru. Tapi tidak ada apa-apa.' },
+    { id: 'jam',      x: 120, y: 54,  range: 32, label: 'Periksa jam dinding',   title: 'JAM DINDING',
+      flavor: 'Jamnya berhenti di 23.12. Baterainya mati sejak lama \u2014 ini bukan petunjuk.' },
+    { id: 'ac',       x: 300, y: 54,  range: 32, label: 'Periksa AC',            title: 'AC',
+      flavor: 'Masih dingin dan berdebu. Filternya belum dibersihkan sejak awal semester.' },
+    { id: 'kabel',    x: 150, y: 240, range: 28, label: 'Periksa kabel lantai',  title: 'KABEL LANTAI',
+      flavor: 'Kabel LAN berserakan. Satu ujung lepas, tapi colokannya memang sudah longgar.' },
+    { id: 'poster',   x: 352, y: 54,  range: 30, label: 'Periksa poster',        title: 'POSTER TATA TERTIB',
+      flavor: 'Sudut bawahnya terkelupas dan lembap. Isinya cuma aturan pemakaian lab.' },
+    { id: 'pot',      x: 404, y: 240, range: 32, label: 'Periksa pot tanaman',   title: 'POT TANAMAN' },
+    { id: 'lemari',   x: 368, y: 110, range: 32, label: 'Buka lemari arsip',     title: 'LEMARI ARSIP' },
+    { id: 'door',     x: 208, y: 276, range: 30, label: 'Pintu keluar',          title: 'PINTU KELUAR' }
   ];
+
+  var CLUE_POOL_EXCLUDE = { monitor: 1, pot: 1, lemari: 1, door: 1 };
+
+  function placeClues() {
+    var pool = [];
+    for (var i = 0; i < INTERACTABLES.length; i++) {
+      if (!CLUE_POOL_EXCLUDE[INTERACTABLES[i].id]) pool.push(INTERACTABLES[i].id);
+    }
+    for (var j = pool.length - 1; j > 0; j--) {
+      var k = Math.floor(Math.random() * (j + 1));
+      var t = pool[j]; pool[j] = pool[k]; pool[k] = t;
+    }
+    state.clueMap = {};
+    for (var c = 0; c < CASE.clues.length; c++) state.clueMap[pool[c]] = CASE.clues[c];
+  }
+
+  function propById(id) {
+    for (var i = 0; i < INTERACTABLES.length; i++) if (INTERACTABLES[i].id === id) return INTERACTABLES[i];
+    return null;
+  }
 
   // lampu langit-langit -> kolam cahaya di lantai
   var LIGHTS = [
@@ -307,8 +347,9 @@
   /* =========================================================
      5. STATE
      ========================================================= */
-  var state = { collected: {}, solved: false, score: 1000, hintUsed: false,
-                potSlid: false, keyFound: false, cells: [], gSolved: false };
+  var state = { collected: {}, score: 1000, found: {}, clueMap: {},
+                encrypted: false, potSlid: false, keyFound: false,
+                win: false, picked: null };
   var potAnim = 0;   // 0..1 animasi pot digeser
   var player = { x: 216, y: 240, dir: 'down', moving: false, anim: 0 };
   var cam = { x: 0, y: 0 };
@@ -846,7 +887,7 @@
     for (var i = 0; i < INTERACTABLES.length; i++) {
       var it = INTERACTABLES[i];
       // pot baru bisa diperiksa setelah sandi terpecahkan
-      if (it.id === 'pot' && !state.solved) continue;
+      if (it.id === 'pot' && !state.encrypted) continue;
       var d = Math.sqrt((player.x - it.x) * (player.x - it.x) + (player.y - it.y) * (player.y - it.y));
       if (d < it.range && d < bd) { bd = d; best = it; }
     }
@@ -924,13 +965,14 @@
   }
 
   function updateObjective() {
-    var n = 0;
-    CORE.forEach(function (k) { if (state.collected[k]) n++; });
     var el = $('objective');
-    if (!state.solved) el.innerHTML = 'Cari bukti &middot; ' + n + '/3';
-    else if (!state.keyFound) el.innerHTML = 'Periksa <b>pot dekat dispenser</b>';
-    else if (!state.collected.lemari) el.innerHTML = 'Buka <b>lemari arsip</b> dengan kunci';
-    else el.innerHTML = 'Tuduh <b>tersangka</b>';
+    if (!CASE) return;
+    var n = cluesFound();
+    if (n < CASE.clues.length) { el.innerHTML = 'Cari petunjuk &middot; ' + n + '/' + CASE.clues.length; return; }
+    if (!state.encrypted) { el.innerHTML = 'Jalankan <b>alat enkripsi</b> di komputer guru'; return; }
+    if (!state.keyFound) { el.innerHTML = 'Periksa <b>pot</b> di sudut ruangan'; return; }
+    if (!state.collected.lemari) { el.innerHTML = 'Buka <b>lemari arsip</b>'; return; }
+    el.innerHTML = 'Interogasi <b>tersangka</b>';
   }
 
   function updateKeyBadge() {
@@ -957,50 +999,54 @@
     toast('Kunci lemari didapat');
   }
 
+  function escHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function cluesFound() {
+    var n = 0;
+    for (var i = 0; i < CASE.clues.length; i++) if (state.found[CASE.clues[i].id]) n++;
+    return n;
+  }
+
+  function checkAllClues() {
+    if (cluesFound() >= CASE.clues.length && !state.encrypted) {
+      toast('Petunjuk lengkap \u00b7 jalankan alat di komputer guru');
+    }
+  }
+
   function interact(id) {
     if (dialogOpen) return;
+    var p = propById(id);
+    if (!p) return;
 
+    /* ---- alat enkripsi ---- */
     if (id === 'monitor') {
-      collect('monitor');
-      openDialog('LAPTOP MEJA GURU',
-        'File terakhir yang diketik di laptop ini pukul <b>23.45</b>: <code>pesan.txt</code> — pesan terakhir ' +
-        'Nayla, dikirim ke grup OSIS. Isinya deretan huruf acak, terenkripsi lebih dari satu lapis.',
+      var n = cluesFound();
+      if (n < CASE.clues.length) {
+        openDialog('KOMPUTER GURU',
+          'Ini alat enkripsi yang dipakai Nayla. Layarnya menunggu dua hal: <b>pesan asli</b> dan ' +
+          '<b>kunci fungsinya</b>. Kamu baru punya <b>' + n + '/' + CASE.clues.length + '</b> petunjuk.',
+          [{ label: 'Cari dulu', fn: closeDialog }]);
+        return;
+      }
+      openDialog('KOMPUTER GURU',
+        'Semua bahan sudah lengkap. Alat ini bisa dijalankan sekarang.',
         [
-          { label: 'Buka Meja Dekripsi', primary: true, fn: function () { closeDialog(); openDesk(); } },
+          { label: 'Buka alat', primary: true, fn: function () { closeDialog(); openTool(); } },
           { label: 'Tutup', fn: closeDialog }
         ]);
       return;
     }
 
-    if (id === 'papan') {
-      collect('papan');
-      openDialog('PAPAN TULIS', diff.cluePapan,
-        [{ label: 'Catat: ' + CASE.layers.map(function (L) {
-             return L.clue === 'papan' ? L.name + '(x) = ' + fxStr(L) : null;
-           }).filter(Boolean).join('  ·  '), primary: true, fn: closeDialog }]);
-      return;
-    }
-
-    if (id === 'sampah') {
-      collect('sampah');
-      var sLabel = diff.id === 'hard'
-        ? 'Catat: ' + diff.composite + ' (g(x) sobek)'
-        : 'Catat: ' + CASE.layers.map(function (L) {
-            return L.clue === 'sampah' ? L.name + '(x) = ' + fxStr(L) : null;
-          }).filter(Boolean).join('  ·  ');
-      openDialog('TEMPAT SAMPAH', diff.clueSampah,
-        [{ label: sLabel, primary: true, fn: closeDialog }]);
-      return;
-    }
-
+    /* ---- pot ---- */
     if (id === 'pot') {
       if (state.keyFound) {
-        openDialog('POT TANAMAN',
-          'Pot ini sudah kamu geser. Bawahnya kosong sekarang.',
+        openDialog('POT TANAMAN', 'Pot ini sudah kamu geser. Bawahnya kosong sekarang.',
           [{ label: 'Tutup', fn: closeDialog }]);
         return;
       }
-      if (!state.solved) {
+      if (!state.encrypted) {
         openDialog('POT TANAMAN',
           'Pot besar berisi tanah, cukup berat. Belum ada alasan untuk menggesernya.',
           [{ label: 'Tutup', fn: closeDialog }]);
@@ -1008,12 +1054,13 @@
       }
       if (state.potSlid) {
         openDialog('POT TANAMAN',
-          'Di bawah pot ada <b>kunci kecil</b> dengan label "ARSIP" — Nayla yang menyembunyikannya.',
+          'Di bawah pot ada <b>kunci kecil</b> dengan label "ARSIP" \u2014 Nayla yang menyembunyikannya.',
           [{ label: 'Ambil kunci', primary: true, fn: takeKey }]);
         return;
       }
       openDialog('POT TANAMAN',
-        'Kamu mengingat pesan Nayla: <code>' + CASE.plain + '</code>. Pot besar di sudut ini kelihatan baru digeser.',
+        'Sandi yang kamu jalankan tadi cocok dengan catatan ini: <code>' + CASE.plain + '</code>. ' +
+        'Pot besar di sudut ini kelihatan baru digeser.',
         [
           { label: 'Geser pot', primary: true, fn: function () {
               closeDialog();
@@ -1031,31 +1078,62 @@
       return;
     }
 
+    /* ---- lemari ---- */
     if (id === 'lemari') {
       if (!state.keyFound) {
         openDialog('LEMARI ARSIP',
-          'Terkunci. Lubang kuncinya kecil — ini butuh kunci fisik, bukan sandi.',
+          'Terkunci. Lubang kuncinya kecil \u2014 ini butuh kunci fisik, bukan sandi.',
           [{ label: 'Tutup', fn: closeDialog }]);
         return;
       }
-      collect('lemari');
+      state.collected.lemari = true;
+      updateObjective();
       openDialog('LEMARI ARSIP',
-        'Kunci masuk dengan pas. Di dalamnya ada <b>flashdisk</b> berlabel "JANGAN FORMAT — BUKTI": salinan ' +
-        'rekaman CCTV dan catatan penguntit yang Nayla tulis selama seminggu terakhir.',
+        'Kunci masuk dengan pas. Di dalamnya ada <b>flashdisk</b> berlabel "JANGAN FORMAT \u2014 BUKTI": ' +
+        'salinan rekaman CCTV dan catatan penguntit yang Nayla tulis selama seminggu terakhir.',
         [
-          { label: 'Tuduh Tersangka', primary: true, fn: function () {
-              closeDialog(); renderSuspects(); showScreen('scr-accuse');
+          { label: 'Bawa ke ruang interogasi', primary: true, fn: function () {
+              closeDialog(); openInterro();
             } },
           { label: 'Tutup', fn: closeDialog }
         ]);
       return;
     }
 
+    /* ---- pintu ---- */
     if (id === 'door') {
       openDialog('PINTU KELUAR',
-        state.solved ? 'Kasusnya sudah selesai. Waktunya melapor.' : 'Belum bisa keluar. Kasusnya belum selesai.',
+        state.collected.lemari ? 'Kasusnya sudah selesai. Waktunya melapor.' : 'Belum bisa keluar. Kasusnya belum selesai.',
         [{ label: 'Tutup', fn: closeDialog }]);
+      return;
     }
+
+    /* ---- barang yang menyimpan petunjuk ---- */
+    var clue = state.clueMap[id];
+    if (clue) {
+      if (state.found[clue.id]) {
+        openDialog(p.title,
+          'Petunjuk dari sini sudah kamu catat. Tidak ada lagi yang tertinggal.',
+          [{ label: 'Tutup', fn: closeDialog }]);
+        return;
+      }
+      state.found[clue.id] = true;
+      updateObjective();
+      var lead = clue.kind === 'msg'
+        ? 'Di baliknya ada lipatan kertas kecil. Tulisan tangan Nayla, masih basah:'
+        : 'Ada sobekan kertas dengan rumus tertulis rapi:';
+      openDialog(p.title,
+        lead + '<div class="found-clue">' + escHtml(clue.body) + '</div>',
+        [
+          { label: 'SALIN', primary: true, fn: function () { copyClue(clue); } },
+          { label: 'Tutup', fn: function () { closeDialog(); checkAllClues(); } }
+        ]);
+      return;
+    }
+
+    /* ---- sisanya: alasan kenapa kosong ---- */
+    openDialog(p.title, p.flavor || 'Tidak ada yang mencurigakan di sini.',
+      [{ label: 'Tutup', fn: closeDialog }]);
   }
 
   function onInteractKey() {
@@ -1065,337 +1143,550 @@
   }
 
   /* =========================================================
-     12. MEJA DEKRIPSI
+     12. ALAT ENKRIPSI
      ========================================================= */
-  // Tiap sel punya rantai nilai: chain[0]=c, chain[i+1]=hasil langkah invers ke-i,
-  // chain[n]=angka plain. Field: (n-1) input angka + 1 input huruf.
-  function buildCells() {
+  var clipBuf = '';
+  var toolOK = false;
+
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a; }
+
+  function parseFnBody(s) {
+    s = s.replace(/\s+/g, '').toLowerCase().replace(/\u2212/g, '-');
+    var m = s.match(/^([+-]?\d*)x([+-]\d+)?$/);
+    if (!m) return null;
+    var a = (m[1] === '' || m[1] === '+') ? 1 : (m[1] === '-' ? -1 : parseInt(m[1], 10));
+    var b = m[2] ? parseInt(m[2], 10) : 0;
+    if (!isFinite(a) || !isFinite(b)) return null;
+    return { a: a, b: b };
+  }
+
+  // baca teks kunci: baris "f(x) = 3x + 7" (nama opsional), urut dari lapis terluar
+  function parseFns(text) {
+    var lines = text.split(/\n+/);
     var out = [];
-    var n = CASE.layers.length;
-    for (var i = 0; i < CASE.cipher.length; i++) {
-      var ch = CASE.cipher.charAt(i);
-      if (ch === ' ') { out.push({ space: true }); continue; }
-      var chain = [l2n(ch)];
-      for (var s = 0; s < n; s++) chain.push(decLayer(CASE.layers[s], chain[s]));
-      out.push({
-        space: false, c: ch, chain: chain, plain: n2l(chain[n]),
-        fields: [], oks: [], penalized: false
-      });
+    for (var i = 0; i < lines.length; i++) {
+      var raw = lines[i].trim();
+      if (!raw) continue;
+      var low = raw.toLowerCase();
+      if (/^c\s*=/.test(low)) continue;                 // baris komposisi, dilewati
+      var nm = low.match(/^([a-z])\s*\(\s*x\s*\)\s*=/);
+      var eq = raw.indexOf('=');
+      var body = eq >= 0 ? raw.slice(eq + 1) : raw;
+      var f = parseFnBody(body);
+      if (!f) continue;
+      f.name = nm ? nm[1] : FN_NAMES[out.length] || '?';
+      out.push(f);
     }
     return out;
   }
 
-  function renderCells() {
-    cellsEl.innerHTML = '';
-    var n = CASE.layers.length;
-    for (var i = 0; i < state.cells.length; i++) {
-      (function (cell, idx) {
+  function encryptWith(plain, fns) {
+    var out = '';
+    for (var i = 0; i < plain.length; i++) {
+      var ch = plain.charAt(i).toUpperCase();
+      if (ch === ' ') { out += ' '; continue; }
+      if (ch < 'A' || ch > 'Z') return null;
+      var v = l2n(ch);
+      for (var j = fns.length - 1; j >= 0; j--) v = m26(fns[j].a * v + fns[j].b);
+      out += n2l(v);
+    }
+    return out;
+  }
+
+  function openTool() {
+    toolOK = !!state.encrypted;
+    $('in-msg').value = '';
+    $('in-key').value = '';
+    $('tool-out').textContent = '\u2014';
+    $('tool-steps').innerHTML = '';
+    $('tool-msg').textContent = '';
+    $('tool-msg').className = 'tool-msg';
+    $('btn-tool-done').style.display = state.encrypted ? '' : 'none';
+    if (state.encrypted) {
+      $('in-msg').value = CASE.plain;
+      $('in-key').value = [composeLine(CASE.layers)].concat(keyLines(CASE.layers, 0, CASE.layers.length)).join('\n');
+      $('tool-out').textContent = CASE.cipher;
+      $('tool-msg').textContent = 'Sandi sudah pernah kamu jalankan di sini.';
+      $('tool-msg').className = 'tool-msg good';
+    }
+    renderEvidence();
+    showScreen('scr-tool');
+  }
+
+  function renderEvidence() {
+    var wrap = $('tool-evidence');
+    wrap.innerHTML = '';
+    if (!CASE) return;
+    for (var i = 0; i < CASE.clues.length; i++) {
+      (function (c) {
+        var found = !!state.found[c.id];
         var d = document.createElement('div');
-        d.className = 'cell' + (cell.space ? ' gap' : '');
-        if (!cell.space) {
-          d.setAttribute('data-i', String(idx));
-          var html = '<div class="ciph">' + cell.c + '</div>';
-          for (var s = 0; s < n - 1; s++) {
-            html += '<div class="fld"><span class="lbl">' + CASE.layers[s].name + '&#8315;&#185;</span>' +
-                    '<input class="in-num" type="text" inputmode="numeric" maxlength="2" autocomplete="off" spellcheck="false"></div>';
-          }
-          html += '<div class="fld"><span class="lbl">' + CASE.layers[n - 1].name + '&#8315;&#185;</span>' +
-                  '<input class="in-let" type="text" maxlength="1" autocomplete="off" spellcheck="false"></div>';
-          d.innerHTML = html;
-          var inputs = d.querySelectorAll('input');
-          cell.fields = [];
-          for (var f = 0; f < inputs.length; f++) cell.fields.push(inputs[f]);
-          cell.oks = [];
-          for (var o = 0; o < n; o++) cell.oks.push(false);
-          wireCell(cell, idx);
-        }
-        cellsEl.appendChild(d);
-      })(state.cells[i], i);
+        d.className = 'ev-item';
+
+        var h = document.createElement('h5');
+        var t = document.createElement('span');
+        t.textContent = c.title;
+        h.appendChild(t);
+
+        var b = document.createElement('button');
+        b.className = 'btn tiny';
+        b.textContent = found ? 'SALIN' : 'BELUM';
+        b.disabled = !found;
+        b.addEventListener('click', function () { copyClue(c); });
+        h.appendChild(b);
+        d.appendChild(h);
+
+        var body = document.createElement('div');
+        body.className = 'ev-body' + (c.kind === 'msg' ? ' big' : '');
+        body.textContent = found ? c.body : '\u2014 belum ditemukan \u2014';
+        if (!found) body.style.color = '#46536a';
+        d.appendChild(body);
+
+        wrap.appendChild(d);
+      })(CASE.clues[i]);
     }
   }
 
-  function nextIndex(from) {
-    for (var j = from + 1; j < state.cells.length; j++) if (!state.cells[j].space) return j;
-    return -1;
-  }
-  function prevIndex(from) {
-    for (var j = from - 1; j >= 0; j--) if (!state.cells[j].space) return j;
-    return -1;
+  function copyClue(c) {
+    clipBuf = c.body;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c.body);
+    } catch (e) { /* file:// tanpa izin clipboard \u2014 buffer internal tetap jalan */ }
+    toast('Disalin \u00b7 ' + c.title);
   }
 
-  function wireCell(cell, idx) {
-    var last = cell.fields.length - 1;
-
-    function focusNext(fi) {
-      if (fi < last) { cell.fields[fi + 1].focus(); return; }
-      var n = nextIndex(idx);
-      if (n >= 0) state.cells[n].fields[0].focus();
-    }
-    function focusPrev(fi) {
-      if (fi > 0) { cell.fields[fi - 1].focus(); return; }
-      var p = prevIndex(idx);
-      if (p >= 0) {
-        var pc = state.cells[p];
-        pc.fields[pc.fields.length - 1].focus();
+  // TEMPEL: ambil petunjuk yang relevan (bukan sekadar clipboard, biar tak pernah gagal)
+  function pasteClue(target) {
+    var txt = '';
+    if (target === 'in-msg') {
+      for (var i = 0; i < CASE.clues.length; i++) {
+        if (CASE.clues[i].kind === 'msg' && state.found[CASE.clues[i].id]) txt = CASE.clues[i].body;
       }
+    } else {
+      var parts = [];
+      for (var j = 0; j < CASE.clues.length; j++) {
+        if (CASE.clues[j].kind === 'key' && state.found[CASE.clues[j].id]) parts.push(CASE.clues[j].body);
+      }
+      txt = parts.join('\n');
     }
-
-    for (var fi = 0; fi <= last; fi++) {
-      (function (field, i2) {
-        var isNum = i2 < last;
-        field.addEventListener('input', function () {
-          var v = isNum
-            ? field.value.replace(/[^0-9]/g, '').slice(0, 2)
-            : field.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1);
-          field.value = v;
-          field.classList.remove('ok', 'bad');
-          if (v.length === (isNum ? 2 : 1)) focusNext(i2);
-          renderWork(idx);
-        });
-        field.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); focusNext(i2); }
-          else if (e.key === 'ArrowLeft') { e.preventDefault(); focusPrev(i2); }
-        });
-        field.addEventListener('focus', function () { renderWork(idx); });
-      })(cell.fields[fi], fi);
-    }
+    if (!txt) { toast('Belum ada yang bisa ditempel'); return; }
+    var el = $(target);
+    var cur = el.value.trim();
+    el.value = cur ? cur + '\n' + txt : txt;
+    el.dispatchEvent(new Event('input'));
+    el.focus();
   }
 
-  function renderWork(i) {
-    var cell = state.cells[i];
-    if (!cell || cell.space) {
-      workEl.innerHTML = '<div class="work-idle">Klik salah satu kolom untuk melihat langkah pengerjaannya.</div>';
+  function renderSteps(plain, fns) {
+    var html = '', shown = 0;
+    for (var i = 0; i < plain.length && shown < 4; i++) {
+      var ch = plain.charAt(i);
+      if (ch === ' ') continue;
+      var v = l2n(ch);
+      var parts = ['<b>' + ch + '</b>(' + v + ')'];
+      for (var j = fns.length - 1; j >= 0; j--) {
+        v = m26(fns[j].a * v + fns[j].b);
+        parts.push(fns[j].name + ' \u2192 ' + v);
+      }
+      parts.push('<span class="st-c">' + n2l(v) + '</span>');
+      html += parts.join(' &middot; ') + '<br>';
+      shown++;
+    }
+    $('tool-steps').innerHTML = html;
+  }
+
+  function runEncrypt() {
+    var msgEl = $('tool-msg'), outEl = $('tool-out');
+    var plain = $('in-msg').value.toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!plain) {
+      msgEl.textContent = 'Pesan masih kosong \u2014 tempel dulu pesan yang kamu temukan.';
+      msgEl.className = 'tool-msg bad';
       return;
     }
-    var html = '';
-    for (var s = 0; s < CASE.layers.length; s++) {
-      var L = CASE.layers[s];
-      var y = cell.chain[s], res = cell.chain[s + 1];
-      var known = cell.oks[s];
-      var body;
-      if (!cell.oks.slice(0, s).every(Boolean)) {
-        body = L.name + '\u207b\u00b9(?) = ? \u2192 <b>?</b>';
-      } else if (L.a === 1) {
-        var target = y + ' ' + (L.b < 0 ? '+ ' + (-L.b) : '\u2212 ' + L.b);
-        var raw = y - L.b;
-        var wraps = raw <= 0 || raw > 26;
-        body = L.name + '\u207b\u00b9(' + y + ') = ' + target + ' = ' + raw +
-               (wraps ? ' \u2261 <b>' + res + '</b> (mod 26)' : ' \u2192 <b>' + (known ? res : '?') + '</b>');
-      } else {
-        var rawMul = L.inv * (y - L.b);
-        body = L.name + '\u207b\u00b9(' + y + ') = ' + L.inv + '(' + target + ') = ' + rawMul +
-               ' \u2261 <b>' + (known ? res : '?') + '</b> (mod 26)';
-      }
-      html += '<div class="step"><i>Langkah ' + (s + 1) + '</i><span>' + body + '</span></div>';
+    var fns = parseFns($('in-key').value);
+    if (!fns.length) {
+      msgEl.textContent = 'Kunci belum terbaca. Format tiap baris: f(x) = 3x + 7';
+      msgEl.className = 'tool-msg bad';
+      return;
     }
-    workEl.innerHTML = html;
-  }
-
-  function keysComplete() { return !!state.collected.papan && !!state.collected.sampah; }
-
-  function clueKnown(L) {
-    if (L.clue === 'derive') return state.gSolved;
-    return !!state.collected[L.clue];
-  }
-
-  function deskReady() {
-    if (!keysComplete()) return false;
-    for (var i = 0; i < CASE.layers.length; i++) {
-      if (CASE.layers[i].clue === 'derive' && !state.gSolved) return false;
+    if (fns.length !== CASE.layers.length) {
+      msgEl.textContent = 'Jumlah fungsi belum pas \u2014 mode ini butuh ' + CASE.layers.length +
+                          ' lapis, kamu menempel ' + fns.length + '.';
+      msgEl.className = 'tool-msg bad';
+      return;
     }
-    return true;
-  }
-
-  function buildFormulaBar() {
-    var bar = $('formula-bar');
-    var html = '';
-    for (var i = 0; i < CASE.layers.length; i++) {
-      var L = CASE.layers[i];
-      var known = clueKnown(L);
-      if (L.clue === 'derive' && known) {
-        html += '<div class="fx"><b>g(x)</b> = <span>' + fxStr(L) + '</span></div>';
-      } else if (L.clue === 'derive') {
-        html += '<div class="fx derive" id="derive-box">' +
-                  '<b>g(x)</b> = <input id="derive-a" type="text" maxlength="2" inputmode="numeric">x + ' +
-                  '<input id="derive-b" type="text" maxlength="3" inputmode="numeric">' +
-                  '<span class="derive-note">dari ' + CASE.diff.composite + '</span>' +
-                '</div>';
-      } else {
-        html += '<div class="fx' + (known ? '' : ' locked') + '"><b>' + L.name + '(x)</b> = <span>' +
-                (known ? fxStr(L) : '???') + '</span></div>';
-      }
-      if (diff.showInverse) {
-        html += '<div class="fx inv' + (known ? '' : ' locked') + '"><b>' + L.name + '\u207b\u00b9(y)</b> = <span>' +
-                (known ? finvStr(L) : '???') + '</span></div>';
-      }
-    }
-    html += '<div class="fx note">' + chainNote() + '</div>';
-    bar.innerHTML = html;
-
-    if ($('derive-a')) {
-      var aEl = $('derive-a'), bEl = $('derive-b');
-      function checkDerive() {
-        var av = aEl.value.replace(/[^0-9]/g, '').slice(0, 2);
-        var bv = bEl.value.replace(/[^0-9]/g, '').slice(0, 3);
-        aEl.value = av; bEl.value = bv;
-        if (av === '' || bv === '') return;
-        var ok = parseInt(av, 10) === CASE.layers[1].a && parseInt(bv, 10) === CASE.layers[1].b;
-        aEl.classList.toggle('ok', ok); bEl.classList.toggle('ok', ok);
-        aEl.classList.toggle('bad', !ok); bEl.classList.toggle('bad', !ok);
-        if (ok && !state.gSolved) {
-          state.gSolved = true;
-          toast('g(x) = ' + fxStr(CASE.layers[1]) + ' \u2014 kunci ditemukan');
-          updateObjective();
-          buildFormulaBar();
-          updateDeskLocks();
-        }
-      }
-      aEl.addEventListener('input', checkDerive);
-      bEl.addEventListener('input', checkDerive);
-    }
-  }
-
-  function chainNote() {
-    var fwd = [], rev = [];
-    for (var i = 0; i < CASE.layers.length; i++) {
-      fwd.push(CASE.layers[i].name);
-      rev.push(CASE.layers[i].name + '\u207b\u00b9');
-    }
-    return 'c = ' + fwd.join('(') + '(x' + ')'.repeat(CASE.layers.length) +
-           ' \u2192 x = ' + rev.join('(') + '(c' + ')'.repeat(CASE.layers.length);
-  }
-
-  function updateDeskLocks() {
-    var complete = deskReady();
-
-    $('desk-hint').textContent = diff.id === 'hard'
-      ? 'Turunkan g(x) dari (f\u2218g)(x), lalu isi f\u207b\u00b9 \u2192 g\u207b\u00b9 tiap huruf'
-      : 'Isi tiap kolom mengikuti urutan lapisan: ' +
-        CASE.layers.map(function (L) { return L.name + '\u207b\u00b9'; }).join(' \u2192 ');
-
-    $('cipher-label').textContent = complete ? 'CIPHERTEKS'
-      : (keysComplete() ? 'CIPHERTEKS \u2014 TURUNKAN g(x) DULU' : 'CIPHERTEKS \u2014 KUNCI BELUM LENGKAP');
-    $('cipher-label').classList.toggle('locked', !complete);
-    $('btn-check').disabled = !complete;
-
-    for (var i = 0; i < state.cells.length; i++) {
-      var c = state.cells[i];
-      if (c.space) continue;
-      for (var f = 0; f < c.fields.length; f++) c.fields[f].disabled = !complete;
-    }
-  }
-
-  function openDesk() {
-    buildFormulaBar();
-    updateDeskLocks();
-    renderWork(-1);
-    showScreen('scr-desk');
-    if (deskReady()) {
-      for (var i = 0; i < state.cells.length; i++) {
-        if (!state.cells[i].space) { state.cells[i].fields[0].focus(); break; }
-      }
-    }
-  }
-
-  function checkAll() {
-    if (!deskReady()) return;
-    var allOk = true, wrongNow = 0;
-
-    for (var i = 0; i < state.cells.length; i++) {
-      var cell = state.cells[i];
-      if (cell.space) continue;
-      var cellOk = true, cellFilled = false;
-
-      for (var s = 0; s < CASE.layers.length; s++) {
-        var field = cell.fields[s];
-        var v = field.value.trim();
-        var isNum = s < CASE.layers.length - 1;
-        var ok = isNum
-          ? (v !== '' && parseInt(v, 10) === cell.chain[s + 1])
-          : (v !== '' && v.toUpperCase() === cell.plain);
-        cell.oks[s] = ok;
-        field.classList.toggle('ok', ok);
-        field.classList.toggle('bad', !ok && v !== '');
-        if (!ok) cellOk = false;
-        if (v !== '') cellFilled = true;
-      }
-
-      if (!cellOk) {
-        allOk = false;
-        if (cellFilled && !cell.penalized) { cell.penalized = true; wrongNow++; }
+    for (var i = 0; i < fns.length; i++) {
+      if (gcd(fns[i].a, 26) !== 1) {
+        msgEl.textContent = 'Koefisien ' + fns[i].a + ' tidak punya invers mod 26 \u2014 bukan kunci yang valid.';
+        msgEl.className = 'tool-msg bad';
+        return;
       }
     }
 
-    if (wrongNow > 0) {
-      state.score = Math.max(0, state.score - wrongNow * 20);
-      updateScore();
-      toast(wrongNow + ' kolom salah \u00b7 \u2212' + wrongNow * 20 + ' poin');
-    } else if (!allOk) {
-      toast('Masih ada kolom yang kosong.');
+    var res = encryptWith(plain, fns);
+    if (!res) { msgEl.textContent = 'Pesan cuma boleh huruf dan spasi.'; msgEl.className = 'tool-msg bad'; return; }
+    outEl.textContent = res;
+
+    if (res === CASE.cipher) {
+      toolOK = true;
+      state.encrypted = true;
+      msgEl.textContent = 'Cocok dengan catatan sistem. Sandi berhasil dijalankan.';
+      msgEl.className = 'tool-msg good';
+      $('btn-tool-done').style.display = '';
+      renderSteps(plain, fns);
+      updateObjective();
+    } else {
+      toolOK = false;
+      msgEl.textContent = 'Hasilnya tidak cocok dengan catatan sistem \u2014 cek urutan lapisnya.';
+      msgEl.className = 'tool-msg bad';
+      $('btn-tool-done').style.display = 'none';
+      $('tool-steps').innerHTML = '';
     }
-
-    if (allOk) { solve(); return; }
-
-    for (var k = 0; k < state.cells.length; k++) {
-      var c2 = state.cells[k];
-      if (!c2.space && c2.oks.indexOf(false) >= 0) { c2.fields[0].focus(); break; }
-    }
-  }
-
-  function solve() {
-    state.solved = true;
-    updateObjective();
-    modalEl.setAttribute('data-solve', '1');
-    openModal('SANDI TERPECAHKAN', 'Pesan berhasil dibaca',
-      'Semua lapis enkripsi terbuka dengan urutan terbalik — lapis terluar dibuka lebih dulu. ' +
-      'Pesannya menunjuk ke sebuah benda di ruangan ini, bukan ke orang.',
-      CASE.plain, false);
-  }
-
-  function showHint() {
-    if (!state.hintUsed) {
-      state.hintUsed = true;
-      state.score = Math.max(0, state.score - 100);
-      updateScore();
-    }
-    openModal('PETUNJUK', diff.hint.title, diff.hint.desc, diff.hint.payload, true);
   }
 
   /* =========================================================
-     13. TUDUH & ENDING
+     13. INTEROGASI & VONIS
      ========================================================= */
-  function renderSuspects() {
-    var wrap = $('suspect-cards');
-    var html = '';
-    for (var i = 0; i < CASE.suspects.length; i++) {
-      var s = CASE.suspects[i];
-      html += '<button class="card" data-id="' + s.id + '">' +
-                '<div class="avatar">' + s.initials + '</div>' +
-                '<h4>' + s.name + '</h4>' +
-                '<div class="role">' + s.role + '</div>' +
-                '<div class="alibi">' + s.alibi + '</div>' +
-                '<div class="note">' + s.note + '</div>' +
-              '</button>';
-    }
-    wrap.innerHTML = html;
-    var cards = wrap.querySelectorAll('.card');
-    for (var j = 0; j < cards.length; j++) {
-      (function (el) {
-        el.addEventListener('click', function () { onAccuse(el.getAttribute('data-id'), el); });
-      })(cards[j]);
+  var icv = null, ictx = null, ict = 0, ihover = -1;
+  var vcv = null, vctx = null, vdTime = 0;
+
+  var SEATS = [
+    { x: 158, skin: '#e0aa7e', hair: '#241a14', top: '#3a4350', top2: '#4b5566' },
+    { x: 320, skin: '#d9a377', hair: '#1d1a18', top: '#2f4a6e', top2: '#41669a' },
+    { x: 482, skin: '#e8b48a', hair: '#2b1e17', top: '#4a3a2c', top2: '#5d4a38' }
+  ];
+
+  function TR4(x, y, w, h, c) { ictx.fillStyle = c; ictx.fillRect(x | 0, y | 0, w | 0, h | 0); }
+  function TR5(x, y, w, h, c) { vctx.fillStyle = c; vctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
+
+  function pxText4(txt, x, y, sc, col) {
+    ictx.fillStyle = col;
+    for (var i = 0; i < txt.length; i++) {
+      var gl = FONT3[txt.charAt(i)] || FONT3[' '];
+      for (var r = 0; r < 5; r++) {
+        for (var c = 0; c < 3; c++) {
+          if (gl[r].charAt(c) === '1') ictx.fillRect(x + (i * 4 + c) * sc, y + r * sc, sc, sc);
+        }
+      }
     }
   }
 
-  function onAccuse(id, el) {
-    if (id === CASE.culprit) { finish(true); return; }
-    state.score = Math.max(0, state.score - 250);
-    updateScore();
-    el.style.opacity = '.4';
-    el.style.pointerEvents = 'none';
-    toast('Alibi orang ini kuat. Salah tuduh \u00b7 \u2212250 poin');
+  function initInterro() {
+    icv = $('icv');
+    if (icv) {
+      ictx = icv.getContext('2d');
+      ictx.imageSmoothingEnabled = false;
+      icv.addEventListener('mousemove', function (e) {
+        var r = icv.getBoundingClientRect();
+        if (!r.width) return;
+        ihover = hitSeat((e.clientX - r.left) / r.width * 640, (e.clientY - r.top) / r.height * 360);
+      });
+      icv.addEventListener('mouseleave', function () { ihover = -1; });
+      icv.addEventListener('click', function (e) {
+        var r = icv.getBoundingClientRect();
+        var i = hitSeat((e.clientX - r.left) / r.width * 640, (e.clientY - r.top) / r.height * 360);
+        if (i >= 0) chooseSuspect(i);
+      });
+    }
+    vcv = $('vcv');
+    if (vcv) {
+      vctx = vcv.getContext('2d');
+      vctx.imageSmoothingEnabled = false;
+    }
   }
 
-  function finish(win) {
+  function hitSeat(x, y) {
+    for (var i = 0; i < SEATS.length; i++) {
+      var s = SEATS[i];
+      if (x > s.x - 58 && x < s.x + 58 && y > 160 && y < 316) return i;
+    }
+    return -1;
+  }
+
+  function openInterro() {
+    ihover = -1;
+    showScreen('scr-interro');
+  }
+
+  function chooseSuspect(i) {
+    var s = CASE.suspects[i];
+    if (!s) return;
+    state.picked = s;
+    state.win = (s.id === CASE.culprit);
+    if (!state.win) state.score = Math.max(0, state.score - 250);
+    vdTime = 0;
+    $('btn-vd-next').style.display = 'none';
+    showScreen('scr-verdict');
+  }
+
+  function cuffRing(x, y) {
+    TR4(x - 7, y - 6, 14, 13, '#0c1119');
+    TR4(x - 6, y - 5, 12, 11, '#cfd8e4');
+    TR4(x - 6, y - 5, 12, 2, '#ffffff');
+    TR4(x - 6, y + 4, 12, 2, '#8792a2');
+    TR4(x - 3, y - 1, 6, 5, '#3b3226');   // lubang \u2014 warna permukaan meja
+  }
+
+  function drawSeat(cx, pal, hot) {
+    // kursi
+    TR4(cx - 34, 244, 68, 54, '#1a1f27');
+    // badan
+    TR4(cx - 27, 232, 54, 64, pal.top);
+    TR4(cx - 27, 232, 54, 4, pal.top2);
+    TR4(cx - 27, 232, 3, 64, pal.top2);
+    // leher
+    TR4(cx - 7, 224, 14, 12, pal.skin);
+    TR4(cx - 7, 224, 14, 4, '#00000033');
+    // kepala
+    TR4(cx - 15, 196, 30, 30, pal.skin);
+    TR4(cx + 12, 196, 3, 30, '#00000028');
+    // rambut
+    TR4(cx - 16, 191, 32, 11, pal.hair);
+    TR4(cx - 16, 200, 5, 13, pal.hair);
+    TR4(cx + 11, 200, 5, 13, pal.hair);
+    // mata (menunduk)
+    TR4(cx - 9, 210, 5, 3, '#14181f');
+    TR4(cx + 4, 210, 5, 3, '#14181f');
+    // mulut
+    TR4(cx - 5, 218, 10, 2, '#8a6248');
+    // lengan di atas meja
+    TR4(cx - 32, 282, 64, 14, pal.top);
+    TR4(cx - 32, 282, 64, 3, pal.top2);
+
+    if (hot) {
+      ictx.save();
+      ictx.globalCompositeOperation = 'lighter';
+      var hg = ictx.createRadialGradient(cx, 240, 10, cx, 240, 120);
+      hg.addColorStop(0, 'rgba(255,226,170,.18)');
+      hg.addColorStop(1, 'rgba(255,226,170,0)');
+      ictx.fillStyle = hg;
+      ictx.fillRect(cx - 130, 120, 260, 230);
+      ictx.restore();
+    }
+  }
+
+  function drawHands(cx, pal) {
+    // dua tangan berdampingan di atas meja
+    TR4(cx - 21, 300, 17, 12, pal.skin);
+    TR4(cx + 4, 300, 17, 12, pal.skin);
+    TR4(cx - 21, 300, 17, 2, '#ffffff22');
+    TR4(cx + 4, 300, 17, 2, '#ffffff22');
+    // borgol mengunci kedua pergelangan
+    cuffRing(cx - 13, 306);
+    cuffRing(cx + 13, 306);
+    // rantai
+    TR4(cx - 6, 304, 12, 3, '#9aa6b4');
+    TR4(cx - 6, 304, 12, 1, '#e8eef6');
+    TR4(cx - 2, 303, 4, 6, '#5d6878');
+    TR4(cx + 1, 303, 4, 6, '#5d6878');
+  }
+
+  function drawInterro(dt) {
+    if (!ictx) return;
+    ict += dt;
+
+    // dinding
+    TR4(0, 0, 640, 360, '#0c1015');
+    for (var i = 0; i < 640; i += 64) TR4(i, 0, 1, 300, '#141a21');
+    // kaca satu arah
+    TR4(120, 34, 400, 80, '#0a1219');
+    TR4(120, 34, 400, 3, '#1e2c38');
+    TR4(120, 111, 400, 3, '#1e2c38');
+    ictx.globalAlpha = 0.10;
+    for (var k = 0; k < 5; k++) TR4(150 + k * 76, 40, 22, 70, '#7fa8d6');
+    ictx.globalAlpha = 1;
+    pxText4('ONE WAY', 300, 24, 1, '#2c3b4a');
+
+    // lampu gantung
+    TR4(316, 0, 8, 26, '#1b222c');
+    TR4(300, 26, 40, 8, '#2a333f');
+    var tx = ihover >= 0 ? SEATS[ihover].x : 320;
+    ictx.save();
+    ictx.globalCompositeOperation = 'lighter';
+    var lg = ictx.createLinearGradient(320, 30, tx, 300);
+    lg.addColorStop(0, 'rgba(255,232,180,.18)');
+    lg.addColorStop(1, 'rgba(255,232,180,0)');
+    ictx.fillStyle = lg;
+    ictx.beginPath();
+    ictx.moveTo(312, 30); ictx.lineTo(328, 30);
+    ictx.lineTo(tx + 150, 320); ictx.lineTo(tx - 150, 320);
+    ictx.closePath(); ictx.fill();
+    ictx.restore();
+
+    // tiga tersangka
+    for (var s = 0; s < SEATS.length; s++) drawSeat(SEATS[s].x, SEATS[s], s === ihover);
+
+    // meja: permukaan lebar + muka depan
+    TR4(40, 296, 560, 36, '#3b3226');
+    TR4(40, 296, 560, 4, '#524736');
+    TR4(40, 328, 560, 26, '#2a241b');
+    TR4(40, 328, 560, 2, '#1a1610');
+    ictx.globalAlpha = 0.5;
+    TR4(40, 354, 560, 6, '#000');
+    ictx.globalAlpha = 1;
+
+    // tangan + borgol di atas permukaan meja
+    for (var h = 0; h < SEATS.length; h++) drawHands(SEATS[h].x, SEATS[h]);
+
+    // papan nama
+    for (var n = 0; n < SEATS.length; n++) {
+      var sp = CASE && CASE.suspects[n] ? CASE.suspects[n] : null;
+      if (!sp) continue;
+      var nm = sp.name.toUpperCase();
+      var w = nm.length * 8 + 22;
+      var cx2 = SEATS[n].x;
+      var on = n === ihover;
+      TR4(cx2 - w / 2, 148, w, 26, '#0d1218');
+      TR4(cx2 - w / 2, 148, w, 1, on ? '#f2b544' : '#2a3444');
+      TR4(cx2 - w / 2, 173, w, 1, on ? '#f2b544' : '#2a3444');
+      TR4(cx2 - w / 2, 148, 1, 26, on ? '#f2b544' : '#2a3444');
+      TR4(cx2 - w / 2 + w - 1, 148, 1, 26, on ? '#f2b544' : '#2a3444');
+      pxText4(nm, cx2 - nm.length * 4, 156, 2, on ? '#f2b544' : '#8d99ab');
+    }
+
+    // vignette
+    var vg = ictx.createRadialGradient(320, 200, 110, 320, 200, 400);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,.76)');
+    ictx.fillStyle = vg;
+    ictx.fillRect(0, 0, 640, 360);
+  }
+
+  /* ---------- cutscene vonis ---------- */
+  var VD_WIN = [
+    'Pak Dedi menunduk lama sekali. Tangan yang diborgol itu tidak bergerak sedikit pun.',
+    '"Kartu akses saya," katanya pelan. "Saya lupa kalau semuanya tercatat."',
+    'Nayla ditemukan di gudang alat kebersihan dekat rumahnya. Selamat, dan sudah diperiksa di klinik.'
+  ];
+  var VD_LOSE = [
+    'Alibi orang yang kamu tuduh tidak terbantahkan. Pengacaranya sudah menunggu di lobi.',
+    'Sementara itu, satu pintu di ujung koridor terbuka dan tertutup lagi.',
+    'Pelakunya menghilang sebelum fajar. Kasusnya dibuka lagi besok.'
+  ];
+
+  function drawVerdict(dt) {
+    if (!vctx) return;
+    vdTime += dt;
+    var win = !!state.win;
+
+    // ruangan
+    TR5(0, 0, 640, 360, win ? '#0b0d12' : '#0a0c11');
+    for (var i = 0; i < 640; i += 64) TR5(i, 0, 1, 340, win ? '#12161d' : '#111419');
+
+    if (win) {
+      // sorot lampu ke tersangka
+      vctx.save();
+      vctx.globalCompositeOperation = 'lighter';
+      var lg = vctx.createRadialGradient(320, 200, 12, 320, 200, 200);
+      lg.addColorStop(0, 'rgba(255,226,170,.22)');
+      lg.addColorStop(1, 'rgba(255,226,170,0)');
+      vctx.fillStyle = lg;
+      vctx.fillRect(110, 20, 420, 330);
+      vctx.restore();
+
+      // meja
+      TR5(232, 292, 216, 30, '#3b3226');
+      TR5(232, 292, 216, 4, '#524736');
+      TR5(232, 320, 216, 40, '#2a241b');
+      TR5(232, 320, 216, 2, '#1a1610');
+
+      // tersangka menunduk
+      TR5(268, 212, 104, 84, '#1a2029');
+      TR5(268, 212, 104, 4, '#242c38');
+      TR5(268, 212, 3, 84, '#242c38');
+      TR5(310, 198, 20, 16, '#c99a72');
+      TR5(296, 166, 48, 36, '#c99a72');
+      TR5(292, 158, 56, 14, '#1d1a18');
+      TR5(296, 166, 48, 6, '#00000033');
+      // mata tertutup + mulut
+      TR5(304, 182, 8, 3, '#14181f');
+      TR5(328, 182, 8, 3, '#14181f');
+      TR5(314, 194, 12, 2, '#8a6248');
+
+      // tangan + borgol di atas meja
+      TR5(302, 296, 17, 12, '#c99a72');
+      TR5(321, 296, 17, 12, '#c99a72');
+      TR5(298, 294, 25, 17, '#0c1119');
+      TR5(300, 296, 21, 13, '#cfd8e4');
+      TR5(300, 296, 21, 2, '#ffffff');
+      TR5(300, 306, 21, 2, '#8792a2');
+      TR5(317, 294, 25, 17, '#0c1119');
+      TR5(319, 296, 21, 13, '#cfd8e4');
+      TR5(319, 296, 21, 2, '#ffffff');
+      TR5(319, 306, 21, 2, '#8792a2');
+      TR5(316, 300, 8, 4, '#9aa6b4');
+      TR5(316, 300, 8, 1, '#e8eef6');
+
+      // siluet detektif di foreground (kiri)
+      var rimC = 'rgba(255,226,170,.30)';
+      TR5(0, 246, 132, 114, '#04060a');
+      TR5(6, 206, 150, 46, '#04060a');
+      TR5(48, 186, 40, 26, '#04060a');
+      TR5(40, 146, 56, 46, '#04060a');
+      TR5(16, 136, 104, 16, '#04060a');
+      TR5(48, 108, 52, 32, '#04060a');
+      // rim cahaya di tepi kanan siluet
+      TR5(152, 206, 3, 46, rimC);
+      TR5(92, 146, 3, 46, rimC);
+      TR5(116, 136, 3, 16, rimC);
+      TR5(96, 108, 3, 32, rimC);
+      TR5(128, 246, 3, 114, rimC);
+      // kerah jas
+      TR5(64, 200, 3, 46, '#0a0d13');
+      TR5(46, 236, 3, 40, '#0a0d13');
+    } else {
+      // koridor
+      TR5(0, 0, 640, 300, '#0e1319');
+      for (var i2 = 0; i2 < 640; i2 += 64) TR5(i2, 0, 1, 300, '#171e26');
+      // lantai
+      TR5(0, 300, 640, 60, '#171d25');
+      TR5(0, 300, 640, 2, '#2a3442');
+      for (var f = 0; f < 7; f++) TR5(30 + f * 88, 322 + (f % 2) * 14, 52, 2, 'rgba(200,190,120,.12)');
+
+      // pintu di ujung koridor
+      TR5(228, 88, 184, 212, '#26333f');
+      TR5(234, 94, 172, 206, '#0a0f15');
+      // celah cahaya di balik pintu
+      var p2 = Math.min(1, vdTime / 6);
+      vctx.save();
+      vctx.globalCompositeOperation = 'lighter';
+      vctx.globalAlpha = 0.16 + 0.30 * p2;
+      TR5(234, 94, 26, 206, '#8fb4dd');
+      vctx.restore();
+
+      // siluet berjalan keluar
+      if (p2 > 0.12) {
+        var mx = 296 + p2 * 56;
+        var sc = 1 - p2 * 0.28;
+        var hh = 108 * sc, bw = 36 * sc, hw = 24 * sc;
+        TR5(mx - bw / 2, 300 - hh, bw, hh, '#05080c');
+        TR5(mx - hw / 2, 300 - hh - 26 * sc, hw, 28 * sc, '#05080c');
+        TR5(mx - hw / 2 - 6, 300 - hh - 31 * sc, hw + 12, 7 * sc, '#05080c');
+        TR5(mx - hw / 2 - 4, 300 - hh - 45 * sc, hw + 8, 16 * sc, '#05080c');
+      }
+
+      // daun pintu kanan
+      TR5(388, 94, 18, 206, '#26333f');
+      TR5(400, 94, 6, 206, '#0a0f15');
+    }
+
+    // vignette
+    var vg = vctx.createRadialGradient(320, 180, 100, 320, 180, 400);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,.80)');
+    vctx.fillStyle = vg;
+    vctx.fillRect(0, 0, 640, 360);
+  }
+
+  function updateVerdictDom() {
+    var arr = state.win ? VD_WIN : VD_LOSE;
+    var idx = Math.min(arr.length - 1, Math.floor(vdTime / 4.2));
+    $('vd-caption').textContent = arr[idx];
+    var done = vdTime > arr.length * 4.2;
+    $('btn-vd-next').style.display = done ? '' : 'none';
+  }
+
+    function finish(win) {
     var stamp = $('verdict-stamp');
     if (win) {
       stamp.textContent = 'TERBUKTI';
@@ -1430,21 +1721,19 @@
      ========================================================= */
   function resetGame() {
     state.collected = {};
-    state.solved = false;
+    state.found = {};
     state.score = 1000;
-    state.hintUsed = false;
+    state.encrypted = false;
     state.potSlid = false;
     state.keyFound = false;
-    state.gSolved = false;
+    state.win = false;
+    state.picked = null;
     potAnim = 0;
-    state.cells = buildCells();
-    renderCells();
-    renderWork(-1);
+    if (!CASE) CASE = buildCase(diff);
+    placeClues();
     updateScore();
     updateObjective();
     updateKeyBadge();
-    buildFormulaBar();
-    updateDeskLocks();
     player.x = 216; player.y = 240; player.dir = 'down'; player.moving = false; player.anim = 0;
     cam.x = Math.round(Math.max(0, Math.min(WORLD_W - VW, player.x - VW / 2)));
     cam.y = Math.round(Math.max(0, Math.min(WORLD_H - VH, player.y - VH / 2)));
@@ -1495,10 +1784,12 @@
     $('btn-start').addEventListener('click', function () { showScreen('scr-select'); });
     $('btn-help').addEventListener('click', function () {
       openModal('CARA MAIN', 'Alur penyelidikan',
-        '1. Jalan dengan WASD atau tombol panah.  2. Dekati objek, tekan E untuk memeriksa.  ' +
-        '3. Kumpulkan cipherteks dan kedua fungsi.  4. Buka meja dekripsi dari komputer.  ' +
-        '5. Untuk tiap huruf, buka lapis terluar dulu: f⁻¹, lalu lapis berikutnya, sampai huruf aslinya.  ' +
-        '6. Buka lemari arsip, lalu tuduh tersangka.',
+        '1. Jalan dengan WASD atau panah, tekan E untuk memeriksa barang.  ' +
+        '2. Semua barang bisa diperiksa \u2014 sebagian menyimpan petunjuk, sisanya cuma alasan.  ' +
+        '3. Kumpulkan PESAN dan KUNCI fungsinya.  ' +
+        '4. Buka alat enkripsi di komputer guru, tempel pesan + kunci, lalu jalankan.  ' +
+        '5. Sandi yang cocok menunjuk lokasi kunci.  ' +
+        '6. Buka lemari arsip, lalu pilih tersangka di ruang interogasi.',
         'c = f(g(x))  \u2192  x = g\u207b\u00b9(f\u207b\u00b9(c))', true);
     });
     $('btn-select-back').addEventListener('click', function () { showScreen('scr-title'); });
@@ -1517,32 +1808,27 @@
     });
     $('cf-start').addEventListener('click', startInvestigation);
 
-    $('btn-desk-help').addEventListener('click', function () { $('btn-help').click(); });
-
-    $('btn-desk-back').addEventListener('click', function () {
+    $('btn-tool-back').addEventListener('click', function () { showScreen('scr-play'); });
+    $('btn-tool-done').addEventListener('click', function () {
       showScreen('scr-play');
-      if (state.solved && !state.keyFound) {
-        openDialog('KAMU MENGINGAT SESUATU',
-          'Sandi dari pesan itu: <code>' + CASE.plain + '</code>. Coba periksa pot tanaman di dekat dispenser, sudut kanan bawah.',
-          [{ label: 'Ke pot', primary: true, fn: closeDialog }]);
-      }
+      openDialog('KAMU MENGINGAT SESUATU',
+        'Sandi yang kamu jalankan cocok dengan catatan ini: <code>' + CASE.plain + '</code>. ' +
+        'Coba periksa pot tanaman di sudut ruangan.',
+        [{ label: 'Ke pot', primary: true, fn: closeDialog }]);
     });
-    $('btn-hint').addEventListener('click', showHint);
-    $('btn-check').addEventListener('click', checkAll);
-    $('btn-accuse-back').addEventListener('click', function () { showScreen('scr-play'); });
+    $('btn-encrypt').addEventListener('click', runEncrypt);
+    var pastes = document.querySelectorAll('.tool-paste');
+    for (var pi = 0; pi < pastes.length; pi++) {
+      (function (el) {
+        el.addEventListener('click', function () { pasteClue(el.getAttribute('data-target')); });
+      })(pastes[pi]);
+    }
+    $('btn-interro-back').addEventListener('click', function () { showScreen('scr-play'); });
+    $('btn-vd-skip').addEventListener('click', function () { finish(state.win); });
+    $('btn-vd-next').addEventListener('click', function () { finish(state.win); });
     $('btn-again').addEventListener('click', function () { resetGame(); showScreen('scr-select'); });
 
-    $('modal-x').addEventListener('click', function () {
-      var wasSolve = modalEl.getAttribute('data-solve') === '1';
-      closeModal();
-      if (wasSolve) {
-        modalEl.removeAttribute('data-solve');
-        showScreen('scr-play');
-        openDialog('KAMU MENGINGAT SESUATU',
-          'Sandi dari pesan itu: <code>' + CASE.plain + '</code>. Coba periksa pot tanaman di dekat dispenser, sudut kanan bawah.',
-          [{ label: 'Ke pot', primary: true, fn: closeDialog }]);
-      }
-    });
+    $('modal-x').addEventListener('click', closeModal);
     $('modal-ok').addEventListener('click', function () { $('modal-x').click(); });
     modalEl.addEventListener('click', function (e) { if (e.target === modalEl) $('modal-x').click(); });
     document.addEventListener('keydown', function (e) {
@@ -1588,6 +1874,8 @@
         selTime += dt;
         drawSelectScene();
       }
+      if (activeScreen === 'scr-interro') drawInterro(dt);
+      if (activeScreen === 'scr-verdict') { drawVerdict(dt); updateVerdictDom(); }
       if (activeScreen === 'scr-title') drawTitle(dt);
       draw();
     } catch (err) {
@@ -3062,6 +3350,7 @@
   initCutscene();
   initBoard();
   initSelect();
+  initInterro();
   fit();
   window.addEventListener('resize', fit);
   requestAnimationFrame(frame);
@@ -3081,15 +3370,18 @@
     selectMouse: function (x, y) { selMouse.x = x; selMouse.y = y; },
     hoveredFig: function () { var f = hoverCheck(); return f ? f.id : null; },
     screen: function () { return activeScreen; },
-    checkAll: checkAll, interact: interact, openDesk: openDesk,
+    interact: interact, openTool: openTool, openInterro: openInterro,
+    runEncrypt: runEncrypt, parseFns: parseFns, encryptWith: encryptWith,
+    placeClues: placeClues, cluesFound: cluesFound, propById: propById,
+    copyClue: copyClue, pasteClue: pasteClue, chooseSuspect: chooseSuspect,
+    takeKey: takeKey,
+    hitSeat: hitSeat,
     showScreen: showScreen, finish: finish,
     teleport: function (x, y) { player.x = x; player.y = y; },
     potAnim: function () { return potAnim; },
     _dbg: { drawSprite: drawSprite, PAL: PAL, ctx: ctx,
             SPR: { SPR_DOWN: SPR_DOWN, SPR_UP: SPR_UP, SPR_SIDE: SPR_SIDE } },
-    derivedPlain: function () {
-      return state.cells.map(function (c) { return c.space ? ' ' : c.plain; }).join('');
-    },
+    derivedPlain: function () { return CASE ? CASE.plain : ''; },
     encrypt: function (s) {
       var out = '';
       for (var i = 0; i < s.length; i++) {

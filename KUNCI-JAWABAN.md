@@ -1,160 +1,122 @@
-# KUNCI JAWABAN — Kasus #01 "Rekaman 23.47"
+# Kunci & Panduan Penilaian — Kasus #01 "Rekaman 23.47"
 
 Bahan buat presentasi. Jangan dibuka di depan kelas sebelum kelompok lain sempat mencoba.
 
-**Kontrol:** WASD atau tombol panah untuk jalan, **E** untuk memeriksa objek yang ditandai.
-
-Satu kasus, tiga tingkat kesulitan. Ceritanya sama, yang berbeda adalah matematikanya:
-
-| Mode | Lapis | Fokus materi | Cipherteks → plainteks |
-|---|---|---|---|
-| EASY | 2 fungsi | Komposisi dua fungsi + invers | `KUNCI DI POT` |
-| NORMAL | 3 fungsi | Komposisi tiga fungsi, invers diturunkan sendiri | `CEK POT BUNGA` |
-| HARD | 2 fungsi | Menentukan fungsi yang hilang dari hasil komposisi | `DI BAWAH POT` |
-
-Catatan tampilan: pada mode NORMAL dan HARD, cipherteks di layar sengaja ditampilkan dengan
-**huruf besar-kecil campur** (seperti teks acak sungguhan — sesuai penjelasan guru). Itu hanya
-tampilan; nilai hurufnya sama, jadi tabel di bawah ditulis huruf besar semua.
-
-Cipherteks dihasilkan otomatis dari plainteks lewat fungsi-fungsinya, jadi tidak mungkin salah ketik.
+**Kontrol:** WASD atau panah untuk jalan, **E** untuk memeriksa objek.
 
 ---
 
-## Mode EASY — 2 lapis, invers sudah ditampilkan
+## Penting: pesan & kunci diacak tiap permainan
 
-| | Fungsi | Invers |
+**Pesan asli, fungsi, dan lokasi petunjuk diacak setiap kali kasus dimulai.** Tidak ada satu
+jawaban tetap yang bisa dihafal — ini disengaja supaya siswa benar-benar membaca petunjuk di
+layar, bukan mengingat urutan klik.
+
+Untuk melihat jawaban dari sesi yang sedang berjalan (atau mencetak contoh untuk guru):
+
+```bash
+node _genkunci.js
+```
+
+Perintah itu mencetak, untuk ketiga mode: daftar fungsi per lapis, baris komposisi, pesan asli,
+sandi hasilnya, dan tabel rantai enkripsi huruf per huruf.
+
+---
+
+## Aturan matematika yang selalu berlaku
+
+| Aturan | Keterangan |
+|---|---|
+| Pemetaan huruf | `A = 1 … Z = 26`, spasi tidak dienkripsi |
+| Modulo | hasil selalu dikembalikan ke 1–26 (`0` ditulis `26`) |
+| Koefisien `a` | wajib **koprima dengan 26** (bukan kelipatan 2 atau 13) supaya punya invers |
+| Urutan lapis | baris pertama kunci = **lapis terluar**; alat menerapkan dari baris terakhir |
+
+Contoh rantai satu huruf (mode EASY, `f(x) = 3x + 7`, `g(x) = x + 5`, `c = f(g(x))`):
+
+```
+K (11)  →  g: 11 + 5 = 16  →  f: 3·16 + 7 = 55 ≡ 3  →  C
+```
+
+---
+
+## Tingkat kesulitan
+
+| Mode | Lapis | Petunjuk yang harus dicari |
 |---|---|---|
-| Lapis luar | `f(x) = 3x + 7` | `f⁻¹(y) = 9(y − 7) mod 26` |
-| Lapis dalam | `g(x) = x + 5` | `g⁻¹(y) = y − 5 mod 26` |
+| EASY | 2 | pesan + 1 kunci |
+| NORMAL | 3 | pesan + 1 kunci (tiga fungsi sekaligus) |
+| HARD | 3 | pesan + **2 sobekan kunci** (kunci dipecah, disimpan terpisah) |
 
-Enkripsi: `c = f(g(x))` — jadi dekripsi harus dibalik: **`x = g⁻¹(f⁻¹(c))`**
-
-Kenapa `9`? Karena `3 · 9 = 27 ≡ 1 (mod 26)`. Membagi dengan 3 sama saja dengan mengalikan 9 dalam modulo 26. Ini yang bikin `f` bisa dibalik.
-
-| Cipher | c | Langkah 1: f⁻¹(c) = 9(c − 7) | Langkah 2: g⁻¹ = hasil − 5 | Plainteks |
-|---|---|---|---|---|
-| C | 3  | 9(−4) = −36 ≡ **16** | 16 − 5 = 11 | **K** |
-| G | 7  | 9(0) = 0 ≡ **26** | 26 − 5 = 21 | **U** |
-| L | 12 | 9(5) = **45 ≡ 19** | 19 − 5 = 14 | **N** |
-| E | 5  | 9(−2) = −18 ≡ **8** | 8 − 5 = 3 | **C** |
-| W | 23 | 9(16) = **144 ≡ 14** | 14 − 5 = 9 | **I** |
-| ␣ | —  | spasi tidak dienkripsi | — | — |
-| H | 8  | 9(1) = **9** | 9 − 5 = 4 | **D** |
-| W | 23 | 9(16) = **144 ≡ 14** | 14 − 5 = 9 | **I** |
-| ␣ | —  | spasi tidak dienkripsi | — | — |
-| R | 18 | 9(11) = **99 ≡ 21** | 21 − 5 = 16 | **P** |
-| O | 15 | 9(8) = **72 ≡ 20** | 20 − 5 = 15 | **O** |
-| D | 4  | 9(−3) = −27 ≡ **25** | 25 − 5 = 20 | **T** |
-
-**Hasil: `KUNCI DI POT`** — cipherteksnya `C G L E W   H W   R O D`.
+Pada HARD, siswa harus menemukan **tiga** barang sebelum alat bisa dijalankan — sobekan A berisi
+baris komposisi + fungsi pertama, sobekan B berisi fungsi terakhir.
 
 ---
 
-## Mode NORMAL — 3 lapis (komposisi tiga fungsi)
+## Yang dinilai
 
-Meja dekripsi hanya menampilkan fungsi aslinya — **inversnya harus diturunkan sendiri**.
+Karena perhitungan per huruf sudah dipegang alat, penilaian bergeser ke **pemahaman urutan lapis**:
 
-| Fungsi | Rumus | Invers (turunan siswa) |
-|---|---|---|
-| `f(x)` | `7x + 3` | `f⁻¹(y) = 15(y − 3) mod 26` — karena `7 · 15 = 105 ≡ 1` |
-| `g(x)` | `x + 11` | `g⁻¹(y) = y − 11 mod 26` |
-| `h(x)` | `x − 6`  | `h⁻¹(y) = y + 6 mod 26` |
+1. **Apakah siswa menemukan pesan dan kunci yang benar** — bukan menebak barang secara acak.
+   Semua barang bisa diperiksa; yang tidak menyimpan petunjuk memberi alasan kenapa kosong.
+2. **Apakah siswa menempelkan kunci pada urutan yang benar.** Alat menolak dengan pesan
+   *"Hasilnya tidak cocok dengan catatan sistem — cek urutan lapisnya"* kalau urutannya terbalik.
+   Ini justru inti materinya: `c = f(g(x))` tidak sama dengan `c = g(f(x))`.
+3. **Apakah siswa bisa menjelaskan kenapa urutan itu penting** — tanyakan langsung saat presentasi.
 
-Urutan enkripsi: `c = f(g(h(x)))` — jadi dekripsi: **`x = h⁻¹(g⁻¹(f⁻¹(c)))`**, buka dari lapis terluar.
-
-| Cipher | Langkah f⁻¹ | Langkah g⁻¹ | Langkah h⁻¹ | Plainteks |
-|---|---|---|---|---|
-| **G** (7) | 15(7 − 3) = 60 ≡ **8** | 8 − 11 = −3 ≡ **23** | 23 + 6 = 29 ≡ **3** | **C** |
-| **U** (21) | 15(21 − 3) = 270 ≡ **10** | 10 − 11 = −1 ≡ **25** | 25 + 6 = 31 ≡ **5** | **E** |
-| **K** (11) | 15(11 − 3) = 120 ≡ **16** | 16 − 11 = **5** | 5 + 6 = 11 | **K** |
-| ␣ | spasi tidak dienkripsi | — | — | — |
-| **T** (20) | 15(20 − 3) = 255 ≡ **21** | 21 − 11 = **10** | 10 + 6 = 16 | **P** |
-| **M** (13) | 15(13 − 3) = 150 ≡ **20** | 20 − 11 = **9** | 9 + 6 = 15 | **O** |
-| **V** (22) | 15(22 − 3) = 285 ≡ **25** | 25 − 11 = **14** | 14 + 6 = 20 | **T** |
-| ␣ | spasi tidak dienkripsi | — | — | — |
-| **Z** (26) | 15(26 − 3) = 345 ≡ **7** | 7 − 11 = −4 ≡ **22** | 22 + 6 = 28 ≡ **2** | **B** |
-| **C** (3) | 15(3 − 3) = 0 ≡ **26** | 26 − 11 = **15** | 15 + 6 = 21 | **U** |
-| **F** (6) | 15(6 − 3) = 45 ≡ **19** | 19 − 11 = **8** | 8 + 6 = 14 | **N** |
-| **I** (9) | 15(9 − 3) = 90 ≡ **12** | 12 − 11 = **1** | 1 + 6 = 7 | **G** |
-| **S** (19) | 15(19 − 3) = 240 ≡ **6** | 6 − 11 = −5 ≡ **21** | 21 + 6 = 27 ≡ **1** | **A** |
-
-**Hasil: `CEK POT BUNGA`** — cipherteksnya `G U K   T M V   Z C F I S`.
-
-Sumber kunci: papan tulis memuat **f(x)** dan **h(x)**; sticky note di tempat sampah memuat **g(x)**.
+Alat juga menolak kunci yang tidak valid (`a` tidak koprima dengan 26) dan jumlah fungsi yang
+tidak sesuai jumlah lapis mode.
 
 ---
 
-## Mode HARD — kunci g(x) hilang, harus diturunkan dari komposisi
+## Alur lengkap (untuk demo)
 
-| | Fungsi | Invers |
-|---|---|---|
-| Lapis luar | `f(x) = 5x + 2` | `f⁻¹(y) = 21(y − 2) mod 26` — karena `5 · 21 = 105 ≡ 1` |
-| Lapis dalam | `g(x) = 3x + 3` *(rahasia)* | `g⁻¹(y) = 9(y − 3) mod 26` — karena `3 · 9 = 27 ≡ 1` |
-
-Petunjuk yang ada: papan tulis memuat `f(x) = 5x + 2`, dan kertas di tempat sampah sobek — yang tertulis hanya:
-
-```
-(f ∘ g)(x) = 15x + 17
-```
-
-**Menurunkan g(x)** (materi: menentukan fungsi kanan):
-
-```
-(f ∘ g)(x) = f(g(x)) = 5·g(x) + 2 = 15x + 17
-5·g(x) = 15x + 15
-g(x) = (15x + 15) / 5 = 3x + 3
-```
-
-Input `a = 3`, `b = 3` di meja dekripsi akan membuka kolom dekripsi. Salah isian ditandai merah, tanpa penalti.
-
-| Cipher | Langkah f⁻¹ | Langkah g⁻¹ | Plainteks |
-|---|---|---|---|
-| **Y** (25) | 21(25 − 2) = 483 ≡ **15** | 9(15 − 3) = 108 ≡ **4** | **D** |
-| **V** (22) | 21(22 − 2) = 420 ≡ **4** | 9(4 − 3) = 9 ≡ **9** | **I** |
-| ␣ | spasi tidak dienkripsi | — | — |
-| **U** (21) | 21(21 − 2) = 399 ≡ **9** | 9(9 − 3) = 54 ≡ **2** | **B** |
-| **F** (6) | 21(6 − 2) = 84 ≡ **6** | 9(6 − 3) = 27 ≡ **1** | **A** |
-| **X** (24) | 21(24 − 2) = 462 ≡ **20** | 9(20 − 3) = 153 ≡ **23** | **W** |
-| **F** (6) | 21(6 − 2) = 84 ≡ **6** | 9(6 − 3) = 27 ≡ **1** | **A** |
-| **G** (7) | 21(7 − 2) = 105 ≡ **1** | 9(1 − 3) = −18 ≡ **8** | **H** |
-| ␣ | spasi tidak dienkripsi | — | — |
-| **W** (23) | 21(23 − 2) = 441 ≡ **25** | 9(25 − 3) = 198 ≡ **16** | **P** |
-| **H** (8) | 21(8 − 2) = 126 ≡ **22** | 9(22 − 3) = 171 ≡ **15** | **O** |
-| **E** (5) | 21(5 − 2) = 63 ≡ **11** | 9(11 − 3) = 72 ≡ **20** | **T** |
-
-**Hasil: `DI BAWAH POT`** — cipherteksnya `Y V   U F X F G   W H E`.
+1. Menu → pilih kasus di jalanan (senter mengikuti kursor) → pilih tingkat.
+2. Cutscene CCTV → papan kasus → turun ke TKP.
+3. Periksa barang-barang di lab. Dua (atau tiga) di antaranya menyimpan **pesan** dan **kunci**.
+4. Buka **alat enkripsi** di komputer guru, tempel pesan + kunci, jalankan.
+   Hasilnya harus cocok dengan catatan sistem.
+5. Sandi yang cocok menunjuk **pot** di sudut ruangan → geser pot → ambil kunci.
+6. Buka **lemari arsip** → flashdisk bukti.
+7. **Ruang interogasi** — tiga tersangka duduk diborgol. Sorot dengan lampu, klik untuk memilih.
+   - Pelaku benar → cutscene pengakuan → ending **TERBUKTI**.
+   - Salah → cutscene pintu di ujung koridor → ending **SALAH TUDUH** (−250 poin).
 
 ---
 
-## Alur kasus (sama untuk semua mode)
+## Kalau ada yang macet
 
-1. **Pilih kasus di jalanan** — senter detektif mengikuti kursor; klik sosok hitam CASE 01
-2. **Cutscene CCTV** → sosok hitam keluar lab pukul 23.47 memikul tas besar
-3. **Papan kasus detektif** → deduksi: kartu akses 23.40, tas besar, Nayla
-4. **Laptop meja guru** → `pesan.txt` terakhir Nayla (23.45) → cipherteks + buka meja dekripsi
-5. **Papan tulis** → fungsi yang Nayla tulis (NORMAL: sekaligus lapis paling dalam)
-6. **Tempat sampah** → kunci yang Nayla remas dan buang (HARD: hanya sisa komposisinya)
-7. **Meja dekripsi** → pesan terakhir Nayla terbaca
-8. **Pot tanaman** (dekat dispenser, sudut kanan bawah) → pot digeser → **kunci lemari** label "ARSIP"
-9. **Lemari arsip** → dibuka pakai kunci → **flashdisk "JANGAN FORMAT — BUKTI"**: salinan CCTV + catatan penguntit
-10. **Tuduh** → Pak Dedi
+- **Alat bilang "jumlah fungsi belum pas"** → sobekan kunci belum lengkap, atau ada baris lain
+  yang ikut tertempel. Cukup tempel ulang bagian `f(x) = …` saja.
+- **Alat bilang "tidak cocok dengan catatan sistem"** → urutan baris terbalik. Coba tukar.
+- **Pot tidak bisa digeser** → enkripsi belum berhasil dijalankan.
+- **Lemari tidak bisa dibuka** → kunci belum diambil dari bawah pot.
 
-Alasannya: Pak Dedi mengaku pulang pukul 21.00, tapi kartu akses teknisinya sendiri tercatat tap masuk
-pukul 23.40 — tujuh menit sebelum sosok hitam itu membawa tas besar keluar lewat kamera. Nayla sendiri
-yang mengenkripsi pesannya, supaya penguntitnya tidak bisa membaca. Rian sudah di kos dengan dua saksi
-sekos, Sinta terekam CCTV perpustakaan lalu keluar gerbang.
-
-Catatan: pot **tidak bisa diperiksa sama sekali** sebelum sandi dipecahkan — tanda interaksinya baru muncul setelah pesan terbaca. Jadi matematikanya wajib dikerjakan dulu.
+---
 
 ## Poin yang bisa dijelaskan waktu presentasi
 
-- **Kenapa dua lapis (atau tiga)?** Satu fungsi saja tidak cukup — pesan dienkripsi berlapis: hasil `g` dienkripsi lagi oleh `f`. Itulah **komposisi fungsi** `(f ∘ g)(x)`.
-- **Kenapa urutan invers dibalik?** Yang dipasang terakhir harus dibuka duluan. `c = f(g(x))` dibuka dengan `f⁻¹` dulu, baru `g⁻¹`. Sama seperti kaos dalam lalu kemeja — dibukanya kemeja dulu. Untuk tiga lapis: `f⁻¹ → g⁻¹ → h⁻¹`.
-- **Kenapa ada `mod 26`?** Huruf cuma 26. Kalau hasil fungsinya 45, kita bungkus lagi ke rentang 1–26: 45 − 26 = 19. Hasil 0 ditulis 26 karena tidak ada huruf ke-0.
-- **Kenapa koefisien harus koprima dengan 26?** Agar fungsi punya invers. Karena itu dipakai 3, 5, 7 — bukan 2 atau 13. Kalau koefisiennya 2, dua huruf berbeda bisa menghasilkan cipher yang sama dan pesan tidak bisa dibalik.
-- **HARD: bagaimana menemukan fungsi yang hilang?** Dari sifat komposisi: `(f ∘ g)(x) = f(g(x))`. Kalau `f` diketahui, `g` bisa "diekstrak" dengan membalik `f` — persis materi menentukan fungsi kanan/kiri.
-- **Kenapa sandinya menunjuk ke pot, bukan langsung ke lemari?** Kalau sandinya "lemari biru", pemain bisa langsung buka lemari tanpa menyelesaikan apa pun. Dua langkah (pot → kunci → lemari) memaksa pemain menyelesaikan dekripsi dulu.
+- **Kenapa berlapis?** Hasil `g` dienkripsi lagi oleh `f` — itulah komposisi `(f ∘ g)(x)`.
+- **Kenapa urutan penting?** `f(g(x))` dan `g(f(x))` memberi hasil berbeda. Alat menolak kalau
+  urutannya salah, jadi siswa melihat langsung akibatnya, bukan cuma menghafal rumus.
+- **Kenapa ada `mod 26`?** Huruf cuma 26. Hasil 45 dibungkus lagi ke 1–26 → 19. Hasil 0 ditulis 26.
+- **Kenapa koefisien harus koprima dengan 26?** Agar fungsinya punya invers. Karena itu dipakai
+  3, 5, 7 — bukan 2 atau 13.
+- **Kenapa sandi menunjuk pot, bukan langsung lemari?** Supaya matematikanya jadi gerbang wajib,
+  bukan opsional. Tanpa enkripsi berhasil, pot tidak bisa digeser.
 
-## Catatan teknis (kalau ditanya)
+---
 
-Huruf diubah ke angka dengan A=1, B=2, … Z=26. Cipherteks dihitung otomatis dari plainteks lewat fungsi-fungsinya (lihat `DIFFS` di `game.js`), dan diverifikasi dua arah oleh `node _selftest.js` — enkripsi dan rantai dekripsi dijamin saling mengembalikan.
+## Catatan teknis
+
+Huruf diubah ke angka dengan A=1, B=2, … Z=26. Sandi dihitung otomatis dari pesan lewat
+fungsi-fungsi di blok `DIFFS` (`game.js`), dan `node _selftest.js` memverifikasi bahwa hasil
+alat selalu cocok dengan sandi kasus, urutan terbalik selalu ditolak, dan koefisien selalu
+koprima dengan 26.
+
+---
+
+## Kredit
+
+Tugas Matematika — Fungsi Komposisi & Fungsi Invers
+**XI PPLG 4 · SMK Telkom Purwokerto**
