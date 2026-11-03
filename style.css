@@ -376,6 +376,39 @@ html, body {
   from { transform: scale(.7); opacity: 0; }
   to   { transform: scale(1);  opacity: 1; }
 }
+
+/* badge penjaga — hanya muncul di mode yang ada patrolinya */
+.guard-badge {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  color: #cddcef;
+  background: rgba(29,47,77,.85);
+  border: 1px solid #2a456d;
+  padding: 5px 11px 5px 9px;
+}
+.guard-badge.show { display: inline-flex; }
+.guard-badge::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #5a93d6;
+  box-shadow: 0 0 6px rgba(90,147,214,.9);
+  animation: guardPulse 1.6s ease-in-out infinite;
+}
+.guard-badge.alert {
+  color: #ffd0c8;
+  background: rgba(90,32,28,.85);
+  border-color: #7a3a34;
+}
+.guard-badge.alert::before { background: var(--red); box-shadow: 0 0 8px rgba(232,86,74,.95); }
+@keyframes guardPulse {
+  0%, 100% { opacity: .45; }
+  50%      { opacity: 1; }
+}
 .p-top .score { margin-left: auto; }
 .score { font-size: 11px; letter-spacing: .18em; color: var(--dim); }
 .score b { color: var(--amber); font-size: 17px; letter-spacing: .04em; margin-left: 6px; }

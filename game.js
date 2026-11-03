@@ -63,22 +63,25 @@
       id: 'easy', label: 'EASY',
       layers: [ { a: 3, b: 7 }, { a: 1, b: 5 } ],
       clueCount: 2,
+      guards: 0,
       confirm: 'Mode EASY \u2014 pesan Nayla dienkripsi dua lapis. Cari pesannya dan kuncinya di lab, ' +
-               'lalu buka sandinya dengan alat dekripsi di komputer guru.'
+               'lalu buka sandinya dengan alat dekripsi di komputer guru. Tidak ada penjaga berpatroli.'
     },
     normal: {
       id: 'normal', label: 'NORMAL',
       layers: [ { a: 3, b: 7 }, { a: 1, b: 5 }, { a: 1, b: -6 } ],
       clueCount: 2,
-      confirm: 'Mode NORMAL \u2014 tiga lapis komposisi fungsi. Kuncinya lebih panjang, ' +
-               'tapi alatnya tetap satu.'
+      guards: 1,
+      confirm: 'Mode NORMAL \u2014 tiga lapis komposisi fungsi, plus SATU penjaga berpatroli dengan lampu. ' +
+               'Kalau kena sorotnya, kamu diantar balik ke pintu masuk dan kehilangan poin.'
     },
     hard: {
       id: 'hard', label: 'HARD',
       layers: [ { a: 5, b: 2 }, { a: 3, b: 3 }, { a: 1, b: -4 } ],
       clueCount: 3,
-      confirm: 'Mode HARD \u2014 kuncinya disobek jadi dua bagian dan disimpan terpisah. ' +
-               'Kamu harus menemukan pesannya plus kedua sobekan kunci sebelum alat bisa jalan.'
+      guards: 2,
+      confirm: 'Mode HARD \u2014 kuncinya disobek jadi dua bagian dan disimpan terpisah, plus DUA penjaga ' +
+               'berpatroli dengan sorot lampu yang lebih lebar dan lebih cepat. Jangan sampai ketahuan.'
     }
   };
 
@@ -124,7 +127,11 @@
     for (var i = 0; i < d.layers.length; i++) {
       layers.push({ name: FN_NAMES[i], a: d.layers[i].a, b: d.layers[i].b, inv: ainv(d.layers[i].a) });
     }
-    var plain = pickOne((CUR && CUR.messages) || MESSAGES);
+    // pesan dipilih stabil per kasus (bukan acak tiap reset, dan sama di semua mode)
+    // supaya sandi tidak berubah saat pemain mengulang kasus atau ganti tingkat
+    var msgs = (CUR && CUR.messages) || MESSAGES;
+    var seed = (CUR ? CUR.id.charCodeAt(1) : 0) % msgs.length;
+    var plain = msgs[seed];
 
     // enkripsi: lapis paling dalam dulu (ujung array) ke terluar (awal array)
     var cipher = '';
@@ -200,6 +207,33 @@
         }
       }
     }
+    return g;
+  }
+
+  /* ---------------------------------------------------------
+     DENAH RUANGAN — lantai dibagi jadi beberapa ruang + lorong
+     rooms: [{c,r,w,h}]  (koordinat tile)
+     doors: [{c,r,w,h}]  (lubang penghubung; ditembus di dinding)
+     corridors: [{c,r,w,h}] (lorong; lantainya tetap, bukan ruangan)
+     --------------------------------------------------------- */
+  function makeFloorPlan(w, h, rooms, doors, corridors) {
+    var g = [];
+    // mulai dari SEMUA dinding
+    for (var r = 0; r < h; r++) {
+      var row = [];
+      for (var c = 0; c < w; c++) row.push(1);
+      g.push(row);
+    }
+    function carve(rect) {
+      for (var rr = rect.r; rr < rect.r + rect.h; rr++) {
+        for (var cc = rect.c; cc < rect.c + rect.w; cc++) {
+          if (rr > 0 && rr < h - 1 && cc > 0 && cc < w - 1) g[rr][cc] = 0;
+        }
+      }
+    }
+    for (var i = 0; i < rooms.length; i++) carve(rooms[i]);
+    for (var j = 0; j < corridors.length; j++) carve(corridors[j]);
+    for (var k = 0; k < doors.length; k++) carve(doors[k]);
     return g;
   }
 
@@ -444,42 +478,54 @@
 
   /* ---------- lantai & dinding ---------- */
 
+  /* ---------- lantai & dinding: kontras ditegaskan supaya denah ruangan kebaca ---------- */
   function labFloor(c, r, x, y) {
-    R(x, y, T, T, FLOOR_SHADE[(c * 7 + r * 13) % 3]);
-    R(x, y, T, 1, 'rgba(255,255,255,.018)');
-    if ((c + r) % 2 === 0) R(x + 7, y + 7, 2, 2, 'rgba(255,255,255,.03)');
+    // lantai: gelap, rata, ubin besar
+    R(x, y, T, T, ((c + r) % 2) ? '#141a22' : '#171d26');
+    R(x, y, T, 1, 'rgba(140,180,220,.05)');
+    R(x, y, 1, T, 'rgba(0,0,0,.35)');
   }
 
-  function labWall(c, r, x, y) { drawWallTile(c, r, x, y); }
+  function labWall(c, r, x, y) {
+    // dinding: terang, bata, jelas beda dari lantai
+    R(x, y, T, T, '#3a4452');
+    R(x, y, T, 2, '#4e5a6b');            // sorot atas
+    R(x, y + T - 3, T, 3, '#232b36');    // bayangan bawah
+    // pola bata
+    var off = (r % 2) ? 8 : 0;
+    R(x + off, y + 6, 7, 1, 'rgba(20,26,34,.55)');
+    R(x + ((off + 8) % 16), y + 12, 7, 1, 'rgba(20,26,34,.45)');
+    R(x, y + 6, 1, 10, 'rgba(20,26,34,.30)');
+    R(x + T - 1, y + 6, 1, 10, 'rgba(20,26,34,.30)');
+  }
 
   function libFloor(c, r, x, y) {
-    R(x, y, T, T, (r % 2) ? '#2a2018' : '#2f2419');
-    R(x, y, T, 1, 'rgba(255,255,255,.022)');
-    R(x, y, 1, T, 'rgba(0,0,0,.20)');
-    if ((c * 3 + r) % 4 === 0) R(x + 3, y + 6, 9, 1, 'rgba(0,0,0,.16)');
-    if ((c + r * 5) % 7 === 0) R(x + 11, y + 2, 1, 6, 'rgba(0,0,0,.14)');
+    R(x, y, T, T, (r % 2) ? '#1e1710' : '#241c14');
+    R(x, y, T, 1, 'rgba(210,180,130,.05)');
+    R(x, y, 1, T, 'rgba(0,0,0,.30)');
   }
 
   function srvFloor(c, r, x, y) {
-    R(x, y, T, T, ((c + r) % 2) ? '#1b2129' : '#1e242d');
-    R(x, y, T, 1, 'rgba(120,160,200,.10)');
-    R(x, y, 1, T, 'rgba(120,160,200,.08)');
-    R(x + 6, y + 6, 4, 4, 'rgba(0,0,0,.35)');
-    R(x + 7, y + 7, 2, 2, 'rgba(120,160,200,.10)');
+    R(x, y, T, T, ((c + r) % 2) ? '#12171e' : '#151b23');
+    R(x, y, T, 1, 'rgba(120,160,200,.07)');
+    R(x, y, 1, T, 'rgba(0,0,0,.30)');
   }
 
   function libWall(c, r, x, y) {
-    R(x, y, T, T, '#241c14');
-    R(x, y, T, 1, 'rgba(255,255,255,.03)');
-    if (r === 2) R(x, y + T - 3, T, 3, '#3a2c1e');
-    if ((c * 5 + r * 3) % 6 === 0) R(x + 4, y + 5, 6, 2, 'rgba(0,0,0,.22)');
+    R(x, y, T, T, '#4a3826');
+    R(x, y, T, 2, '#5f4a33');
+    R(x, y + T - 3, T, 3, '#2a1f14');
+    var off = (r % 2) ? 8 : 0;
+    R(x + off, y + 6, 7, 1, 'rgba(26,18,10,.55)');
+    R(x + ((off + 8) % 16), y + 12, 7, 1, 'rgba(26,18,10,.45)');
   }
 
   function srvWall(c, r, x, y) {
-    R(x, y, T, T, '#1a2028');
-    R(x, y, T, 1, 'rgba(120,160,200,.06)');
-    if (r === 2) R(x, y + T - 3, T, 3, '#2b333d');
-    if (c % 3 === 0) R(x + 6, y + 4, 2, 2, 'rgba(120,160,200,.10)');
+    R(x, y, T, T, '#2b333d');
+    R(x, y, T, 2, '#3d4854');
+    R(x, y + T - 3, T, 3, '#171d24');
+    if (c % 2 === 0) R(x + 2, y + 5, 12, 1, 'rgba(150,190,230,.10)');
+    if (c % 2 !== 0) R(x + 2, y + 11, 12, 1, 'rgba(150,190,230,.07)');
   }
 
   /* ---------- dekorasi dinding per kasus ---------- */
@@ -566,24 +612,105 @@
 
   function propsLab() {
     var list = [];
-    list.push({ y: 96, fn: drawTeacherDesk });
-    list.push({ y: 96, fn: drawPrinterTable });
-    list.push({ y: 96, fn: drawCabinet });
-    list.push({ y: 128, fn: drawBookshelf });
-    list.push({ y: 126, fn: drawBin });
-    list.push({ y: 212, fn: drawDispenser });
-    list.push({ y: 256, fn: drawPlant });
-    list.push({ y: 179, fn: drawMop });
-    var deskCols = [4, 9, 14, 19];
-    for (var i = 0; i < deskCols.length; i++) {
-      (function (col) {
-        list.push({ y: 176, fn: function () { drawStudentDesk(col * T, 160); } });
-        list.push({ y: 224, fn: function () { drawStudentDesk(col * T, 208); } });
-        list.push({ y: 186, fn: function () { drawChair(col * T + 10, 172); } });
-        list.push({ y: 234, fn: function () { drawChair(col * T + 10, 220); } });
-      })(deskCols[i]);
+
+    /* ===== LAB KOMPUTER 2 (kiri atas: c3-14, r4-10) ===== */
+    list.push({ y: 96,  fn: function () { drawDeskTop(56, 72, 96); } });          // meja guru
+    list.push({ y: 96,  fn: function () { drawMonitor(76, 62, 40, 26); } });
+    list.push({ y: 96,  fn: function () { drawChair(140, 84); } });
+    list.push({ y: 120, fn: function () { drawBoard(); } });                      // papan tulis (sudah digambar via drawBoard global)
+    list.push({ y: 136, fn: function () { drawBookshelf(); } });
+    list.push({ y: 150, fn: function () { drawBin(); } });
+    // deret meja siswa 2 baris
+    var labDesks = [[56, 140], [120, 140], [56, 176], [120, 176]];
+    for (var i = 0; i < labDesks.length; i++) {
+      (function (dx, dy) {
+        list.push({ y: dy + 16, fn: function () { drawStudentDesk(dx, dy); } });
+        list.push({ y: dy + 26, fn: function () { drawChair(dx + 10, dy + 16); } });
+      })(labDesks[i][0], labDesks[i][1]);
     }
-    list.push({ y: 288, fn: drawDoor });
+
+    /* ===== RUANG GURU (kanan atas: c20-30, r4-10) ===== */
+    list.push({ y: 100, fn: function () { drawPrinterTable(); } });
+    list.push({ y: 140, fn: function () { drawCabinet(); } });
+    list.push({ y: 118, fn: function () { drawBookshelf(); } });
+    list.push({ y: 108, fn: function () { drawCorkBoard(); } });
+
+    /* ===== GUDANG (kiri bawah: c3-11, r15-20) ===== */
+    list.push({ y: 300, fn: function () { drawPlant(); } });
+    list.push({ y: 286, fn: function () { drawDispenser(); } });
+    list.push({ y: 300, fn: function () { drawMop(); } });
+
+    /* ===== RUANG ISTIRAHAT (kanan bawah: c20-30, r15-20) ===== */
+    list.push({ y: 296, fn: function () { drawStudentDesk(328, 272); } });
+    list.push({ y: 296, fn: function () { drawStudentDesk(408, 272); } });
+    list.push({ y: 300, fn: function () { drawRug(); } });
+
+    /* ===== lorong: kabel lantai ===== */
+    list.push({ y: 200, fn: function () { drawCable(150, 196, 90); } });
+
+    list.push({ y: 360, fn: drawDoor });
+    return list;
+  }
+
+  /* ---------- props KASUS 2: ruang guru / rapat / arsip / pantry ---------- */
+  function propsTeacherRoom() {
+    var list = [];
+    /* RUANG GURU (kiri atas) — TKP */
+    list.push({ y: 100, fn: function () { drawDeskTop(56, 80, 96); } });
+    list.push({ y: 100, fn: function () { drawMonitor(76, 70, 40, 24); } });
+    list.push({ y: 108, fn: function () { drawChair(120, 92); } });
+    list.push({ y: 76,  fn: function () { drawBoard(); } });
+    list.push({ y: 156, fn: function () { drawBin(); } });
+
+    /* RUANG RAPAT (kanan atas) */
+    list.push({ y: 104, fn: function () { drawDeskTop(340, 88, 140); } });
+    list.push({ y: 130, fn: function () { drawChair(360, 112); } });
+    list.push({ y: 130, fn: function () { drawChair(400, 112); } });
+    list.push({ y: 130, fn: function () { drawChair(440, 112); } });
+    list.push({ y: 96,  fn: function () { drawCorkBoard(); } });
+    list.push({ y: 104, fn: function () { drawPrinterTable(); } });
+
+    /* ARSIP (kiri bawah) */
+    list.push({ y: 300, fn: function () { drawBookshelf(); } });
+    list.push({ y: 300, fn: function () { drawCabinet(); } });
+
+    /* PANTRY (kanan bawah) */
+    list.push({ y: 300, fn: function () { drawDispenser(); } });
+    list.push({ y: 292, fn: function () { drawCabinet(); } });
+    list.push({ y: 300, fn: function () { drawPlant(); } });
+    list.push({ y: 288, fn: function () { drawDeskTop(432, 256, 72); } });
+
+    /* lorong */
+    list.push({ y: 220, fn: function () { drawRug(); } });
+    list.push({ y: 416, fn: function () { drawDoor(); } });
+    return list;
+  }
+
+  /* ---------- props KASUS 3: server / panel / gudang / kontrol ---------- */
+  function propsServerFire() {
+    var list = [];
+    /* RUANG SERVER UTAMA (kiri atas) */
+    list.push({ y: 120, fn: function () { drawServerRack(48, 56, 48, 64); } });
+    list.push({ y: 120, fn: function () { drawServerRack(144, 56, 48, 64); } });
+    list.push({ y: 180, fn: function () { drawServerRack(48, 120, 48, 64); } });
+    list.push({ y: 180, fn: function () { drawServerRack(144, 120, 48, 64); } });
+    list.push({ y: 176, fn: function () { drawTerminalDesk(96, 152, 80); } });
+
+    /* RUANG PANEL (kanan atas) */
+    list.push({ y: 110, fn: function () { drawPanelBox(416, 80, 32, 32); } });
+    list.push({ y: 110, fn: function () { drawCoolingUnit(496, 56, 32, 48); } });
+    list.push({ y: 152, fn: function () { drawBin(); } });
+
+    /* GUDANG (kiri bawah) */
+    list.push({ y: 320, fn: function () { drawServerRack(48, 280, 32, 48); } });
+    list.push({ y: 320, fn: function () { drawCabinet(); } });
+
+    /* RUANG KONTROL (kanan bawah) */
+    list.push({ y: 320, fn: function () { drawSafeBox(416, 288, 48, 40); } });
+    list.push({ y: 304, fn: function () { drawTerminalDesk(368, 272, 80); } });
+    list.push({ y: 320, fn: function () { drawCabinet(); } });
+
+    list.push({ y: 432, fn: function () { drawDoor(); } });
     return list;
   }
 
@@ -645,17 +772,32 @@
     {
       id: 'c1', no: 'CASE FILE #01', title: 'Rekaman 23.47',
       place: 'LAB KOMPUTER 2', cam: 'CAM 02', loc: 'KORIDOR LANTAI 2',
-      mapW: 28, mapH: 18, spawn: { x: 216, y: 240 },
+      mapW: 34, mapH: 24, spawn: { x: 264, y: 344 },
       floor: labFloor, wall: labWall, decor: decorLab, props: propsLab,
-      walls: [
-        [11, 5, 13, 6], [22, 3, 23, 5], [20, 4, 21, 5], [2, 4, 3, 7],
-        [24, 12, 24, 13], [16, 7, 16, 7], [25, 14, 25, 15],
-        [4, 10, 5, 10], [9, 10, 10, 10], [14, 10, 15, 10], [19, 10, 20, 10],
-        [4, 13, 5, 13], [9, 13, 10, 13], [14, 13, 15, 13], [19, 13, 20, 13]
-      ],
+      // denah: lorong berbentuk T + 4 ruangan (lab utama, ruang guru, gudang, ruang istirahat)
+      plan: {
+        rooms: [
+          { c: 3,  r: 4,  w: 12, h: 7 },    // LAB KOMPUTER 2 (kiri atas)
+          { c: 20, r: 4,  w: 11, h: 7 },    // RUANG GURU (kanan atas)
+          { c: 3,  r: 15, w: 9,  h: 6 },    // GUDANG (kiri bawah)
+          { c: 20, r: 15, w: 11, h: 6 }     // RUANG ISTIRAHAT (kanan bawah)
+        ],
+        corridors: [
+          { c: 3,  r: 12, w: 28, h: 2 },    // lorong horizontal tengah
+          { c: 15, r: 4,  w: 4,  h: 10 },   // lorong vertikal tengah-atas
+          { c: 15, r: 15, w: 4,  h: 7 }     // lorong vertikal tengah-bawah
+        ],
+        doors: [
+          { c: 8,  r: 11, w: 2, h: 1 },     // lab -> lorong
+          { c: 24, r: 11, w: 2, h: 1 },     // ruang guru -> lorong
+          { c: 7,  r: 14, w: 2, h: 1 },     // gudang -> lorong
+          { c: 24, r: 14, w: 2, h: 1 },     // istirahat -> lorong
+          { c: 16, r: 3,  w: 2, h: 1 }      // lorong atas (buntu / pintu darurat)
+        ]
+      },
       lights: [
-        { x: 96, y: 88, r: 86 }, { x: 216, y: 88, r: 92 },
-        { x: 336, y: 88, r: 86 }, { x: 216, y: 208, r: 104 }
+        { x: 120, y: 100, r: 90 }, { x: 400, y: 100, r: 90 },
+        { x: 264, y: 200, r: 110 }, { x: 120, y: 290, r: 80 }, { x: 400, y: 290, r: 80 }
       ],
       messages: ['KUNCI DI POT', 'KUNCI LEMARI DI POT', 'AMBIL KUNCI DI POT', 'KUNCI ARSIP DI POT', 'KUNCI ADA DI POT'],
       suspects: [
@@ -687,36 +829,41 @@
         ]
       },
       interactables: [
-        { id: 'monitor',  x: 200, y: 118, range: 34, label: 'Pakai alat dekripsi', title: 'KOMPUTER GURU' },
-        { id: 'papan',    x: 200, y: 62,  range: 36, label: 'Periksa papan tulis',  title: 'PAPAN TULIS',
+        // --- LAB KOMPUTER 2 (kiri atas, c3-14 r4-10) ---
+        { id: 'monitor',  x: 120, y: 92,  range: 34, label: 'Pakai alat dekripsi', title: 'KOMPUTER GURU' },
+        { id: 'papan',    x: 168, y: 68,  range: 34, label: 'Periksa papan tulis',  title: 'PAPAN TULIS',
           flavor: 'Sisa materi jaringan minggu lalu. Ada tulisan "praktek jumat" yang sudah setengah terhapus.' },
-        { id: 'sampah',   x: 263, y: 132, range: 30, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
+        { id: 'sampah',   x: 196, y: 140, range: 30, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
           flavor: 'Bungkus snack, sobekan kertas tugas, dan satu gelas plastik. Tidak ada yang berguna.' },
-        { id: 'rak',      x: 48,  y: 110, range: 36, label: 'Periksa rak buku',      title: 'RAK BUKU',
-          flavor: 'Buku manual jaringan berdebu. Satu slot kosong, tapi lapisan debunya rata \u2014 sudah lama.' },
-        { id: 'printer',  x: 336, y: 100, range: 32, label: 'Periksa printer',       title: 'PRINTER',
-          flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering dan menguning.' },
-        { id: 'dispenser',x: 392, y: 214, range: 30, label: 'Periksa dispenser',     title: 'DISPENSER',
-          flavor: 'Galon hampir habis. Cuma tetesan air di lantai, bukan jejak kaki.' },
-        { id: 'meja1',    x: 80,  y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 1',
+        { id: 'meja1',    x: 72,  y: 152, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 1',
           flavor: 'Ada tulisan "JANGAN DUDUK SINI" pakai tip-ex. Laci kosong.' },
-        { id: 'meja2',    x: 160, y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 2',
+        { id: 'meja2',    x: 140, y: 152, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 2',
           flavor: 'Serutan pensil dan satu penghapus karet. Monitor masih menyala di halaman login.' },
-        { id: 'meja3',    x: 240, y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 3',
-          flavor: 'Coretan jadwal piket di permukaan meja. Tidak lebih dari itu.' },
-        { id: 'meja4',    x: 320, y: 186, range: 26, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 4',
-          flavor: 'Kursinya ditarik agak jauh dari meja, seperti ditinggal buru-buru. Tapi tidak ada apa-apa.' },
-        { id: 'jam',      x: 306, y: 28,  range: 42, label: 'Periksa jam dinding',   title: 'JAM DINDING',
-          flavor: 'Jamnya berhenti di 23.12. Baterainya mati sejak lama \u2014 ini bukan petunjuk.' },
-        { id: 'ac',       x: 399, y: 26,  range: 44, label: 'Periksa AC',            title: 'AC',
-          flavor: 'Masih dingin dan berdebu. Filternya belum dibersihkan sejak awal semester.' },
-        { id: 'kabel',    x: 150, y: 240, range: 28, label: 'Periksa kabel lantai',  title: 'KABEL LANTAI',
+        { id: 'kabel',    x: 176, y: 176, range: 28, label: 'Periksa kabel lantai',  title: 'KABEL LANTAI',
           flavor: 'Kabel LAN berserakan. Satu ujung lepas, tapi colokannya memang sudah longgar.' },
-        { id: 'poster',   x: 341, y: 30,  range: 40, label: 'Periksa poster',        title: 'POSTER TATA TERTIB',
+        // --- RUANG GURU (kanan atas, c20-30 r4-10) ---
+        { id: 'printer',  x: 344, y: 84,  range: 32, label: 'Periksa printer',       title: 'PRINTER',
+          flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering dan menguning.' },
+        { id: 'rak',      x: 456, y: 100, range: 34, label: 'Periksa rak buku',      title: 'RAK BUKU',
+          flavor: 'Buku manual jaringan berdebu. Satu slot kosong, tapi lapisan debunya rata \u2014 sudah lama.' },
+        { id: 'jam',      x: 388, y: 60,  range: 40, label: 'Periksa jam dinding',   title: 'JAM DINDING',
+          flavor: 'Jamnya berhenti di 23.12. Baterainya mati sejak lama \u2014 ini bukan petunjuk.' },
+        { id: 'ac',       x: 470, y: 58,  range: 40, label: 'Periksa AC',            title: 'AC',
+          flavor: 'Masih dingin dan berdebu. Filternya belum dibersihkan sejak awal semester.' },
+        { id: 'poster',   x: 340, y: 58,  range: 38, label: 'Periksa poster',        title: 'POSTER TATA TERTIB',
           flavor: 'Sudut bawahnya terkelupas dan lembap. Isinya cuma aturan pemakaian lab.' },
-        { id: 'pot',      x: 404, y: 240, range: 32, label: 'Periksa pot tanaman',   title: 'POT TANAMAN' },
-        { id: 'lemari',   x: 368, y: 110, range: 32, label: 'Buka lemari arsip',     title: 'LEMARI ARSIP' },
-        { id: 'door',     x: 208, y: 276, range: 30, label: 'Pintu keluar',          title: 'PINTU KELUAR' }
+        { id: 'lemari',   x: 448, y: 152, range: 32, label: 'Buka lemari arsip',     title: 'LEMARI ARSIP' },
+        // --- GUDANG (kiri bawah, c3-11 r15-20) ---
+        { id: 'pot',      x: 96,  y: 300, range: 32, label: 'Periksa pot tanaman',   title: 'POT TANAMAN' },
+        { id: 'dispenser',x: 152, y: 272, range: 30, label: 'Periksa dispenser',     title: 'DISPENSER',
+          flavor: 'Galon hampir habis. Cuma tetesan air di lantai, bukan jejak kaki.' },
+        // --- RUANG ISTIRAHAT (kanan bawah, c20-30 r15-20) ---
+        { id: 'meja3',    x: 344, y: 288, range: 28, label: 'Periksa meja',          title: 'MEJA ISTIRAHAT',
+          flavor: 'Coretan jadwal piket di permukaan meja. Tidak lebih dari itu.' },
+        { id: 'meja4',    x: 440, y: 288, range: 28, label: 'Periksa sofa',          title: 'SOFA LUSUH',
+          flavor: 'Bantalnya penyok, seperti baru dipakai tidur. Tidak ada yang tertinggal.' },
+        // --- pintu keluar (lorong bawah) ---
+        { id: 'door',     x: 264, y: 352, range: 32, label: 'Pintu keluar',          title: 'PINTU KELUAR' }
       ],
       clueExclude: { monitor: 1, pot: 1, lemari: 1, door: 1 },
       caps: [
@@ -767,165 +914,191 @@
       }
     },
 
-    /* ================= KASUS 2 — PERPUSTAKAAN ================= */
+    /* ================= KASUS 2 — PEMBUNUHAN DI RUANG GURU ================= */
     {
-      id: 'c2', no: 'CASE FILE #02', title: 'Buku Besar Perpustakaan',
-      place: 'PERPUSTAKAAN', cam: 'CAM 05', loc: 'PERPUSTAKAAN LANTAI 1',
-      mapW: 34, mapH: 22, spawn: { x: 280, y: 316 },
-      floor: libFloor, wall: libWall, decor: decorLib,
-      furniture: FURN_LIB, props: function () { return furnitureProps(FURN_LIB).concat([{ y: 352, fn: function () { drawDoorAt(272, 334); } }]); },
+      id: 'c2', no: 'CASE FILE #02', title: 'Jam Terakhir Bu Ratna',
+      place: 'RUANG GURU', cam: 'CAM 05', loc: 'SAYAP GURU LANTAI 1',
+      mapW: 36, mapH: 26, spawn: { x: 280, y: 384 },
+      floor: libFloor, wall: libWall, decor: decorLib, props: propsTeacherRoom,
+      plan: {
+        rooms: [
+          { c: 3,  r: 4,  w: 11, h: 7 },    // RUANG GURU (kiri atas) - TKP
+          { c: 20, r: 4,  w: 13, h: 7 },    // RUANG RAPAT (kanan atas)
+          { c: 3,  r: 15, w: 8,  h: 7 },    // ARSIP (kiri bawah)
+          { c: 20, r: 15, w: 13, h: 7 }     // PANTRY (kanan bawah)
+        ],
+        corridors: [
+          { c: 3,  r: 12, w: 30, h: 2 },
+          { c: 15, r: 4,  w: 4,  h: 10 },
+          { c: 15, r: 15, w: 4,  h: 8 }
+        ],
+        doors: [
+          { c: 8,  r: 11, w: 2, h: 1 },
+          { c: 26, r: 11, w: 2, h: 1 },
+          { c: 6,  r: 14, w: 2, h: 1 },
+          { c: 26, r: 14, w: 2, h: 1 },
+          { c: 16, r: 3,  w: 2, h: 1 }
+        ]
+      },
       lights: [
-        { x: 120, y: 96, r: 82 }, { x: 260, y: 96, r: 86 }, { x: 400, y: 96, r: 82 },
-        { x: 160, y: 232, r: 92 }, { x: 340, y: 232, r: 92 }
+        { x: 120, y: 100, r: 88 }, { x: 420, y: 100, r: 92 },
+        { x: 280, y: 210, r: 116 }, { x: 110, y: 300, r: 78 }, { x: 420, y: 300, r: 78 }
       ],
-      messages: ['KUNCI DI KERANJANG', 'KUNCI BUKU DI KERANJANG', 'AMBIL DI KERANJANG', 'KUNCI ADA DI KERANJANG'],
+      messages: ['KUNCI DI LEMARI ARSIP', 'KUNCI DI ARSIP', 'KUNCI ADA DI LEMARI ARSIP', 'AMBIL KUNCI DI ARSIP'],
       suspects: [
-        { id: 'ratna',  name: 'Bu Ratna',      role: 'Pustakawan',        initials: 'RT' },
-        { id: 'yoga',   name: 'Yoga Saputra',  role: 'Siswa XII TKJ 1',   initials: 'YS' },
-        { id: 'slamet', name: 'Pak Slamet',    role: 'Petugas Kebersihan', initials: 'SL' }
+        { id: 'ratna',  name: 'Bu Ratna',        role: 'Guru Matematika',      initials: 'RT' },
+        { id: 'yoga',   name: 'Yoga Saputra',    role: 'Siswa XII TKJ 1',      initials: 'YS' },
+        { id: 'slamet', name: 'Pak Slamet',      role: 'Petugas Kebersihan',   initials: 'SL' }
       ],
-      culprit: 'ratna',
+      culprit: 'yoga',
       clueCount: { easy: 3, normal: 3, hard: 4 },
       quest: {
-        tool: 'komputer', toolTitle: 'KOMPUTER PUSTAKAWAN',
+        tool: 'komputer', toolTitle: 'LAPTOP BU RATNA',
         locks: [
-          { at: 'keranjang', need: null, flag: 'key1', anim: true,
-            obj: 'Bongkar keranjang buku', title: 'KERANJANG BUKU',
-            locked: 'Keranjang besi beroda, penuh buku lama yang belum dishelving. Belum ada alasan untuk membongkarnya.',
-            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Keranjang ini kelihatan baru dipindah \u2014 roda-rodanya masih hangat.',
-            action: 'Bongkar keranjang',
-            after: 'Di dasar keranjang, di bawah tumpukan buku bersampul debu, ada <b>kunci kecil</b> bergemerincing.',
+          { at: 'arsip', need: null, flag: 'key1', anim: true,
+            obj: 'Periksa lemari arsip di sayap kiri', title: 'LEMARI ARSIP',
+            locked: 'Lemari arsip logam, terkunci. Tapi pintunya tidak rapat \u2014 ada yang memaksanya.',
+            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Lemari ini memang tidak terkunci sempurna.',
+            action: 'Tarik pintu lemari',
+            after: 'Pintu terbuka. Di rak paling atas, di balik map-map lama, ada <b>kunci kecil</b> dengan label "LOKER GURU".',
             take: 'Ambil kunci',
-            done: 'Keranjang sudah kamu bongkar. Sisanya cuma buku.' },
+            done: 'Lemari arsip sudah kamu periksa. Sisanya cuma map berdebu.' },
           { at: 'loker', need: 'key1', flag: 'key2',
-            obj: 'Buka loker pustakawan', title: 'LOKER PUSTAKAWAN',
-            locked: 'Loker logam dua pintu. Ada gembok kecil di kupingnya.',
+            obj: 'Buka loker guru', title: 'LOKER GURU',
+            locked: 'Baris loker besi di dinding. Satu pintu berlabel "R. RATNA".',
             ready: 'Kunci tadi pas dengan gembok loker.',
-            action: 'Buka gembok',
-            after: 'Di dalam loker: <b>kunci kedua</b> yang lebih panjang, dan sobekan kertas bertulis "brankas \u2014 2 putaran".',
+            action: 'Buka loker',
+            after: 'Di dalam loker: <b>kunci kedua</b> yang lebih panjang, dan satu map bertulis "BERKAS \u2014 JANGAN DIBUKA".',
             take: 'Ambil kunci kedua',
             done: 'Loker sudah kosong. Cuma jas hujan tua di pintu sebelah.' },
           { at: 'brankas', need: 'key2', flag: 'evidence', final: true,
-            obj: 'Buka brankas buku langka', title: 'BRANKAS BUKU LANGKA',
-            locked: 'Brankas besi setinggi pinggang. Lubang kuncinya dua kali lebih besar dari yang tadi.',
+            obj: 'Buka brankas berkas', title: 'BRANKAS BERKAS',
+            locked: 'Brankas besi di balik lemari. Lubang kuncinya dua kali lebih besar dari yang tadi.',
             ready: 'Kunci kedua masuk. Tuasnya berat, tapi berputar.',
             action: 'Buka brankas',
-            after: 'Di dalamnya: <b>tiga buku langka</b> yang dilaporkan hilang, plus buku catatan penjualan dengan nama pembeli dan harga.',
+            after: 'Di dalamnya: <b>berkas nilai yang diubah</b> dan satu surat ancaman bertanda tangan \u2014 bukan tulisan Bu Ratna.',
             take: 'Bawa ke ruang interogasi',
             done: 'Brankas sudah kosong.' }
         ]
       },
       interactables: [
-        { id: 'komputer', x: 232, y: 292, range: 40, label: 'Pakai alat dekripsi', title: 'KOMPUTER PUSTAKAWAN' },
-        { id: 'keranjang',x: 336, y: 100, range: 34, label: 'Periksa keranjang buku', title: 'KERANJANG BUKU' },
-        { id: 'loker',    x: 440, y: 296, range: 36, label: 'Periksa loker',        title: 'LOKER PUSTAKAWAN' },
-        { id: 'brankas',  x: 152, y: 292, range: 34, label: 'Periksa brankas',      title: 'BRANKAS BUKU LANGKA' },
-        { id: 'rakA',     x: 104, y: 66,  range: 46, label: 'Periksa rak atas',     title: 'RAK \u00b7 SASTRA',
-          flavor: 'Novel-novel tebal, punggungnya sudah pudar. Satu buku miring, tapi debunya utuh.' },
-        { id: 'rakB',     x: 248, y: 66,  range: 46, label: 'Periksa rak atas',     title: 'RAK \u00b7 PELAJARAN',
-          flavor: 'Buku paket bersegel plastik. Tidak ada yang pernah dibuka sejak tahun lalu.' },
-        { id: 'rakC',     x: 392, y: 66,  range: 46, label: 'Periksa rak atas',     title: 'RAK \u00b7 REFERENSI',
-          flavor: 'Ensiklopedia dan kamus. Berdebu tebal, tapi tidak ada celah kosong.' },
-        { id: 'rakKiri',  x: 48,  y: 144, range: 44, label: 'Periksa rak samping',  title: 'RAK \u00b7 MAJALAH',
-          flavor: 'Majalah lama dijilid per tahun. Ada sarang laba-laba di sudut atas.' },
-        { id: 'rakKanan', x: 496, y: 144, range: 44, label: 'Periksa rak samping',  title: 'RAK \u00b7 KORAN',
-          flavor: 'Koran bulan lalu, masih terikat tali. Ujung talinya belum dilepas.' },
-        { id: 'rakBawah', x: 56,  y: 312, range: 40, label: 'Periksa rak bawah',    title: 'RAK \u00b7 ARSIP',
-          flavor: 'Map-map skripsi alumni. Lapisan debu paling tebal di perpustakaan.' },
-        { id: 'meja1',    x: 96,  y: 124, range: 28, label: 'Periksa meja baca',    title: 'MEJA BACA \u00b7 1',
-          flavor: 'Lampu bacanya masih menyala. Kursinya kosong, buku tidak ada.' },
-        { id: 'meja2',    x: 192, y: 124, range: 28, label: 'Periksa meja baca',    title: 'MEJA BACA \u00b7 2',
-          flavor: 'Ada bekas gelas di permukaan kayu. Cincin airnya sudah kering.' },
-        { id: 'meja3',    x: 288, y: 124, range: 28, label: 'Periksa meja baca',    title: 'MEJA BACA \u00b7 3',
-          flavor: 'Satu kursi ditarik menghadap dinding. Aneh, tapi tidak mencurigakan.' },
-        { id: 'meja4',    x: 384, y: 124, range: 28, label: 'Periksa meja baca',    title: 'MEJA BACA \u00b7 4',
-          flavor: 'Kosong. Debu di kursinya rata, tidak ada yang duduk di sini malam ini.' },
-        { id: 'meja5',    x: 96,  y: 188, range: 28, label: 'Periksa meja baca',    title: 'MEJA BACA \u00b7 5',
-          flavor: 'Ada pembatas buku tertinggal di sela meja. Halamannya kosong.' },
-        { id: 'meja6',    x: 192, y: 188, range: 28, label: 'Periksa meja baca',    title: 'MEJA BACA \u00b7 6',
-          flavor: 'Lampu baca mati. Tombolnya masih di posisi off.' },
-        { id: 'katalog',  x: 112, y: 292, range: 30, label: 'Periksa katalog kartu', title: 'KATALOG KARTU',
-          flavor: 'Laci-laci kartu katalog. Semua tersusun rapi menurut abjad \u2014 terlalu rapi.' },
-        { id: 'globe',    x: 400, y: 100, range: 28, label: 'Periksa globe',        title: 'GLOBE DUNIA',
-          flavor: 'Globe tua, benua Afrika sudah tergores. Berputar sedikit waktu disentuh.' },
-        { id: 'papan',    x: 208, y: 44,  range: 40, label: 'Periksa papan',        title: 'PAPAN PENGUMUMAN',
-          flavor: 'Jadwal piket dan aturan peminjaman. Sudut kertasnya melengkung karena lembap.' },
-        { id: 'jam',      x: 302, y: 26,  range: 42, label: 'Periksa jam dinding',  title: 'JAM DINDING',
-          flavor: 'Jamnya berdetak normal. Ini jam mekanik, bukan yang bisa dimatikan diam-diam.' },
-        { id: 'ac',       x: 460, y: 26,  range: 46, label: 'Periksa AC',           title: 'AC',
-          flavor: 'Menyala, dingin, dan berdebu. Filter belum dibersihkan sejak lama.' },
-        { id: 'jendela',  x: 95,  y: 44,  range: 52, label: 'Periksa jendela',      title: 'JENDELA TINGGI',
-          flavor: 'Jendela tinggi dengan kait pengaman. Kaitnya masih terkunci dari dalam.' },
-        { id: 'tanaman',  x: 328, y: 296, range: 26, label: 'Periksa tanaman',      title: 'TANAMAN HIAS',
-          flavor: 'Pot tanah liat, daunnya lembap. Tanahnya baru disiram.' },
-        { id: 'sampah',   x: 296, y: 296, range: 26, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
-          flavor: 'Kertas sobek, puntung pensil, dan satu bungkus permen. Tidak ada yang berguna.' },
-        { id: 'dispenser',x: 360, y: 296, range: 26, label: 'Periksa dispenser',    title: 'DISPENSER',
+        // --- RUANG GURU (TKP, kiri atas) ---
+        { id: 'komputer', x: 96,  y: 96,  range: 36, label: 'Pakai alat dekripsi', title: 'LAPTOP BU RATNA' },
+        { id: 'mejaGuru', x: 140, y: 132, range: 30, label: 'Periksa meja korban', title: 'MEJA BU RATNA',
+          flavor: 'Kopi masih setengah, sudah dingin. Kursinya tergeser sedikit ke belakang \u2014 seperti berdiri buru-buru.' },
+        { id: 'papan',    x: 96,  y: 68,  range: 38, label: 'Periksa papan tulis', title: 'PAPAN TULIS',
+          flavor: 'Masih ada tulisan fungsi komposisi dari kelas tadi. Ada satu rumus yang dilingkari dua kali.' },
+        { id: 'jam',      x: 168, y: 64,  range: 40, label: 'Periksa jam dinding', title: 'JAM DINDING',
+          flavor: 'Berhenti di 16.42. Baterainya baru diganti \u2014 ini bukan kebetulan.' },
+        { id: 'kaca',     x: 40,  y: 68,  range: 40, label: 'Periksa jendela',     title: 'JENDELA',
+          flavor: 'Terkunci dari dalam. Kacanya berembun di sisi luar, bukan dalam.' },
+        { id: 'sampah',   x: 176, y: 152, range: 28, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
+          flavor: 'Sobekan kertas, puntung pensil, dan satu gelas plastik kopi yang masih basah.' },
+        // --- RUANG RAPAT (kanan atas) ---
+        { id: 'printer',  x: 360, y: 92,  range: 32, label: 'Periksa printer',     title: 'PRINTER',
+          flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering.' },
+        { id: 'papanRapat',x: 440, y: 68, range: 40, label: 'Periksa papan rapat', title: 'PAPAN RAPAT',
+          flavor: 'Daftar hadir rapat pukul 15.00. Tiga nama, satu tanda tangan terlihat berbeda tintanya.' },
+        { id: 'kursiRapat',x: 400, y: 132, range: 30, label: 'Periksa kursi rapat', title: 'KURSI RAPAT',
+          flavor: 'Enam kursi, semuanya rapi. Tidak ada yang tergeser sejak rapat.' },
+        { id: 'ac',       x: 480, y: 64,  range: 40, label: 'Periksa AC',          title: 'AC',
+          flavor: 'Menyala, dingin. Setelannya 18 derajat \u2014 lebih dingin dari biasanya.' },
+        // --- ARSIP (kiri bawah) ---
+        { id: 'arsip',    x: 72,  y: 300, range: 34, label: 'Periksa lemari arsip', title: 'LEMARI ARSIP' },
+        { id: 'kardus',   x: 140, y: 296, range: 28, label: 'Periksa kardus',      title: 'KARDUS BERKAS',
+          flavor: 'Kardus penuh berkas lama. Debu di atasnya tebal dan tidak terganggu.' },
+        { id: 'rakArsip', x: 48,  y: 272, range: 32, label: 'Periksa rak arsip',   title: 'RAK ARSIP',
+          flavor: 'Map-map per tahun ajaran. Satu slot kosong, tapi debunya rata \u2014 sudah lama kosong.' },
+        // --- PANTRY (kanan bawah) ---
+        { id: 'loker',    x: 400, y: 296, range: 34, label: 'Buka loker guru',     title: 'LOKER GURU' },
+        { id: 'brankas',  x: 480, y: 300, range: 34, label: 'Buka brankas',        title: 'BRANKAS BERKAS' },
+        { id: 'dispenser',x: 340, y: 300, range: 28, label: 'Periksa dispenser',   title: 'DISPENSER',
           flavor: 'Galon masih penuh. Tidak ada tetesan di lantai.' },
-        { id: 'door',     x: 280, y: 338, range: 32, label: 'Pintu keluar',         title: 'PINTU KELUAR' }
+        { id: 'kopi',     x: 456, y: 264, range: 28, label: 'Periksa mesin kopi',  title: 'MESIN KOPI',
+          flavor: 'Saringan kopinya masih lembap. Ada dua cangkir kotor di nampan, bukan satu.' },
+        // --- pintu ---
+        { id: 'door',     x: 280, y: 400, range: 34, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
       ],
-      clueExclude: { komputer: 1, keranjang: 1, loker: 1, brankas: 1, door: 1 },
+      clueExclude: { komputer: 1, arsip: 1, loker: 1, brankas: 1, door: 1 },
       caps: [
-        { t: 1.2,  s: 'Kamera 05 \u2014 perpustakaan, lantai satu.' },
-        { t: 3.4,  s: 'Pukul 22.10 \u2014 rak referensi masih utuh. Semua buku di tempatnya.' },
-        { t: 7.8,  s: 'Pukul 23.02 \u2014 satu sosok lewat, membawa keranjang besi.' },
-        { t: 12.0, s: 'Pukul 23.19 \u2014 tiga buku langka tidak lagi di raknya.' },
-        { t: 16.4, s: 'Yang melapor justru orang yang paling tahu isi rak itu.' },
-        { t: 20.6, s: 'Dan semalam, komputer pustakawan menulis satu pesan terenkripsi.' }
+        { t: 1.2,  s: 'Kamera 05 \u2014 sayap guru, lantai satu.' },
+        { t: 3.6,  s: 'Pukul 16.12 \u2014 Bu Ratna masuk ruang guru sendirian.' },
+        { t: 7.4,  s: 'Pukul 16.38 \u2014 seseorang menyusul. Wajahnya tertutup.' },
+        { t: 11.8, s: 'Pukul 16.42 \u2014 jam dinding berhenti. Tidak ada yang keluar lewat pintu.' },
+        { t: 16.0, s: 'Pukul 16.55 \u2014 orang yang sama keluar. Tangannya membawa map.' },
+        { t: 20.8, s: 'Bu Ratna tidak pernah keluar dari ruangan itu.' }
       ],
       cutScene: cutSceneLib,
-      clockBase: 22 * 3600 + 10 * 60 + 3, clockJumpAt: 7.0, clockJumpTo: 23 * 3600 + 2 * 60 + 41,
+      clockBase: 16 * 3600 + 12 * 60 + 4, clockJumpAt: 7.0, clockJumpTo: 16 * 3600 + 38 * 60 + 51,
       boardCaps: [
-        { t: 1.2,  s: 'Tiga buku langka hilang, raknya rapi \u2014 bukan dibongkar.' },
-        { t: 4.6,  s: 'Yang bisa membuka brankas cuma dua orang. Satu sudah pensiun.' },
-        { t: 9.4,  s: 'Dan laporan kehilangan ditulis sebelum raknya sempat diperiksa.' },
-        { t: 13.8, s: 'Orang yang melapor tahu persis buku mana yang harus dicek.' },
-        { t: 18.6, s: 'Pesan terenkripsinya masih di komputer itu. Aku harus membacanya.' }
+        { t: 1.2,  s: 'Bu Ratna masuk pukul 16.12. Sendirian.' },
+        { t: 4.6,  s: 'Dua puluh enam menit kemudian, seseorang menyusul \u2014 wajahnya tertutup.' },
+        { t: 9.4,  s: 'Jam dinding berhenti 16.42. Tidak ada yang keluar lewat pintu.' },
+        { t: 13.8, s: 'Tapi pukul 16.55, orang yang sama keluar membawa map.' },
+        { t: 18.6, s: 'Dan laptop Bu Ratna masih menyala. Dia sempat menulis sesuatu.' }
       ],
       pins: [
         { x: 128, y: 104, kind: 'wajah', label: 'BU RATNA' },
-        { x: 250, y: 84,  kind: 'buku',  label: '3 BUKU' },
-        { x: 352, y: 130, kind: 'kartu', label: 'BRANKAS' },
-        { x: 208, y: 192, kind: 'lab',   label: 'PERPUS' }
+        { x: 250, y: 84,  kind: 'kartu', label: 'JAM 16.42' },
+        { x: 352, y: 130, kind: 'buku',  label: 'MAP HILANG' },
+        { x: 208, y: 192, kind: 'lab',   label: 'RUANG GURU' }
       ],
       verdict: {
         win: [
-          'Buku catatan itu bukan daftar koleksi \u2014 itu daftar penjualan, lengkap dengan nama dan harga.',
-          'Setiap baris ditulis dengan tangan yang sama. Tangan yang menulis laporan kehilangan.',
-          'Bu Ratna melapor sebelum sempat memeriksa rak. Dia tahu buku mana yang harus dicek.',
-          'Ketiga buku kembali ke raknya. Dan satu nama hilang dari daftar pustakawan.'
+          'Berkas di brankas itu daftar nilai yang diubah \u2014 dan surat ancaman bertanda tangan Yoga.',
+          'Daftar hadir rapat menunjukkan tanda tangannya dipalsukan: tinta berbeda, dan dia tercatat di dua tempat sekaligus.',
+          'Yoga masuk pukul 16.38, empat menit sebelum jam dinding berhenti.',
+          'Bu Ratna sempat menulis pesan terakhirnya sebelum itu. Dia sudah menduga.'
         ],
         lose: [
-          'Alibi orang yang kamu tuduh terbukti. Dia bahkan tidak memegang kunci brankas.',
-          'Sementara itu, tiga buku itu sudah keluar dari kota sejak pagi.',
-          'Kasus ini ditutup sebagai kehilangan biasa.'
+          'Alibi orang yang kamu tuduh terbukti. Dia bahkan tidak ada di gedung saat itu.',
+          'Sementara itu, berkas nilai yang diubah tidak pernah ditemukan.',
+          'Kasus ini ditutup sebagai kecelakaan.'
         ]
       },
       ending: {
         win: {
-          title: 'Kasus Selesai \u2014 Tiga Buku Kembali',
-          text: 'Brankas itu menyimpan tiga buku langka yang dilaporkan hilang, plus buku catatan penjualan bertulis tangan. Tulisan itu identik dengan laporan kehilangan yang masuk pagi harinya \u2014 ditulis Bu Ratna sebelum raknya sempat diperiksa. Dia satu-satunya yang tahu buku mana yang harus dicek, dan satu-satunya yang memegang kunci brankas. Ketiga buku kembali ke rak referensi, dan perpustakaan punya pustakawan baru.'
+          title: 'Kasus Selesai \u2014 Bu Ratna Terbunuh',
+          text: 'Brankas di ruang guru menyimpan daftar nilai yang diubah dan surat ancaman bertanda tangan Yoga Saputra. Daftar hadir rapat menunjukkan tanda tangannya dipalsukan \u2014 tinta berbeda, dan namanya tercatat di dua tempat pada jam yang sama. Dia masuk pukul 16.38, empat menit sebelum jam dinding berhenti. Bu Ratna sempat menulis pesan terakhirnya di laptop sebelum itu: dia sudah menduga ada yang tidak beres dengan nilai kelasnya.'
         },
         lose: {
           title: 'Pelaku Lolos',
-          text: 'Alibi orang yang kamu tuduh terbukti. Tiga buku langka itu sudah keluar dari kota, dan kasusnya ditutup sebagai kehilangan biasa.'
+          text: 'Alibi orang yang kamu tuduh terbukti. Berkas nilai yang diubah tidak pernah ditemukan, dan kasus ini ditutup sebagai kecelakaan.'
         }
       }
     },
 
-    /* ================= KASUS 3 — RUANG SERVER ================= */
+    /* ================= KASUS 3 — PEMBAKARAN SENGAJA ================= */
     {
-      id: 'c3', no: 'CASE FILE #03', title: 'Server Terkunci',
+      id: 'c3', no: 'CASE FILE #03', title: 'Api di Ruang Server',
       place: 'RUANG SERVER', cam: 'CAM 09', loc: 'RUANG SERVER LT. 3',
-      mapW: 40, mapH: 26, spawn: { x: 312, y: 380 },
-      floor: srvFloor, wall: srvWall, decor: decorSrv,
-      furniture: FURN_SRV, props: function () { return furnitureProps(FURN_SRV).concat([{ y: 420, fn: function () { drawDoorAt(304, 398); } }]); },
+      mapW: 42, mapH: 28, spawn: { x: 328, y: 412 },
+      floor: srvFloor, wall: srvWall, decor: decorSrv, props: propsServerFire,
+      plan: {
+        rooms: [
+          { c: 3,  r: 4,  w: 13, h: 8 },    // RUANG SERVER UTAMA (kiri atas) - TKP
+          { c: 22, r: 4,  w: 15, h: 8 },    // RUANG PANEL (kanan atas)
+          { c: 3,  r: 16, w: 10, h: 8 },    // GUDANG PERANGKAT (kiri bawah)
+          { c: 22, r: 16, w: 15, h: 8 }     // RUANG KONTROL (kanan bawah)
+        ],
+        corridors: [
+          { c: 3,  r: 13, w: 34, h: 2 },
+          { c: 17, r: 4,  w: 4,  h: 11 },
+          { c: 17, r: 16, w: 4,  h: 9 }
+        ],
+        doors: [
+          { c: 8,  r: 12, w: 2, h: 1 },
+          { c: 28, r: 12, w: 2, h: 1 },
+          { c: 6,  r: 15, w: 2, h: 1 },
+          { c: 28, r: 15, w: 2, h: 1 },
+          { c: 18, r: 3,  w: 2, h: 1 }
+        ]
+      },
       lights: [
-        { x: 112, y: 96, r: 78 }, { x: 272, y: 96, r: 84 }, { x: 432, y: 96, r: 78 },
-        { x: 112, y: 232, r: 84 }, { x: 320, y: 232, r: 88 }, { x: 512, y: 232, r: 78 },
-        { x: 288, y: 368, r: 96 }
+        { x: 130, y: 100, r: 92 }, { x: 450, y: 100, r: 96 },
+        { x: 328, y: 224, r: 120 }, { x: 110, y: 320, r: 84 }, { x: 450, y: 320, r: 84 }
       ],
-      messages: ['KUNCI DI PANEL', 'KUNCI RAK DI PANEL', 'AMBIL KUNCI DI PANEL', 'KUNCI ADA DI PANEL'],
+      messages: ['KUNCI DI PANEL', 'KUNCI ADA DI PANEL', 'AMBIL KUNCI DI PANEL', 'KUNCI CADANGAN DI PANEL'],
       suspects: [
         { id: 'bagas',  name: 'Mas Bagas',    role: 'Admin Jaringan',  initials: 'BG' },
         { id: 'hendra', name: 'Pak Hendra',   role: 'Guru TKJ',        initials: 'HD' },
@@ -934,143 +1107,129 @@
       culprit: 'hendra',
       clueCount: { easy: 3, normal: 4, hard: 4 },
       quest: {
-        tool: 'terminal', toolTitle: 'TERMINAL ADMIN',
+        tool: 'terminal', toolTitle: 'TERMINAL KONTROL',
         locks: [
           { at: 'panel', need: null, flag: 'key1', anim: true,
-            obj: 'Buka panel listrik', title: 'PANEL LISTRIK',
-            locked: 'Panel listrik di dinding. Bautnya masih rapat, belum ada alasan untuk membukanya.',
-            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Panel ini kelihatan baru dibuka-tutup \u2014 bautnya mengkilap.',
-            action: 'Buka panel',
-            after: 'Di dalam panel, terselip di antara kabel: <b>kunci kartu</b> bertanda "RAK B".',
+            obj: 'Buka panel alarm', title: 'PANEL ALARM',
+            locked: 'Panel alarm di dinding. Bautnya masih rapat \u2014 tapi ada goresan baru di sekelilingnya.',
+            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Panel ini jelas baru dibuka-tutup: bautnya mengkilap, goresannya masih terang.',
+            action: 'Buka panel alarm',
+            after: 'Di dalam panel: kabel sensor yang <b>diputus</b>, dan terselip <b>kunci kartu</b> bertanda "RAK B".',
             take: 'Ambil kunci kartu',
-            done: 'Panel sudah kamu buka. Isinya cuma kabel dan MCB.' },
+            done: 'Panel sudah kamu buka. Kabel sensornya masih terputus.' },
           { at: 'rakB', need: 'key1', flag: 'key2',
             obj: 'Buka rak server B', title: 'RAK SERVER B',
-            locked: 'Rak server terkunci. Pembaca kartunya berkedip merah.',
+            locked: 'Rak server terkunci. Pembaca kartunya berkedip merah \u2014 tidak ada catatan akses.',
             ready: 'Kartu itu pas. Lampu pembaca berubah hijau.',
             action: 'Tempel kartu',
-            after: 'Di dalam rak, di antara dua unit server: <b>kunci tabung</b> dan catatan kecil "cooling \u2014 unit 2".',
+            after: 'Di dalam rak, di antara dua unit server: <b>kunci tabung</b>, dan sisa <b>kain berminyak</b> yang terselip di celah rak.',
             take: 'Ambil kunci tabung',
-            done: 'Rak B sudah terbuka. Servernya masih menyala normal.' },
+            done: 'Rak B sudah terbuka. Servernya hangus di bagian belakang.' },
           { at: 'cooling', need: 'key2', flag: 'key3',
             obj: 'Buka unit pendingin', title: 'UNIT PENDINGIN',
             locked: 'Unit pendingin besar. Baut penutupnya butuh kunci tabung.',
             ready: 'Kunci tabung masuk ke dua baut penutup.',
             action: 'Buka penutup',
-            after: 'Di balik penutup, di sela sirip pendingin: <b>kunci induk</b> dan sobekan kertas "vault \u2014 4 digit".',
+            after: 'Di balik penutup: <b>kunci induk</b>, dan <b>botol akseleran</b> yang disembunyikan di sela sirip pendingin.',
             take: 'Ambil kunci induk',
-            done: 'Unit pendingin sudah kamu tutup lagi. Debu di siripnya tebal.' },
+            done: 'Unit pendingin sudah kamu tutup lagi. Bau bahan bakar masih terasa.' },
           { at: 'vault', need: 'key3', flag: 'evidence', final: true,
             obj: 'Buka vault bukti', title: 'VAULT BUKTI',
             locked: 'Pintu besi setebal dua jari. Ada slot kunci induk di samping dial.',
             ready: 'Kunci induk masuk. Dial berputar, bautnya mundur satu per satu.',
             action: 'Buka vault',
-            after: 'Di dalam vault: <b>dua hard disk</b> berlabel "SOAL UJIAN" dan satu flashdisk berisi rekaman login setelah jam pulang.',
+            after: 'Di dalam vault: <b>log alarm</b> yang dicetak sebelum diputus, dan <b>rekaman CCTV</b> yang sempat disalin. Keduanya menunjuk satu jam: 23.12.',
             take: 'Bawa ke ruang interogasi',
             done: 'Vault sudah kosong.' }
         ]
       },
       interactables: [
-        { id: 'terminal', x: 280, y: 348, range: 40, label: 'Pakai alat dekripsi', title: 'TERMINAL ADMIN' },
-        { id: 'panel',    x: 48,  y: 336, range: 34, label: 'Periksa panel listrik', title: 'PANEL LISTRIK' },
-        { id: 'rakB',     x: 264, y: 208, range: 34, label: 'Periksa rak server B', title: 'RAK SERVER B' },
-        { id: 'cooling',  x: 552, y: 168, range: 36, label: 'Periksa unit pendingin', title: 'UNIT PENDINGIN' },
-        { id: 'vault',    x: 424, y: 356, range: 36, label: 'Periksa vault',        title: 'VAULT BUKTI' },
-        { id: 'rakA',     x: 80,  y: 100, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER A',
-          flavor: 'Delapan unit server, semua lampunya hijau. Tidak ada yang dicabut.' },
-        { id: 'rakC',     x: 144, y: 100, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER C',
-          flavor: 'Kipasnya berisik. Debu di filter tebal, tapi tidak ada yang aneh.' },
-        { id: 'rakD',     x: 208, y: 100, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER D',
-          flavor: 'Satu unit mati total. Lampunya gelap, tapi kabelnya masih terpasang rapi.' },
-        { id: 'rakE',     x: 336, y: 100, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER E',
-          flavor: 'Rak penyimpanan. Semua slot terisi, tidak ada yang kosong.' },
-        { id: 'rakF',     x: 400, y: 100, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER F',
-          flavor: 'Server backup. Jadwal backup terakhir tertulis jam 22.00 \u2014 sesuai jadwal.' },
-        { id: 'rakG',     x: 464, y: 100, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER G',
-          flavor: 'Rak lama, sudah tidak dipakai. Debu di depan pintunya tidak tersentuh.' },
-        { id: 'rakH',     x: 528, y: 100, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER H',
-          flavor: 'Unit switch jaringan. Kabelnya tertata dengan pengikat, tidak satu pun lepas.' },
-        { id: 'rakI',     x: 80,  y: 212, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER I',
-          flavor: 'Server aplikasi. Log-nya penuh, tapi tidak ada error.' },
-        { id: 'rakJ',     x: 144, y: 212, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER J',
-          flavor: 'Rak penyimpanan dingin. Suhunya normal menurut panel.' },
-        { id: 'rakK',     x: 208, y: 212, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER K',
-          flavor: 'Ada goresan di pintunya, seperti pernah dibuka pakai obeng. Tapi goresannya lama.' },
-        { id: 'rakL',     x: 336, y: 212, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER L',
-          flavor: 'Unit kosong, cuma rel dan baut. Tidak ada yang dipasang di sini.' },
-        { id: 'rakM',     x: 400, y: 212, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER M',
-          flavor: 'Server database. Lampu disknya berkedip cepat, seperti sedang menulis sesuatu.' },
-        { id: 'rakN',     x: 464, y: 212, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER N',
-          flavor: 'Rak cadangan. Semua slotnya kosong dan berdebu rata.' },
-        { id: 'rakO',     x: 528, y: 212, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER O',
-          flavor: 'Kabel fiber optik masuk ke sini. Tidak ada yang bisa dicabut tanpa alat.' },
-        { id: 'rakP',     x: 80,  y: 308, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER P',
-          flavor: 'Rak bawah, dekat lantai. Debu paling tebal di sini.' },
-        { id: 'rakQ',     x: 208, y: 308, range: 30, label: 'Periksa rak server',   title: 'RAK SERVER Q',
-          flavor: 'Satu unit masih menyala, padahal seharusnya sudah dimatikan sejak jam 20.00.' },
-        { id: 'kabel',    x: 320, y: 300, range: 28, label: 'Periksa kabel lantai',  title: 'KABEL LANTAI',
-          flavor: 'Kabel daya berserakan di bawah raised floor. Semua masih terpasang.' },
-        { id: 'sensor',   x: 180, y: 40,  range: 44, label: 'Periksa panel sensor',  title: 'PANEL SENSOR',
-          flavor: 'Sensor suhu dan kelembapan. Semua angka di zona aman.' },
-        { id: 'pemadam',  x: 250, y: 40,  range: 40, label: 'Periksa tabung pemadam', title: 'TABUNG PEMADAM',
-          flavor: 'Tabung pemadam ruang server. Segelnya masih utuh, belum pernah dipakai.' },
-        { id: 'jam',      x: 320, y: 26,  range: 44, label: 'Periksa jam digital',   title: 'JAM DIGITAL',
-          flavor: 'Jam digital dinding. Menunjukkan 23.58 \u2014 dan masih berjalan normal.' },
-        { id: 'ac',       x: 560, y: 30,  range: 46, label: 'Periksa AC',            title: 'AC RUANG SERVER',
-          flavor: 'AC presisi, suhunya 18 derajat. Tidak ada yang mengubah setelannya.' },
-        { id: 'cctv',     x: 40,  y: 60,  range: 40, label: 'Periksa kamera CCTV',   title: 'KAMERA CCTV',
-          flavor: 'Kamera 09. Lampu rekamnya menyala, tapi kabelnya tertekuk \u2014 mungkin pernah diputar.' },
-        { id: 'kardus',   x: 470, y: 300, range: 28, label: 'Periksa kardus',        title: 'KARDUS BEKAS',
+        // --- RUANG SERVER UTAMA (TKP, kiri atas) ---
+        { id: 'terminal', x: 112, y: 104, range: 38, label: 'Pakai alat dekripsi', title: 'TERMINAL KONTROL' },
+        { id: 'rakA',     x: 72,  y: 72,  range: 32, label: 'Periksa rak server A', title: 'RAK SERVER A',
+          flavor: 'Delapan unit server, semuanya hangus di sisi belakang. Kerangkanya masih panas.' },
+        { id: 'rakB',     x: 168, y: 76,  range: 34, label: 'Periksa rak server B', title: 'RAK SERVER B' },
+        { id: 'rakC',     x: 72,  y: 136, range: 32, label: 'Periksa rak server C', title: 'RAK SERVER C',
+          flavor: 'Kipasnya meleleh. Debu di filter menghitam \u2014 bukan debu biasa, ini jelaga.' },
+        { id: 'rakD',     x: 168, y: 136, range: 32, label: 'Periksa rak server D', title: 'RAK SERVER D',
+          flavor: 'Satu unit mati total. Kabelnya masih terpasang rapi, tapi konektornya meleleh.' },
+        { id: 'bekas',    x: 128, y: 160, range: 30, label: 'Periksa lantai',       title: 'BEKAS API DI LANTAI',
+          flavor: 'Ada pola menghitam di lantai, membentuk seperti lingkaran. Ini titik api pertama \u2014 bukan dari rak.' },
+        // --- RUANG PANEL (kanan atas) ---
+        { id: 'panel',    x: 440, y: 96,  range: 34, label: 'Periksa panel alarm',  title: 'PANEL ALARM' },
+        { id: 'cooling',  x: 520, y: 76,  range: 34, label: 'Periksa unit pendingin', title: 'UNIT PENDINGIN' },
+        { id: 'sensor',   x: 400, y: 68,  range: 38, label: 'Periksa panel sensor', title: 'PANEL SENSOR',
+          flavor: 'Sensor suhu dan asap. Catatannya berhenti pukul 23.11 \u2014 satu menit sebelum api.' },
+        { id: 'pemadam',  x: 480, y: 136, range: 32, label: 'Periksa tabung pemadam', title: 'TABUNG PEMADAM',
+          flavor: 'Segel tabungnya masih utuh. Tidak pernah dipakai \u2014 padahal ada kebakaran.' },
+        { id: 'jam',      x: 400, y: 136, range: 38, label: 'Periksa jam digital', title: 'JAM DIGITAL',
+          flavor: 'Menunjukkan 23.58, masih berjalan. Ini jam yang tidak bisa dipalsukan.' },
+        // --- GUDANG PERANGKAT (kiri bawah) ---
+        { id: 'kardus',   x: 72,  y: 320, range: 30, label: 'Periksa kardus',      title: 'KARDUS BEKAS',
           flavor: 'Kardus bekas unit server. Sudah dilipat rapi, tidak ada isinya.' },
-        { id: 'tangga',   x: 360, y: 300, range: 28, label: 'Periksa tangga',        title: 'TANGGA LIPAT',
+        { id: 'tangga',   x: 144, y: 320, range: 28, label: 'Periksa tangga',      title: 'TANGGA LIPAT',
           flavor: 'Tangga lipat untuk menjangkau rak atas. Debu di pijakannya tipis \u2014 baru dipakai.' },
-        { id: 'door',     x: 312, y: 404, range: 34, label: 'Pintu keluar',          title: 'PINTU KELUAR' }
+        { id: 'jerigen',  x: 56,  y: 288, range: 30, label: 'Periksa jerigen',     title: 'JERIGEN KOSONG',
+          flavor: 'Jerigen plastik kosong. Tutupnya terbuka, dan baunya menyengat \u2014 bukan air.' },
+        { id: 'rakLama',  x: 152, y: 288, range: 30, label: 'Periksa rak lama',    title: 'RAK LAMA',
+          flavor: 'Rak tua yang sudah tidak dipakai. Debu di depannya tidak tersentuh.' },
+        // --- RUANG KONTROL (kanan bawah) ---
+        { id: 'vault',    x: 440, y: 328, range: 34, label: 'Buka vault',          title: 'VAULT BUKTI' },
+        { id: 'mejaKontrol', x: 400, y: 288, range: 30, label: 'Periksa meja kontrol', title: 'MEJA KONTROL',
+          flavor: 'Monitor pemantauan, semuanya mati. Satu keyboard-nya berlubang bekas terbakar.' },
+        { id: 'cctv',     x: 512, y: 288, range: 34, label: 'Periksa kamera CCTV', title: 'KAMERA CCTV',
+          flavor: 'Kamera 09. Lampu rekamnya mati. Kabelnya tertekuk \u2014 diputar ke dinding sebelum api.' },
+        { id: 'ac',       x: 512, y: 328, range: 34, label: 'Periksa AC',          title: 'AC RUANG SERVER',
+          flavor: 'AC presisi, setelan 18 derajat. Filternya menghitam, sama seperti rak.' },
+        { id: 'kabel',    x: 328, y: 316, range: 28, label: 'Periksa kabel lantai', title: 'KABEL LANTAI',
+          flavor: 'Kabel daya di bawah raised floor. Semua masih terpasang, tidak ada yang dicabut.' },
+        { id: 'door',     x: 328, y: 428, range: 34, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
       ],
       clueExclude: { terminal: 1, panel: 1, rakB: 1, cooling: 1, vault: 1, door: 1 },
       caps: [
         { t: 1.2,  s: 'Kamera 09 \u2014 ruang server, lantai tiga.' },
-        { t: 3.4,  s: 'Pukul 22.04 \u2014 semua rak terkunci. Lampu hijau, tidak ada yang masuk.' },
-        { t: 7.6,  s: 'Pukul 23.12 \u2014 satu sosok berdiri di terminal admin.' },
-        { t: 11.8, s: 'Pukul 23.26 \u2014 dua hard disk dilepas dari rak, lalu pintu ditutup lagi.' },
-        { t: 16.2, s: 'Kuncinya tidak dibawa pergi. Semuanya disembunyikan di dalam ruangan ini.' },
-        { t: 20.8, s: 'File soal ujian sudah dienkripsi. Terminal itu masih menyimpan sandinya.' }
+        { t: 3.4,  s: 'Pukul 23.08 \u2014 semua rak normal. Lampu hijau, suhu stabil.' },
+        { t: 7.6,  s: 'Pukul 23.12 \u2014 satu sosok berdiri di panel alarm. Tangannya di dalam panel.' },
+        { t: 11.8, s: 'Pukul 23.13 \u2014 kabel sensor diputus. Alarm ruangan mati.' },
+        { t: 16.2, s: 'Pukul 23.19 \u2014 api muncul dari lantai, bukan dari rak. Titiknya di tengah ruangan.' },
+        { t: 20.8, s: 'Api tidak berasal dari korsleting. Ada yang menuangkannya.' }
       ],
       cutScene: cutSceneSrv,
-      clockBase: 22 * 3600 + 4 * 60 + 2, clockJumpAt: 7.0, clockJumpTo: 23 * 3600 + 12 * 60 + 26,
+      clockBase: 23 * 3600 + 8 * 60 + 2, clockJumpAt: 7.0, clockJumpTo: 23 * 3600 + 12 * 60 + 26,
       boardCaps: [
-        { t: 1.2,  s: 'Dua hard disk berisi soal ujian hilang dari rak yang terkunci.' },
-        { t: 4.6,  s: 'Tidak ada paksa. Tidak ada alarm. Pintunya dibuka pakai kartu.' },
-        { t: 9.2,  s: 'Cuma tiga orang yang punya kartu untuk rak itu.' },
-        { t: 13.6, s: 'Dan file soalnya sekarang terenkripsi \u2014 dikunci sebelum dibawa.' },
-        { t: 18.4, s: 'Sandinya masih ada di terminal admin. Aku harus membukanya.' }
+        { t: 1.2,  s: 'Api mulai dari lantai, bukan dari rak. Titiknya di tengah ruangan.' },
+        { t: 4.6,  s: 'Tapi alarm tidak berbunyi. Kabel sensornya diputus pukul 23.13.' },
+        { t: 9.2,  s: 'Siapa pun yang memutus itu tahu persis panel mana yang harus dibuka.' },
+        { t: 13.6, s: 'Dan api bukan korsleting \u2014 ada botol akseleran di sela pendingin.' },
+        { t: 18.4, s: 'Ini bukan kecelakaan. Ini pembakaran, dan pelakunya masih di gedung.' }
       ],
       pins: [
         { x: 126, y: 102, kind: 'wajah', label: 'TERSANGKA' },
-        { x: 250, y: 84,  kind: 'tas',   label: '2 HARD DISK' },
-        { x: 352, y: 130, kind: 'kartu', label: 'KARTU RAK' },
-        { x: 208, y: 192, kind: 'lab',   label: 'SERVER' }
+        { x: 250, y: 84,  kind: 'tas',   label: 'API 23.19' },
+        { x: 352, y: 130, kind: 'kartu', label: 'ALARM 23.13' },
+        { x: 208, y: 192, kind: 'lab',   label: 'RUANG SERVER' }
       ],
       verdict: {
         win: [
-          'Rekaman login itu tidak berbohong: kartu rak B dipakai pukul 23.24.',
-          'Pemilik kartu itu mengaku sudah pulang sejak pukul 21.00 \u2014 dan tidak ada yang melihatnya pergi.',
-          'Dua hard disk itu ditemukan di tas kerjanya, masih tersegel dalam plastik antistatis.',
-          'Soal ujian tidak pernah keluar. Dan tidak akan keluar.'
+          'Log alarm yang dicetak sebelum diputus: panel dibuka pukul 23.12 \u2014 bukan dipaksa, tapi dibuka.',
+          'Hanya tiga orang yang tahu urutan kabel di panel itu. Dua sudah pulang lebih awal.',
+          'Botol akseleran di sela pendingin masih berlabel inventaris lab TKJ.',
+          'Pak Hendra memutus alarm, lalu menuangkan bahan bakar. Dia lupa satu hal: log alarm tercetak otomatis.'
         ],
         lose: [
-          'Alibi orang yang kamu tuduh didukung dua saksi. Kartunya tidak pernah dipakai.',
-          'Sementara itu, dua hard disk itu sudah diformat di tempat lain.',
-          'Soal ujian beredar keesokan harinya.'
+          'Alibi orang yang kamu tuduh didukung dua saksi. Dia bahkan tidak ada di lantai tiga.',
+          'Sementara itu, botol akseleran itu sudah hilang dari lokasi.',
+          'Kasus ini ditutup sebagai korsleting listrik.'
         ]
       },
       ending: {
         win: {
-          title: 'Kasus Selesai \u2014 Soal Ujian Aman',
-          text: 'Vault itu menyimpan dua hard disk berlabel "SOAL UJIAN" dan satu flashdisk berisi rekaman login. Kartu rak B dipakai pukul 23.24 \u2014 kartu yang seharusnya sudah dibawa pulang sejak pukul 21.00. Pak Hendra mengaku pulang lebih awal, tapi tidak ada satu pun rekaman yang membenarkannya. Kedua hard disk ditemukan di tas kerjanya, masih tersegel. Soal ujian tidak pernah keluar dari gedung.'
+          title: 'Kasus Selesai \u2014 Pembakaran Terbongkar',
+          text: 'Log alarm yang tercetak sebelum kabelnya diputus menunjukkan panel dibuka pukul 23.12 \u2014 dibuka dengan kunci, bukan dipaksa. Hanya tiga orang yang tahu urutan kabel di panel itu, dan dua di antaranya sudah pulang lebih awal dengan alibi yang kuat. Botol akseleran yang disembunyikan di sela unit pendingin masih berlabel inventaris lab TKJ. Pak Hendra memutus alarm untuk mengelabui penyelidikan, lalu menuangkan bahan bakar ke lantai. Dia lupa satu hal: log alarm tercetak otomatis begitu panel dibuka.'
         },
         lose: {
           title: 'Pelaku Lolos',
-          text: 'Alibi orang yang kamu tuduh didukung dua saksi. Dua hard disk itu diformat di tempat lain, dan soal ujian beredar keesokan harinya.'
+          text: 'Alibi orang yang kamu tuduh didukung dua saksi. Botol akseleran hilang dari lokasi, dan kasus ini ditutup sebagai korsleting listrik.'
         }
       }
     }
@@ -1085,7 +1244,23 @@
     MAP_H = c.mapH;
     WORLD_W = MAP_W * T;
     WORLD_H = MAP_H * T;
-    grid = makeGrid(MAP_W, MAP_H, c.furniture || []);
+    // denah ruangan (lorong + banyak ruangan) atau grid lama
+    if (c.plan) {
+      grid = makeFloorPlan(MAP_W, MAP_H, c.plan.rooms, c.plan.doors, c.plan.corridors);
+    } else {
+      grid = makeGrid(MAP_W, MAP_H, c.furniture || []);
+    }
+    // perabot tetap ditumpuk di atas denah
+    if (c.furniture) {
+      for (var fi = 0; fi < c.furniture.length; fi++) {
+        var d = c.furniture[fi];
+        for (var rr2 = d.r; rr2 < d.r + d.h; rr2++) {
+          for (var cc2 = d.c; cc2 < d.c + d.w; cc2++) {
+            if (grid[rr2] && cc2 >= 0 && cc2 < MAP_W) grid[rr2][cc2] = 2;
+          }
+        }
+      }
+    }
     if (c.walls) {
       for (var i = 0; i < c.walls.length; i++) {
         var q = c.walls[i];
@@ -1217,7 +1392,7 @@
      ========================================================= */
   var state = { collected: {}, score: 1000, found: {}, clueMap: {},
                 decrypted: false, potSlid: false, keyFound: false,
-                flags: {}, caseId: 0,
+                flags: {}, caseId: 0, accused: {},
                 win: false, picked: null };
   var potAnim = 0;   // 0..1 animasi pot digeser
   var player = { x: 216, y: 240, dir: 'down', moving: false, anim: 0 };
@@ -1250,11 +1425,12 @@
   function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
   function shadow(x, y, w, h) { R(x, y, w, h, 'rgba(0,0,0,.30)'); }
 
-  function drawSprite(rows, x, y, flip) {
+  function drawSprite(rows, x, y, flip, pal) {
+    var P = pal || PAL;
     for (var r = 0; r < rows.length; r++) {
       var line = rows[r];
       for (var c = 0; c < line.length; c++) {
-        var col = PAL[line[c]];
+        var col = P[line[c]];
         if (!col) continue;
         ctx.fillStyle = col;
         ctx.fillRect(flip ? (x + line.length - 1 - c) : (x + c), y + r, 1, 1);
@@ -1671,6 +1847,11 @@
     CUR.decor();
 
     var list = CUR.props();
+    for (var gi = 0; gi < guards.length; gi++) {
+      (function (gg) {
+        list.push({ y: gg.y, fn: function () { drawGuard(gg); } });
+      })(guards[gi]);
+    }
     list.push({ y: player.y, fn: function () { drawPlayerShadow(Math.round(player.x), Math.round(player.y)); } });
     list.push({ y: player.y, fn: drawPlayer });
 
@@ -1684,8 +1865,292 @@
   }
 
   /* =========================================================
-     9. GERAK & COLLISION
+     8B. PENJAGA — patroli + sorot lampu (makin sulit per mode)
      ========================================================= */
+  var guards = [];
+  var guardCaught = 0;          // berapa kali ketahuan (buat statistik & ending)
+  var caughtCooldown = 0;       // jeda biar tidak langsung ketahuan lagi
+
+  // rute patroli per kasus — semua titik WAJIB di lorong (grid kosong),
+  // supaya penjaga tidak pernah menembus dinding saat berjalan lurus antar titik
+  var GUARD_ROUTES = {
+    c1: [
+      [{ x: 64,  y: 200 }, { x: 464, y: 200 }],          // lorong horizontal tengah
+      [{ x: 264, y: 200 }, { x: 264, y: 296 }]           // lorong vertikal bawah
+    ],
+    c2: [
+      [{ x: 64,  y: 208 }, { x: 496, y: 208 }],          // lorong horizontal (r12-13)
+      [{ x: 272, y: 96  }, { x: 272, y: 336 }],          // lorong vertikal (c15-18)
+      [{ x: 112, y: 208 }, { x: 112, y: 208 }]           // cadangan: titik diam
+    ],
+    c3: [
+      [{ x: 64,  y: 224 }, { x: 560, y: 224 }],          // lorong horizontal (r13-14)
+      [{ x: 304, y: 96  }, { x: 304, y: 392 }]           // lorong vertikal (c17-20)
+    ]
+  };
+
+  // buang titik rute yang jatuh di tile padat, lalu sambungkan ulang jadi rute aman
+  function sanitizeRoute(pts) {
+    var safe = [];
+    for (var i = 0; i < pts.length; i++) {
+      var tc = Math.floor(pts[i].x / T), tr = Math.floor(pts[i].y / T);
+      if (solidTile(tc, tr)) continue;
+      safe.push(pts[i]);
+    }
+    return safe.length >= 2 ? safe : null;
+  }
+
+  // cari titik acak yang aman di ruangan (fallback kalau rute habis)
+  function randomSafePoint() {
+    for (var tries = 0; tries < 200; tries++) {
+      var tc = 3 + Math.floor(Math.random() * Math.max(1, MAP_W - 6));
+      var tr = 4 + Math.floor(Math.random() * Math.max(1, MAP_H - 8));
+      if (!solidTile(tc, tr)) return { x: tc * T + T / 2, y: tr * T + T / 2 };
+    }
+    return { x: MAP_W * T / 2, y: MAP_H * T / 2 };
+  }
+
+  // konfigurasi per tingkat: jumlah penjaga, kecepatan, sudut sorot, jarak pandang
+  var GUARD_CFG = {
+    easy:   { count: 0, speed: 0,  cone: 0,  range: 0  },
+    normal: { count: 1, speed: 34, cone: 0.42, range: 84 },
+    hard:   { count: 2, speed: 46, cone: 0.58, range: 110 }
+  };
+
+  function guardCfg() { return GUARD_CFG[diff.id] || GUARD_CFG.easy; }
+
+  // bangun jalur aman antar dua titik: bergerak per-sumbu, hanya lewat tile kosong (BFS grid)
+  function pathBetween(ax, ay, bx, by) {
+    var sc = Math.floor(ax / T), sr = Math.floor(ay / T);
+    var ec = Math.floor(bx / T), er = Math.floor(by / T);
+    if (sc === ec && sr === er) return [{ x: bx, y: by }];
+    var key = function (c, r) { return c + ',' + r; };
+    var prev = {}, seen = {}, q = [[sc, sr]];
+    seen[key(sc, sr)] = 1;
+    var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    var found = false;
+    while (q.length) {
+      var cur = q.shift();
+      if (cur[0] === ec && cur[1] === er) { found = true; break; }
+      for (var i = 0; i < dirs.length; i++) {
+        var nc = cur[0] + dirs[i][0], nr = cur[1] + dirs[i][1];
+        var k = key(nc, nr);
+        if (seen[k]) continue;
+        if (nc < 0 || nr < 0 || nc >= MAP_W || nr >= MAP_H) continue;
+        if (grid[nr][nc] !== 0) continue;
+        seen[k] = 1;
+        prev[k] = cur;
+        q.push([nc, nr]);
+      }
+    }
+    if (!found) return null;
+    // rekonstruksi jalur jadi titik-titik world
+    var path = [], node = [ec, er];
+    while (node) {
+      path.unshift({ x: node[0] * T + T / 2, y: node[1] * T + T / 2 });
+      node = prev[key(node[0], node[1])];
+    }
+    path.push({ x: bx, y: by });
+    return path;
+  }
+
+  // gabungkan rute jadi jalur penuh yang aman (tiap segmen lewat BFS)
+  function buildSafeRoute(pts) {
+    if (!pts || pts.length < 2) return null;
+    var full = [{ x: pts[0].x, y: pts[0].y }];
+    for (var i = 1; i < pts.length; i++) {
+      var seg = pathBetween(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+      if (!seg) return null;
+      for (var j = 0; j < seg.length; j++) full.push(seg[j]);
+    }
+    return full.length >= 2 ? full : null;
+  }
+
+  function spawnGuards() {
+    guards = [];
+    var cfg = guardCfg();
+    if (!cfg.count) return;
+    var routes = (CUR && GUARD_ROUTES[CUR.id]) || GUARD_ROUTES.c1;
+    for (var i = 0; i < cfg.count && i < routes.length; i++) {
+      var r = buildSafeRoute(routes[i]);
+      // rute tidak layak -> pakai jalur acak yang aman
+      if (!r) {
+        var p1 = randomSafePoint(), p2 = randomSafePoint();
+        r = buildSafeRoute([p1, p2]) || [p1, p2];
+      }
+      guards.push({
+        pts: r, seg: 0, t: 0, x: r[0].x, y: r[0].y,
+        dir: 1, angle: 0, speed: cfg.speed * (0.85 + i * 0.15),
+        pause: 0, alert: 0
+      });
+    }
+  }
+
+  function updateGuards(dt) {
+    if (!guards.length) return;
+    var cfg = guardCfg();
+    if (caughtCooldown > 0) caughtCooldown -= dt;
+
+    for (var i = 0; i < guards.length; i++) {
+      var g = guards[i];
+
+      // jeda saat sampai di titik
+      if (g.pause > 0) {
+        g.pause -= dt;
+        // saat berhenti, penjaga menoleh (sapu pandangan)
+        g.angle += Math.sin(t0 * 1.6 + i) * dt * 1.5;
+        continue;
+      }
+
+      var a = g.pts[g.seg];
+      var b = g.pts[(g.seg + 1) % g.pts.length];
+      var dx = b.x - a.x, dy = b.y - a.y;
+      var len = Math.hypot(dx, dy) || 1;
+      g.t += (g.speed * dt) / len;
+
+      if (g.t >= 1) {
+        g.t = 0;
+        g.seg = (g.seg + 1) % g.pts.length;
+        g.pause = 0.7 + Math.random() * 0.9;   // berhenti sejenak di tiap titik
+        a = g.pts[g.seg];
+        b = g.pts[(g.seg + 1) % g.pts.length];
+      }
+
+      g.x = a.x + (b.x - a.x) * g.t;
+      g.y = a.y + (b.y - a.y) * g.t;
+      // jangan pernah berdiri di tile padat — kalau iya, lompat ke titik berikutnya
+      if (solidTile(Math.floor(g.x / T), Math.floor(g.y / T))) {
+        g.t = 0;
+        g.seg = (g.seg + 1) % g.pts.length;
+        g.pause = 0.4;
+        continue;
+      }
+      // arah hadap = arah gerak
+      var want = Math.atan2(b.y - a.y, b.x - a.x);
+      var diffA = want - g.angle;
+      while (diffA > Math.PI) diffA -= Math.PI * 2;
+      while (diffA < -Math.PI) diffA += Math.PI * 2;
+      g.angle += diffA * Math.min(1, dt * 6);
+    }
+
+    // deteksi: pemain di dalam kerucut sorot?
+    if (caughtCooldown <= 0 && !dialogOpen && activeScreen === 'scr-play') {
+      for (var j = 0; j < guards.length; j++) {
+        if (guardSees(guards[j], cfg)) { onCaught(guards[j]); break; }
+      }
+    }
+  }
+
+  function guardSees(g, cfg) {
+    var dx = player.x - g.x, dy = player.y - g.y;
+    var dist = Math.hypot(dx, dy);
+    if (dist > cfg.range) return false;
+    var ang = Math.atan2(dy, dx);
+    var d = ang - g.angle;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    if (Math.abs(d) > cfg.cone) return false;
+    // dinding menghalangi pandangan
+    return !sightBlocked(g.x, g.y, player.x, player.y);
+  }
+
+  function sightBlocked(x0, y0, x1, y1) {
+    var steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 8);
+    for (var i = 1; i < steps; i++) {
+      var t = i / steps;
+      var x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
+      if (solidTile(Math.floor(x / T), Math.floor(y / T))) return true;
+    }
+    return false;
+  }
+
+  function onCaught(g) {
+    caughtCooldown = 3.2;
+    guardCaught++;
+    g.alert = 1;
+    var penalty = 120;
+    state.score = Math.max(0, state.score - penalty);
+    updateScore();
+    toast('Ketahuan penjaga \u00b7 \u2212' + penalty + ' poin');
+    // penjaga mengembalikan pemain ke titik masuk
+    var sp = CUR.spawn || { x: 216, y: 240 };
+    player.x = sp.x; player.y = sp.y;
+    cam.x = Math.round(Math.max(0, Math.min(WORLD_W - VW, player.x - VW / 2)));
+    cam.y = Math.round(Math.max(0, Math.min(WORLD_H - VH, player.y - VH / 2)));
+    openDialog('PENJAGA',
+      'Seorang penjaga menghentikannya. <b>"Jam segini masih di sini? Keluar."</b><br>' +
+      'Kamu diantar kembali ke pintu masuk \u2014 dan harus mengulang jalanmu. ' +
+      'Hindari sorot lampunya: <b>berhenti</b> saat lampu mendekat, jangan jalan di depan kerucut cahaya.',
+      [{ label: 'Mengerti', fn: function () { closeDialog(); } }]);
+  }
+
+  // sprite penjaga 16x24 — sama tinggi dengan pemain, dibedakan warna seragamnya
+  var SPR_GUARD_DOWN = [
+    '.....gggggg.....',
+    '....gggggggg....',
+    '...gggggggggg...',
+    '..gggggggggggg..',
+    '.gggggggggggggg.',
+    '....ssssssss....',
+    '....sesssses....',
+    '....ssssssss....',
+    '....ssssssss....',
+    '...uuuuuuuuuu...',
+    '..uuuuuuuuuuuu..',
+    '.uuUuuuuuuuuUuu.',
+    '.uuUuuuuuuuuUuu.',
+    '.uuuuuuuuuuuuuu.',
+    '.uuuuuuuuuuuuuu.',
+    '..uuuuuuuuuuuu..',
+    '..uuuuuuuuuuuu..',
+    '...uuuuuuuuuu...',
+    '...pppppppppp...',
+    '...pppppppppp...',
+    '...pppp..pppp...',
+    '...pppp..pppp...',
+    '...oooo..oooo...',
+    '...oooo..oooo...'
+  ];
+
+  function drawGuard(g) {
+    var x = Math.round(g.x), y = Math.round(g.y);
+    // sorot lampu
+    var cfg = guardCfg();
+    if (cfg.range > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      var gx = x, gy = y - 12;
+      var ex = gx + Math.cos(g.angle) * cfg.range;
+      var ey = gy + Math.sin(g.angle) * cfg.range;
+      var grd = ctx.createLinearGradient(gx, gy, ex, ey);
+      grd.addColorStop(0, 'rgba(255,240,190,.22)');
+      grd.addColorStop(1, 'rgba(255,240,190,.02)');
+      ctx.fillStyle = grd;
+      var px2 = Math.cos(g.angle + Math.PI / 2), py2 = Math.sin(g.angle + Math.PI / 2);
+      var w = cfg.range * 0.30;
+      ctx.beginPath();
+      ctx.moveTo(gx, gy);
+      ctx.lineTo(ex + px2 * w, ey + py2 * w);
+      ctx.lineTo(ex - px2 * w, ey - py2 * w);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    // bayangan kontak
+    ctx.fillStyle = 'rgba(0,0,0,.32)';
+    ctx.fillRect(x - 7, y - 3, 14, 3);
+    // badan penjaga: sprite 16x24, seragam biru tua
+    drawSprite(SPR_GUARD_DOWN, x - 8, y - 24, false, {
+      '.': null,
+      'g': '#16233a', 's': '#e0aa7e', 'e': '#14181f',
+      'u': '#1d2f4d', 'U': '#2a456d',
+      'p': '#0f1620', 'o': '#080d14'
+    });
+    // lampu di tangan
+    var lx = x + Math.cos(g.angle) * 7;
+    var ly = y - 14 + Math.sin(g.angle) * 4;
+    R(lx - 1, ly - 1, 3, 3, '#ffe9b0');
+  }
   function solidTile(c, r) {
     if (c < 0 || r < 0 || c >= MAP_W || r >= MAP_H) return true;
     return grid[r][c] !== 0;
@@ -1725,6 +2190,8 @@
     var sp = 62 * dt;
     if (dx !== 0 && !blocked(player.x + dx * sp, player.y)) player.x += dx * sp;
     if (dy !== 0 && !blocked(player.x, player.y + dy * sp)) player.y += dy * sp;
+
+    updateGuards(dt);
 
     if (state.flags._s_key1 && potAnim < 1) potAnim = Math.min(1, potAnim + dt * 2.6);
 
@@ -1829,6 +2296,18 @@
       return;
     }
     el.innerHTML = 'Interogasi <b>tersangka</b>';
+  }
+
+  function updateGuardHud() {
+    var el = $('guard-badge');
+    if (!el) return;
+    var n = guards.length;
+    if (!n) { el.classList.remove('show'); return; }
+    el.classList.add('show');
+    el.textContent = guardCaught > 0
+      ? 'PENJAGA \u00d7 ' + n + ' \u00b7 KETAHUAN ' + guardCaught
+      : 'PENJAGA \u00d7 ' + n;
+    el.classList.toggle('alert', guardCaught > 0);
   }
 
   function keyCount() {
@@ -2236,13 +2715,22 @@
       icv.addEventListener('mousemove', function (e) {
         var r = icv.getBoundingClientRect();
         if (!r.width) return;
-        ihover = hitSeat((e.clientX - r.left) / r.width * 640, (e.clientY - r.top) / r.height * 360);
+        var h = hitSeat((e.clientX - r.left) / r.width * 640, (e.clientY - r.top) / r.height * 360);
+        // tersangka yang sudah dituduh tidak bisa disorot lagi
+        if (h >= 0 && CASE && CASE.suspects[h] && state.accused && state.accused[CASE.suspects[h].id]) h = -1;
+        ihover = h;
       });
       icv.addEventListener('mouseleave', function () { ihover = -1; });
       icv.addEventListener('click', function (e) {
         var r = icv.getBoundingClientRect();
         var i = hitSeat((e.clientX - r.left) / r.width * 640, (e.clientY - r.top) / r.height * 360);
-        if (i >= 0) chooseSuspect(i);
+        if (i < 0) return;
+        var sp = CASE && CASE.suspects[i];
+        if (sp && state.accused && state.accused[sp.id]) {
+          toast('Orang ini sudah kamu tuduh \u2014 alibinya tidak berubah.');
+          return;
+        }
+        chooseSuspect(i);
       });
     }
     vcv = $('vcv');
@@ -2268,6 +2756,10 @@
   function chooseSuspect(i) {
     var s = CASE.suspects[i];
     if (!s) return;
+    // tersangka yang sudah pernah dituduh tidak bisa dituduh ulang
+    state.accused = state.accused || {};
+    if (state.accused[s.id]) return;
+    state.accused[s.id] = true;
     state.picked = s;
     state.win = (s.id === CASE.culprit);
     if (!state.win) state.score = Math.max(0, state.score - 250);
@@ -2389,16 +2881,22 @@
     for (var n = 0; n < SEATS.length; n++) {
       var sp = CASE && CASE.suspects[n] ? CASE.suspects[n] : null;
       if (!sp) continue;
+      var used = !!(state.accused && state.accused[sp.id]);
       var nm = sp.name.toUpperCase();
       var w = nm.length * 8 + 22;
       var cx2 = SEATS[n].x;
-      var on = n === ihover;
+      var on = n === ihover && !used;
       TR4(cx2 - w / 2, 148, w, 26, '#0d1218');
-      TR4(cx2 - w / 2, 148, w, 1, on ? '#f2b544' : '#2a3444');
-      TR4(cx2 - w / 2, 173, w, 1, on ? '#f2b544' : '#2a3444');
-      TR4(cx2 - w / 2, 148, 1, 26, on ? '#f2b544' : '#2a3444');
-      TR4(cx2 - w / 2 + w - 1, 148, 1, 26, on ? '#f2b544' : '#2a3444');
-      pxText4(nm, cx2 - nm.length * 4, 156, 2, on ? '#f2b544' : '#8d99ab');
+      TR4(cx2 - w / 2, 148, w, 1, used ? '#3a2a2a' : (on ? '#f2b544' : '#2a3444'));
+      TR4(cx2 - w / 2, 173, w, 1, used ? '#3a2a2a' : (on ? '#f2b544' : '#2a3444'));
+      TR4(cx2 - w / 2, 148, 1, 26, used ? '#3a2a2a' : (on ? '#f2b544' : '#2a3444'));
+      TR4(cx2 - w / 2 + w - 1, 148, 1, 26, used ? '#3a2a2a' : (on ? '#f2b544' : '#2a3444'));
+      pxText4(nm, cx2 - nm.length * 4, 156, 2, used ? '#4a4244' : (on ? '#f2b544' : '#8d99ab'));
+      if (used) {
+        // coret: sudah pernah dituduh
+        TR4(cx2 - nm.length * 4 - 2, 163, nm.length * 8 + 4, 2, '#7a3a34');
+        pxText4('SUDAH', cx2 - 8, 178, 1, '#7a3a34');
+      }
     }
 
     // vignette
@@ -2583,12 +3081,17 @@
     state.potSlid = false;
     state.keyFound = false;
     state.flags = {};
+    state.accused = {};
     state.win = false;
     state.picked = null;
     potAnim = 0;
+    guardCaught = 0;
+    caughtCooldown = 0;
     loadCase(state.caseId);
     CASE = buildCase(diff);
     placeClues();
+    spawnGuards();
+    updateGuardHud();
     updateScore();
     updateObjective();
     updateKeyBadge();
@@ -3665,8 +4168,20 @@
     return p2(Math.floor(t / 3600) % 24) + ':' + p2(Math.floor(t / 60) % 60) + ':' + p2(Math.floor(t) % 60);
   }
 
-  var CUT_END = 24.8;
+  var CUT_END_FALLBACK = 24.8;
   var AUTO_DELAY = 1.6;   // jeda setelah caption terakhir selesai sebelum fade otomatis
+
+  // akhir cutscene dihitung dari caption kasus: caption terakhir selesai ngetik + jeda baca
+  function cutEndAt(caps) {
+    if (!caps || !caps.length) return CUT_END_FALLBACK;
+    var last = caps[caps.length - 1];
+    return last.t + last.s.length / 18 + 1.0;
+  }
+  function boardEndAt(caps) {
+    if (!caps || !caps.length) return 22.3;
+    var last = caps[caps.length - 1];
+    return last.t + last.s.length / 18 + 1.0;
+  }
   var CAPS = [
     { t: 1.2,  s: 'Kamera 02 — koridor lantai dua.' },
     { t: 3.6,  s: 'Pukul 23.41 — sosok hitam masuk, tangan kosong.' },
@@ -3685,11 +4200,13 @@
   }
 
   function updateCutDom() {
-    var cap = typeCaption((CUR && CUR.caps) || CAPS, 18, cutTime);
+    var caps = (CUR && CUR.caps) || CAPS;
+    var cap = typeCaption(caps, 18, cutTime);
     $('cut-caption').textContent = cap.txt;
-    $('btn-cut-next').style.display = cutTime > CUT_END ? '' : 'none';
+    var end = cutEndAt(caps);
+    $('btn-cut-next').style.display = cutTime > end ? '' : 'none';
     // selesai sendiri: jeda sejenak setelah caption terakhir, lalu fade tanpa klik
-    if (cutTime > CUT_END + AUTO_DELAY) fadeTo(showBoard);
+    if (cutTime > end + AUTO_DELAY) fadeTo(showBoard);
   }
 
   /* ---------- scene cutscene tiap kasus ---------- */
@@ -3751,103 +4268,196 @@
     }
   }
 
+  /* ---------- CUTSCENE 2: RUANG GURU (pembunuhan) ---------- */
   function cutSceneLib(t) {
-    TR2(0, 0, 640, 250, '#181209');
-    TR2(0, 250, 640, 110, '#0c0906');
-    for (var f = 0; f < 8; f++) TR2(0, 250 + f * 14, 640, 1, 'rgba(200,180,140,.04)');
-    TR2(0, 0, 640, 20, '#0d0a06');
-    TR2(0, 20, 640, 2, '#241a11');
+    // ruang guru: dinding kayu, jendela besar, meja-meja
+    TR2(0, 0, 640, 300, '#1a1510');
+    TR2(0, 300, 640, 60, '#0d0a07');
+    for (var f = 0; f < 10; f++) TR2(0, 300 + f * 6, 640, 1, 'rgba(190,160,120,.05)');
+    TR2(0, 0, 640, 22, '#100c08');
+    TR2(0, 22, 640, 3, '#2a2118');
 
-    function shelf(x, y, w, h) {
-      TR2(x, y, w, h, '#241a11');
-      TR2(x + 2, y + 2, w - 4, h - 4, '#2f2418');
-      for (var i = 0; i < Math.floor(h / 20); i++) {
-        TR2(x + 3, y + 4 + i * 20, w - 6, 2, '#1a1209');
-        for (var b2 = 0; b2 < Math.floor((w - 8) / 5); b2++) {
-          var bh = 10 + ((i + b2) % 4);
-          TR2(x + 5 + b2 * 5, y + 4 + i * 20 + 18 - bh, 4, bh,
-              ['#5a2c22', '#22405e', '#2c5a36', '#5e5222'][(i + b2) % 4]);
-        }
-      }
-    }
-    shelf(0, 40, 120, 210);
-    shelf(520, 40, 120, 210);
-    shelf(160, 30, 90, 150);
-    shelf(390, 30, 90, 150);
-
-    TR2(300, 22, 3, 40, '#2a2a2a');
-    TR2(272, 62, 58, 6, '#2f6b4a');
-    cctx.globalAlpha = 0.10;
-    cctx.fillStyle = '#c8e0a0';
-    cctx.beginPath(); cctx.ellipse(300, 180, 150, 120, 0, 0, 6.283); cctx.fill();
+    // jendela besar di kiri — sore hari, cahaya oranye masuk
+    TR2(30, 60, 150, 130, '#0a0806');
+    TR2(38, 68, 134, 114, '#3a2a18');
+    TR2(38, 68, 134, 6, '#5a4020');
+    TR2(100, 68, 5, 114, '#0a0806');
+    TR2(38, 120, 134, 4, '#0a0806');
+    cctx.globalAlpha = 0.16;
+    cctx.fillStyle = '#ffb060';
+    cctx.beginPath();
+    cctx.moveTo(38, 68); cctx.lineTo(172, 68); cctx.lineTo(300, 300); cctx.lineTo(0, 300);
+    cctx.closePath(); cctx.fill();
     cctx.globalAlpha = 1;
 
-    TR2(240, 240, 160, 12, '#3a2c1e');
-    TR2(240, 240, 160, 3, '#4a3826');
-    TR2(246, 252, 8, 26, '#241a11');
-    TR2(386, 252, 8, 26, '#241a11');
+    // papan tulis dengan rumus komposisi
+    TR2(240, 60, 170, 100, '#0d1210');
+    TR2(246, 66, 158, 88, '#1a2320');
+    TR2(254, 78, 90, 2, 'rgba(220,230,220,.35)');
+    TR2(254, 92, 120, 2, 'rgba(220,230,220,.28)');
+    TR2(254, 106, 70, 2, 'rgba(220,230,220,.22)');
+    TR2(254, 120, 100, 2, 'rgba(220,230,220,.30)');
 
-    var fx = null, carry = false, spd = 9;
-    if (t >= 1.4 && t < 5.6) { fx = 700 - (t - 1.4) * 120; }
-    else if (t >= 7.6 && t < 12.2) { fx = 60 + (t - 7.6) * 92; carry = true; spd = 6.4; }
+    // meja guru (TKP) — kursi tergeser
+    TR2(420, 190, 170, 14, '#3a2a1a');
+    TR2(420, 190, 170, 3, '#4e3a24');
+    TR2(426, 204, 10, 40, '#241a10');
+    TR2(574, 204, 10, 40, '#241a10');
+    TR2(490, 216, 40, 8, '#241a10');   // kursi tergeser jauh
+    TR2(494, 224, 32, 6, '#1a1208');
+
+    // cangkir kopi di meja
+    TR2(470, 180, 12, 10, '#c8c0b0');
+    TR2(470, 180, 12, 2, '#e0d8c8');
+
+    // jam dinding berhenti
+    TR2(560, 40, 30, 30, '#0a0806');
+    TR2(562, 42, 26, 26, '#d8d0c0');
+    TR2(574, 46, 2, 10, '#1a1410');    // jarum menunjuk 16.42
+    TR2(574, 54, 9, 2, '#1a1410');
+
+    // --- pelaku masuk dari kanan (siluet) ---
+    var fx = null, spd = 8;
+    if (t >= 2.0 && t < 6.0) { fx = 720 - (t - 2.0) * 90; }          // masuk
+    else if (t >= 12.5 && t < 16.5) { fx = 480 + (t - 12.5) * 95; }   // keluar bawa map
     if (fx !== null) {
+      var carry = t >= 12.5;
       cctx.globalAlpha = 0.4;
-      TR2(fx - (carry ? 22 : 18), 300, carry ? 44 : 36, 5, '#000');
+      TR2(fx - (carry ? 22 : 16), 300, carry ? 44 : 34, 5, '#000');
       cctx.globalAlpha = 1;
-      drawCtFig(fx, 300, t * spd, carry);
+      drawCtFig(fx, 300, t * spd, false);
+      if (carry) TR2(fx + 6, 262, 16, 20, '#000');   // map di tangan
+    }
+
+    // Bu Ratna duduk di meja sejak awal — siluet, tidak bergerak
+    if (t > 4.0) {
+      TR2(508, 268, 22, 30, '#0a0a0a');
+      TR2(512, 250, 14, 18, '#0a0a0a');
+      TR2(510, 244, 18, 7, '#080808');
+    }
+
+    // efek: jam berhenti (kedip merah halus)
+    if (t > 8.0 && t < 8.6) {
+      cctx.globalAlpha = 0.5;
+      TR2(0, 0, 640, 360, 'rgba(120,20,20,.20)');
+      cctx.globalAlpha = 1;
     }
   }
 
+  /* ---------- CUTSCENE 3: KEBAKARAN RUANG SERVER ---------- */
   function cutSceneSrv(t) {
+    // ruang server, awalnya gelap dan tenang
     TR2(0, 0, 640, 250, '#0b1016');
     TR2(0, 250, 640, 110, '#080c11');
     for (var f = 0; f < 8; f++) TR2(0, 250 + f * 14, 640, 1, 'rgba(140,180,220,.045)');
     TR2(0, 0, 640, 18, '#070a0e');
     TR2(0, 18, 640, 2, '#1a2430');
 
-    function rack(x, y, w, h) {
+    // rak server — makin banyak yang mati seiring waktu
+    function rack(x, y, w, h, dead) {
       TR2(x, y, w, h, '#12181f');
       TR2(x + 2, y + 2, w - 4, h - 4, '#1e2630');
       for (var i = 0; i < Math.floor(h / 14); i++) {
         TR2(x + 4, y + 4 + i * 14, w - 8, 10, '#0c1117');
-        var on = ((i * 7 + x) % 3);
-        TR2(x + w - 10, y + 7 + i * 14, 3, 3, on === 0 ? '#46c98b' : (on === 1 ? '#f2b544' : '#e8564a'));
-        TR2(x + w - 15, y + 7 + i * 14, 3, 3, '#4a8cbe');
+        if (dead) {
+          TR2(x + w - 10, y + 7 + i * 14, 3, 3, '#2a1a18');
+          TR2(x + w - 15, y + 7 + i * 14, 3, 3, '#2a1a18');
+        } else {
+          var on = ((i * 7 + x) % 3);
+          TR2(x + w - 10, y + 7 + i * 14, 3, 3, on === 0 ? '#46c98b' : (on === 1 ? '#f2b544' : '#e8564a'));
+          TR2(x + w - 15, y + 7 + i * 14, 3, 3, '#4a8cbe');
+        }
       }
     }
-    rack(20, 50, 60, 200);
-    rack(96, 50, 60, 200);
-    rack(484, 50, 60, 200);
-    rack(560, 50, 60, 200);
+    var burning = t > 16.5;
+    rack(20, 50, 60, 200, burning);
+    rack(96, 50, 60, 200, burning);
+    rack(484, 50, 60, 200, t > 15);
+    rack(560, 50, 60, 200, t > 15);
 
-    for (var n = 0; n < 3; n++) {
-      TR2(120 + n * 150, 26, 90, 5, '#39434e');
-      TR2(122 + n * 150, 28, 86, 3, '#b8d4e8');
+    // lampu plafon — padam saat api membesar
+    if (t < 16.5) {
+      for (var n = 0; n < 3; n++) {
+        TR2(120 + n * 150, 26, 90, 5, '#39434e');
+        TR2(122 + n * 150, 28, 86, 3, '#b8d4e8');
+      }
+      cctx.globalAlpha = 0.08;
+      cctx.fillStyle = '#a8c8e8';
+      cctx.beginPath(); cctx.ellipse(320, 140, 240, 110, 0, 0, 6.283); cctx.fill();
+      cctx.globalAlpha = 1;
     }
-    cctx.globalAlpha = 0.08;
-    cctx.fillStyle = '#a8c8e8';
-    cctx.beginPath(); cctx.ellipse(320, 140, 240, 110, 0, 0, 6.283); cctx.fill();
-    cctx.globalAlpha = 1;
 
+    // panel alarm di dinding kanan (tempat pelaku bekerja)
+    TR2(300, 80, 44, 56, '#0e1319');
+    TR2(304, 84, 36, 48, '#1a222c');
+    TR2(308, 90, 28, 3, '#2a3440');
+    TR2(308, 98, 20, 3, '#2a3440');
+    if (t > 11.8) {
+      // lampu alarm mati
+      TR2(330, 122, 6, 6, '#3a1a18');
+    } else {
+      var blink = Math.floor(t * 3) % 2;
+      TR2(330, 122, 6, 6, blink ? '#46c98b' : '#1e4a36');
+    }
+
+    // lantai: titik api pertama
     TR2(250, 250, 140, 14, '#232b34');
     TR2(250, 250, 140, 3, '#39434e');
-    TR2(268, 232, 44, 20, '#0e1319');
-    TR2(270, 234, 40, 16, '#0d3b2a');
-    TR2(274, 238, 32, 2, '#2f8f6a');
-    TR2(274, 243, 24, 2, '#2f8f6a');
 
-    var fx = null, spd = 9;
-    if (t >= 1.6 && t < 6.2) { fx = 640 - (t - 1.6) * 78; }
-    else if (t >= 7.4 && t < 11.2) { fx = 300; spd = 0; }
+    // --- pelaku: masuk, buka panel, pergi ---
+    var fx = null, spd = 8;
+    if (t >= 1.6 && t < 6.0) { fx = 700 - (t - 1.6) * 88; }        // masuk dari kanan
+    else if (t >= 6.0 && t < 12.0) { fx = 322; spd = 0; }            // berhenti di panel
+    else if (t >= 12.0 && t < 16.0) { fx = 322 - (t - 12.0) * 95; }  // pergi ke kiri
     if (fx !== null) {
       cctx.globalAlpha = 0.4;
       TR2(fx - 18, 300, 36, 5, '#000');
       cctx.globalAlpha = 1;
       drawCtFig(fx, 300, t * spd, false);
-      if (t >= 8.6 && t < 11.2) {
-        TR2(fx + 14, 262, 16, 10, '#0e1319');
-        TR2(fx + 16, 264, 12, 7, '#8f9aa6');
+      // tangan di dalam panel saat berhenti
+      if (t >= 7.0 && t < 11.8) {
+        TR2(fx + 14, 262, 10, 8, '#000');
       }
+      // membawa jerigen saat pergi
+      if (t >= 13.0 && t < 16.0) {
+        TR2(fx - 16, 274, 12, 16, '#0d1219');
+        TR2(fx - 16, 274, 12, 3, '#1e2a36');
+      }
+    }
+
+    // --- API MUNCUL ---
+    if (t > 16.5) {
+      var grow = Math.min(1, (t - 16.5) / 6);
+      var flick = 0.7 + 0.3 * Math.sin(t * 11);
+      // pijar di lantai
+      cctx.save();
+      cctx.globalCompositeOperation = 'lighter';
+      var fg = cctx.createRadialGradient(320, 270, 4, 320, 270, 40 + grow * 180);
+      fg.addColorStop(0, 'rgba(255,180,60,' + (0.55 * flick).toFixed(3) + ')');
+      fg.addColorStop(0.5, 'rgba(220,90,30,' + (0.28 * flick).toFixed(3) + ')');
+      fg.addColorStop(1, 'rgba(160,40,10,0)');
+      cctx.fillStyle = fg;
+      cctx.fillRect(0, 60, 640, 300);
+      cctx.restore();
+
+      // lidah api
+      var h = 20 + grow * 120;
+      for (var a = 0; a < 9; a++) {
+        var ax = 270 + a * 12 + Math.sin(t * 4 + a) * 4;
+        var ah = h * (0.5 + 0.5 * Math.abs(Math.sin(t * 3 + a * 1.7)));
+        TR2(ax, 276 - ah, 8, ah, a % 2 ? 'rgba(255,150,40,.55)' : 'rgba(255,90,20,.45)');
+        TR2(ax + 2, 276 - ah * 0.6, 4, ah * 0.6, 'rgba(255,230,150,.45)');
+      }
+      // asap
+      for (var s = 0; s < 14; s++) {
+        var ph = (t * 0.35 + s * 0.14) % 1;
+        cctx.globalAlpha = (1 - ph) * 0.28 * grow;
+        cctx.fillStyle = '#2a2a2a';
+        cctx.beginPath();
+        cctx.arc(280 + Math.sin(ph * 5 + s) * 50 + ph * 60, 260 - ph * 200, 10 + ph * 34, 0, 6.283);
+        cctx.fill();
+      }
+      cctx.globalAlpha = 1;
     }
   }
 
@@ -3910,7 +4520,7 @@
      ========================================================= */
   var bcv = null, bctx = null;
   var boardTime = 0;
-  var BOARD_END = 22.3;
+  var BOARD_END_FALLBACK = 22.3;
 
   function BR(x, y, w, h, c) { bctx.fillStyle = c; bctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
 
@@ -3942,10 +4552,12 @@
   ];
 
   function updateBoardDom() {
-    var cap = typeCaption((CUR && CUR.boardCaps) || BOARD_CAPS, 18, boardTime);
+    var caps = (CUR && CUR.boardCaps) || BOARD_CAPS;
+    var cap = typeCaption(caps, 18, boardTime);
     $('board-caption').textContent = cap.txt;
-    $('btn-board-next').style.display = boardTime > BOARD_END ? '' : 'none';
-    if (boardTime > BOARD_END + AUTO_DELAY) fadeTo(function () { showScreen('scr-play'); });
+    var end = boardEndAt(caps);
+    $('btn-board-next').style.display = boardTime > end ? '' : 'none';
+    if (boardTime > end + AUTO_DELAY) fadeTo(function () { showScreen('scr-play'); });
   }
 
   // polaroid + pin + label di papan gabus
@@ -4073,19 +4685,19 @@
   var selMouse = { x: 320, y: 160 };
   var CASE_FIGS = [
     { id: 'c1', x: 190, y: 292, caseNo: 'CASE 01', title: 'REKAMAN 23.47' },
-    { id: 'c2', x: 330, y: 292, caseNo: 'CASE 02', title: 'BUKU BESAR PERPUS', segera: true },
-    { id: 'c3', x: 470, y: 292, caseNo: 'CASE 03', title: 'SERVER TERKUNCI', segera: true }
+    { id: 'c2', x: 330, y: 292, caseNo: 'CASE 02', title: 'JAM TERAKHIR BU RATNA' },
+    { id: 'c3', x: 470, y: 292, caseNo: 'CASE 03', title: 'API DI RUANG SERVER' }
   ];
 
   var CASES_META = {
     c1: { no: 'CASE FILE #01', title: 'Rekaman 23.47',
           desc: 'Nayla, ketua OSIS, hilang — CCTV merekam sosok hitam membawa tas besar keluar dari lab pukul 23.47. Pecahkan pesan terakhirnya, temukan buktinya, tuduh pelakunya.',
           locked: false, idx: 0 },
-    c2: { no: 'CASE FILE #02', title: 'Buku Besar Perpustakaan',
-          desc: 'Tiga buku langka hilang dari rak yang tertutup. Brankasnya butuh dua kunci, dan pesan terenkripsinya menunjuk keranjang buku.',
+    c2: { no: 'CASE FILE #02', title: 'Jam Terakhir Bu Ratna',
+          desc: 'Bu Ratna, guru matematika, ditemukan tewas di ruang guru. Jam dinding berhenti pukul 16.42, dan laptopnya masih menyala dengan pesan terenkripsi.',
           locked: false, idx: 1 },
-    c3: { no: 'CASE FILE #03', title: 'Server Terkunci',
-          desc: 'Dua hard disk berisi soal ujian hilang dari rak terkunci. Empat kunci harus dibuka berurutan sebelum vault terbuka.',
+    c3: { no: 'CASE FILE #03', title: 'Api di Ruang Server',
+          desc: 'Ruang server terbakar, tapi alarm tidak pernah berbunyi. Api berasal dari lantai, bukan dari rak — dan ada botol akseleran di sela pendingin.',
           locked: false, idx: 2 }
   };
 
@@ -4376,6 +4988,14 @@
       return 'none';
     },
     hitSeat: hitSeat,
+    guards: function () { return guards; },
+    guardCfg: guardCfg,
+    guardCaught: function () { return guardCaught; },
+    spawnGuards: spawnGuards,
+    updateGuards: updateGuards,
+    draw: function () { draw(); },
+    guardSees: function (i) { return guardSees(guards[i], guardCfg()); },
+    setPlayer: function (x, y) { player.x = x; player.y = y; },
     showScreen: showScreen, finish: finish,
     resetBoard: function () { boardTime = 0; }, resetCut: function () { cutTime = 0; },
     teleport: function (x, y) { player.x = x; player.y = y; },

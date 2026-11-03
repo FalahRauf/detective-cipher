@@ -28,19 +28,36 @@ python -m http.server 8000
 
 ## Tiga Kasus
 
-| # | Kasus | Lokasi | Peta | Barang | Kunci berurutan |
-|---|---|---|---|---|---|
-| 01 | **Rekaman 23.47** | Lab Komputer 2 | 28 × 18 | 17 | 2 |
-| 02 | **Buku Besar Perpustakaan** | Perpustakaan | 34 × 22 | 26 | 3 |
-| 03 | **Server Terkunci** | Ruang Server Lt. 3 | 40 × 26 | 30 | 4 |
+| # | Kasus | Kejahatan | Lokasi | Peta | Ruangan | Kunci berurutan |
+|---|---|---|---|---|---|---|
+| 01 | **Rekaman 23.47** | Penculikan | Lab Komputer 2 | 34 × 24 | 4 + lorong | 2 |
+| 02 | **Jam Terakhir Bu Ratna** | **Pembunuhan** | Sayap Guru | 36 × 26 | 4 + lorong | 3 |
+| 03 | **Api di Ruang Server** | **Pembakaran sengaja** | Ruang Server Lt. 3 | 42 × 28 | 4 + lorong | 4 |
 
-Tiap kasus punya **EASY / NORMAL / HARD**, jadi total **9 mode**.
+Peta tiap kasus dibagi jadi **beberapa ruangan yang dihubungkan lorong**, bukan satu kotak besar:
+ruang utama (TKP), ruang kerja, gudang, dan ruang kontrol. Kamu harus berjalan menembus lorong
+untuk pindah ruangan — dan di lorong itulah penjaga berpatroli.
 
-| Mode | Lapis fungsi | Sobekan kunci |
-|---|---|---|
-| EASY | 2 | 1 |
-| NORMAL | 3 | 1 |
-| HARD | 3 | 2–3 (tergantung kasus) |
+Tiap kasus punya **EASY / NORMAL / HARD**, jadi total **9 mode**. Yang naik bukan cuma enkripsinya —
+**penjaga ikut berpatroli** di mode yang lebih sulit:
+
+| Mode | Lapis fungsi | Sobekan kunci | Penjaga | Sorot lampu |
+|---|---|---|---|---|
+| EASY | 2 | 1 | — | — |
+| NORMAL | 3 | 1 | 1 penjaga | sudut 0.42 rad, jangkauan 84 px |
+| HARD | 3 | 2–3 (tergantung kasus) | 2 penjaga | sudut 0.58 rad, jangkauan 110 px, lebih cepat |
+
+### Penjaga
+
+Penjaga berpatroli menyusuri lorong sambil menyapu lampu. Kalau kamu masuk ke kerucut cahayanya
+(dan tidak terhalang dinding), dia menghentikanmu:
+
+- skor **−120**
+- kamu diantar kembali ke **titik masuk** dan harus mengulang jalan
+- ada jeda 3,2 detik supaya tidak langsung ketahuan berulang
+
+Cara menghindar: **berhenti** saat lampu mendekat, dan manfaatkan dinding sebagai penghalang
+pandangan. Badge **PENJAGA × n** di HUD menunjukkan berapa penjaga yang aktif.
 
 Jumlah petunjuk naik mengikuti kasus: kasus 1 = 2–3 petunjuk, kasus 2 = 3–4, kasus 3 = 3–4.
 

@@ -219,7 +219,7 @@ console.log('\n== PILIH KASUS (jalanan + senter) ==');
   // klik sosok 2 (terkunci)
   G.selectMouse(330, 280);
   document.getElementById('scv').dispatch('click');
-  ok(document.getElementById('cm-title').textContent.indexOf('Buku Besar') >= 0, 'CASE 02 bisa dibuka');
+  ok(document.getElementById('cm-title').textContent.indexOf('Bu Ratna') >= 0, 'CASE 02 bisa dibuka');
   document.getElementById('cm-x').click();
 
   // pilih CASE 01 lagi lalu mulai -> konfirmasi -> cutscene
@@ -286,7 +286,8 @@ function finish() {
   ok(G.screen() === 'scr-board', 'auto: berganti ke papan kasus saat gelap');
   await wait(500);
 
-  for (let i = 0; i < 240; i++) G.boardTick(0.1); // 24.0 > 23.9 -> fade otomatis
+  // durasi papan sekarang dihitung dari caption kasus, jadi jalankan sampai pasti lewat
+  for (let i = 0; i < 400; i++) G.boardTick(0.1);
   await wait(480);
   ok(G.screen() === 'scr-play', 'papan selesai -> fade-out OTOMATIS ke gameplay');
 
