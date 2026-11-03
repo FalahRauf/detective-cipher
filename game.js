@@ -683,100 +683,183 @@
   // format: {x,y = pojok kiri atas px, w,h = ukuran px, fn = gambar, s = solid (default true)}
   function propsLab() {
     var L = [];
-    function P(x, y, w, h, fn, s) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: s !== false }); }
+    function P(x, y, w, h, fn, s, ix) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: s !== false, ix: ix || null }); }
 
-    /* ===== LAB KOMPUTER 2 — x48-240 y64-176 ===== */
-    P(56, 66, 116, 42, function () { drawBoard(56, 66); });           // papan tulis
-    P(64, 110, 72, 22, function () { drawDeskTop(64, 110, 72); });    // meja guru
-    P(76, 96, 36, 18, function () { drawMonitor(76, 96, 36, 18); });  // monitor di meja
-    P(196, 96, 32, 68, function () { drawBookshelf(196, 96); });      // rak buku
-    P(56, 156, 18, 18, function () { drawBin(56, 156); });            // tempat sampah
-    var labDesks = [[64, 136], [120, 136], [64, 160], [120, 160]];
-    for (var i = 0; i < labDesks.length; i++) {
-      (function (dx, dy) {
-        P(dx, dy, 32, 16, function () { drawStudentDesk(dx, dy); });
-      })(labDesks[i][0], labDesks[i][1]);
-    }
+    /* --- dinding atas --- */
+    P(56, 50, 116, 34, function () { drawBoard(56, 50); }, false,
+      { id: 'papan', label: 'Periksa papan tulis', title: 'PAPAN TULIS',
+        flavor: 'Sisa materi jaringan minggu lalu. Ada tulisan "praktek jumat" yang sudah setengah terhapus.', clueOk: true  });
+    P(64, 84, 72, 20, function () { drawDeskTop(64, 84, 72); }, true,
+      { id: 'monitor', label: 'Periksa meja guru', title: 'KOMPUTER GURU',
+        flavor: 'Laptop dengan alat dekripsi terpasang. Bisa dijalankan kapan saja lewat tombol ALAT.' });
+    P(76, 72, 34, 14, function () { drawMonitor(76, 72, 34, 14); }, false,
+      { id: 'monitorTop', label: 'Periksa monitor', title: 'MONITOR GURU',
+        flavor: 'Layar ini cuma ekstensi dari laptop di bawahnya. Tidak ada file tambahan.' });
 
-    /* ===== RUANG GURU — x320-496 y64-176 ===== */
-    P(336, 80, 32, 46, function () { drawPrinterTable(336, 80); });   // printer
-    P(424, 108, 32, 46, function () { drawCabinet(424, 108); });      // lemari arsip
-    P(336, 120, 32, 68, function () { drawBookshelf(336, 120); });    // rak guru
+    /* --- dinding kiri --- */
+    P(32, 96, 20, 62, function () { drawBookshelf(32, 96); }, true,
+      { id: 'rak', label: 'Periksa rak buku', title: 'RAK BUKU',
+        flavor: 'Buku manual jaringan berdebu. Satu slot kosong, tapi lapisan debunya rata \u2014 sudah lama.', clueOk: true  });
 
-    /* ===== GUDANG — x48-192 y240-336 ===== */
-    P(64, 262, 20, 42, function () { drawPlant(64, 262); });          // pot
-    P(108, 250, 18, 34, function () { drawDispenser(108, 250); });    // dispenser
-    P(156, 282, 16, 44, function () { drawMop(156, 282); });          // alat pel
+    /* --- dinding kanan --- */
+    P(384, 64, 30, 62, function () { drawBookshelf(384, 64); }, true,
+      { id: 'rakGuru', label: 'Periksa rak buku kanan', title: 'RAK BUKU KANAN',
+        flavor: 'Buku praktek kelas XI. Semua rapi menurut nomor absen.', clueOk: true  });
+    P(384, 156, 32, 44, function () { drawCabinet(384, 156); }, true,
+      { id: 'lemari', label: 'Buka lemari arsip', title: 'LEMARI ARSIP' });
 
-    /* ===== RUANG ISTIRAHAT — x320-496 y240-336 ===== */
-    P(336, 270, 32, 16, function () { drawStudentDesk(336, 270); });
-    P(408, 270, 32, 16, function () { drawStudentDesk(408, 270); });
+    /* --- dinding bawah --- */
+    P(80, 236, 20, 40, function () { drawPlant(80, 236); }, true,
+      { id: 'pot', label: 'Periksa pot tanaman', title: 'POT TANAMAN' });
+    P(140, 246, 18, 32, function () { drawDispenser(140, 246); }, true,
+      { id: 'dispenser', label: 'Periksa dispenser', title: 'DISPENSER',
+        flavor: 'Galon hampir habis. Cuma tetesan air di lantai, bukan jejak kaki.', clueOk: true  });
+    P(320, 238, 32, 36, function () { drawPrinterTable(320, 238); }, true,
+      { id: 'printer', label: 'Periksa printer', title: 'PRINTER',
+        flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering dan menguning.', clueOk: true  });
 
-    /* ===== lorong + pintu ===== */
-    P(246, 338, 36, 22, function () { drawDoor(246, 338); });         // pintu keluar
+    /* --- tengah: meja siswa 2 baris (menjorok, tapi jalan di kiri/kanan bebas) --- */
+    P(104, 140, 32, 16, function () { drawStudentDesk(104, 140); }, true,
+      { id: 'meja1', label: 'Periksa meja siswa', title: 'MEJA SISWA \u00b7 1',
+        flavor: 'Ada tulisan "JANGAN DUDUK SINI" pakai tip-ex. Laci kosong.', clueOk: true  });
+    P(184, 140, 32, 16, function () { drawStudentDesk(184, 140); }, true,
+      { id: 'meja2', label: 'Periksa meja siswa', title: 'MEJA SISWA \u00b7 2',
+        flavor: 'Serutan pensil dan satu penghapus karet. Monitor masih menyala di halaman login.', clueOk: true  });
+    P(104, 178, 32, 16, function () { drawStudentDesk(104, 178); }, true,
+      { id: 'meja3', label: 'Periksa meja siswa', title: 'MEJA SISWA \u00b7 3',
+        flavor: 'Coretan jadwal piket di permukaan meja. Tidak lebih dari itu.', clueOk: true  });
+    P(184, 178, 32, 16, function () { drawStudentDesk(184, 178); }, true,
+      { id: 'meja4', label: 'Periksa meja siswa', title: 'MEJA SISWA \u00b7 4',
+        flavor: 'Kursinya ditarik agak jauh, seperti ditinggal buru-buru. Tapi tidak ada apa-apa.', clueOk: true  });
+
+    /* --- tempat sampah dekat meja guru --- */
+    P(150, 92, 18, 18, function () { drawBin(150, 92); }, true,
+      { id: 'sampah', label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
+        flavor: 'Bungkus snack, sobekan kertas tugas, dan satu gelas plastik. Tidak ada yang berguna.', clueOk: true  });
+
+    /* --- pintu (dinding bawah, tengah) --- */
+    P(198, 254, 36, 20, function () { drawDoor(198, 254); }, true,
+      { id: 'door', label: 'Pintu keluar', title: 'PINTU KELUAR' });
     return L;
   }
-
   /* ---------- props KASUS 2: ruang guru / rapat / arsip / pantry ---------- */
   function propsTeacherRoom() {
     var L = [];
-    function P(x, y, w, h, fn) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: true }); }
+    function P(x, y, w, h, fn, s, ix) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: s !== false, ix: ix || null }); }
 
-    /* ===== RUANG GURU (TKP) — x48-224 y64-176 ===== */
-    P(56, 66, 116, 42, function () { drawBoard(56, 66); });           // papan tulis
-    P(64, 110, 88, 22, function () { drawDeskTop(64, 110, 88); });    // meja korban
-    P(76, 96, 36, 18, function () { drawMonitor(76, 96, 36, 18); });  // laptop
+    /* --- dinding atas: TKP --- */
+    P(48, 48, 116, 32, function () { drawBoard(48, 48); }, false,
+      { id: 'papan', label: 'Periksa papan tulis', title: 'PAPAN TULIS',
+        flavor: 'Masih ada tulisan fungsi komposisi dari kelas tadi. Satu rumus dilingkari dua kali.' });
+    P(60, 82, 88, 20, function () { drawDeskTop(60, 82, 88); }, true,
+      { id: 'mejaKorban', label: 'Periksa meja korban', title: 'MEJA BU RATNA' });
+    P(72, 70, 34, 14, function () { drawMonitor(72, 70, 34, 14); }, false,
+      { id: 'komputer', label: 'Pakai alat dekripsi', title: 'LAPTOP BU RATNA' });
+    P(196, 46, 34, 28, function () { drawCorkBoard(196, 46); }, true,
+      { id: 'cork', label: 'Periksa papan pengumuman', title: 'PAPAN PENGUMUMAN',
+        flavor: 'Jadwal piket dan edaran. Tidak ada yang mencurigakan.', clueOk: true  });
+    P(248, 42, 30, 26, function () { drawClock(248, 42); }, true,
+      { id: 'jam', label: 'Periksa jam dinding', title: 'JAM DINDING',
+        setsFlag: 'jam', setsFlagMsg: 'Petunjuk angka dicatat: 16.42',
+        flavor: 'Jam berhenti di 16.42 \u2014 tepat saat kejadian. Baterainya baru diganti, ini bukan kebetulan. Kamu mencatat angkanya.' });
 
-    /* ===== RUANG RAPAT — x320-528 y64-176 ===== */
-    P(352, 112, 120, 20, function () { drawDeskTop(352, 112, 120); });// meja rapat
-    P(336, 68, 34, 30, function () { drawCorkBoard(336, 68); });      // papan pengumuman
-    P(488, 96, 32, 46, function () { drawPrinterTable(488, 96); });   // printer
+    /* --- dinding kanan: ruang rapat --- */
+    P(408, 84, 40, 18, function () { drawDeskTop(408, 84, 40); }, true,
+      { id: 'mejaRapat', label: 'Periksa meja rapat', title: 'MEJA RAPAT',
+        flavor: 'Daftar hadir rapat pukul 15.00. Tiga nama, satu tanda tangan beda tinta.', clueOk: true  });
+    P(416, 130, 32, 40, function () { drawPrinterTable(416, 130); }, true,
+      { id: 'printer', label: 'Periksa printer', title: 'PRINTER',
+        flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering.' });
 
-    /* ===== ARSIP — x48-176 y240-352 ===== */
-    P(56, 260, 32, 68, function () { drawBookshelf(56, 260); });      // rak arsip
-    P(112, 248, 32, 46, function () { drawCabinet(112, 248); });      // lemari arsip
+    /* --- dinding kiri: arsip --- */
+    P(32, 108, 20, 62, function () { drawBookshelf(32, 108); }, true,
+      { id: 'rakArsip', label: 'Periksa rak arsip', title: 'RAK ARSIP',
+        flavor: 'Map-map per tahun ajaran. Satu slot kosong, tapi debunya rata \u2014 sudah lama kosong.', clueOk: true  });
+    P(32, 196, 32, 44, function () { drawCabinet(32, 196); }, true,
+      { id: 'arsip', label: 'Periksa lemari arsip', title: 'LEMARI ARSIP' });
 
-    /* ===== PANTRY — x320-528 y240-352 ===== */
-    P(384, 248, 40, 58, function () { drawLockerUnit(384, 248); });   // loker guru
-    P(464, 264, 32, 46, function () { drawCabinet(464, 264); });      // kabinet
-    P(336, 286, 18, 34, function () { drawDispenser(336, 286); });    // dispenser
+    /* --- dinding bawah: pantry --- */
+    P(100, 244, 40, 44, function () { drawLockerUnit(100, 244); }, true,
+      { id: 'loker', label: 'Buka loker guru', title: 'LOKER GURU' });
+    P(200, 246, 32, 44, function () { drawCabinet(200, 246); }, true,
+      { id: 'brankas', label: 'Buka brankas', title: 'BRANKAS BERKAS' });
+    P(280, 250, 18, 32, function () { drawDispenser(280, 250); }, true,
+      { id: 'dispenser', label: 'Periksa dispenser', title: 'DISPENSER',
+        flavor: 'Galon masih penuh. Tidak ada tetesan di lantai.' });
+    P(330, 240, 32, 16, function () { drawDeskTop(330, 240, 32); }, true,
+      { id: 'kopi', label: 'Periksa meja kopi', title: 'MEJA KOPI',
+        flavor: 'Saringan kopinya masih lembap. Ada dua cangkir kotor di nampan, bukan satu.', clueOk: true  });
 
-    /* ===== pintu ===== */
-    P(262, 330, 36, 22, function () { drawDoor(262, 330); });
+    /* --- pintu (dinding bawah kiri) --- */
+    P(32, 250, 36, 20, function () { drawDoor(32, 250); }, true,
+      { id: 'door', label: 'Pintu keluar', title: 'PINTU KELUAR' });
     return L;
   }
-
   /* ---------- props KASUS 3: server / panel / gudang / kontrol ---------- */
   function propsServerFire() {
     var L = [];
-    function P(x, y, w, h, fn) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: true }); }
+    function P(x, y, w, h, fn, s, ix) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: s !== false, ix: ix || null }); }
 
-    /* ===== RUANG SERVER UTAMA — x48-256 y64-192 ===== */
-    P(56, 72, 40, 48, function () { drawServerRack(56, 72, 40, 48); });
-    P(104, 72, 40, 48, function () { drawServerRack(104, 72, 40, 48); });
-    P(56, 132, 40, 44, function () { drawServerRack(56, 132, 40, 44); });
-    P(104, 132, 40, 44, function () { drawServerRack(104, 132, 40, 44); });
-    P(176, 148, 64, 22, function () { drawTerminalDesk(176, 148, 64); }); // terminal
+    /* --- dinding atas: deretan rak server --- */
+    P(36, 50, 40, 46, function () { drawServerRack(36, 50, 40, 46); }, true,
+      { id: 'rakA', label: 'Periksa rak server A', title: 'RAK SERVER A',
+        flavor: 'Delapan unit server, semuanya hangus di sisi belakang. Kerangkanya masih panas.', clueOk: true  });
+    P(84, 50, 40, 46, function () { drawServerRack(84, 50, 40, 46); }, true,
+      { id: 'rakB', label: 'Buka rak server B', title: 'RAK SERVER B', clueOk: true  });
+    P(132, 50, 40, 46, function () { drawServerRack(132, 50, 40, 46); }, true,
+      { id: 'rakC', label: 'Periksa rak server C', title: 'RAK SERVER C',
+        flavor: 'Kipasnya meleleh. Debu di filter menghitam \u2014 bukan debu biasa, ini jelaga.', clueOk: true  });
+    P(180, 50, 40, 46, function () { drawServerRack(180, 50, 40, 46); }, true,
+      { id: 'rakD', label: 'Periksa rak server D', title: 'RAK SERVER D',
+        flavor: 'Satu unit mati total. Kabelnya masih terpasang rapi, tapi konektornya meleleh.', clueOk: true  });
+    P(230, 56, 64, 20, function () { drawTerminalDesk(230, 56, 64); }, true,
+      { id: 'terminal', label: 'Periksa terminal', title: 'TERMINAL KONTROL',
+        flavor: 'Terminal kontrol dengan layar menyala redup. Alat dekripsi juga bisa dijalankan dari sini.' });
 
-    /* ===== RUANG PANEL — x352-592 y64-192 ===== */
-    P(368, 76, 32, 34, function () { drawPanelBox(368, 76, 32, 32); });   // panel alarm
-    P(428, 68, 40, 58, function () { drawCoolingUnit(428, 68, 40, 56); });// pendingin
-    P(512, 92, 14, 34, function () { drawFireExt(512, 92); });            // pemadam
-    P(472, 96, 24, 24, function () { drawCabinet(472, 96); });            // kabinet kecil
+    /* --- dinding kanan: panel & pendingin & pemadam --- */
+    P(448, 46, 32, 34, function () { drawPanelBox(448, 46, 32, 32); }, true,
+      { id: 'panel', label: 'Periksa panel alarm', title: 'PANEL ALARM' });
+    P(446, 96, 34, 50, function () { drawCoolingUnit(446, 96, 34, 50); }, true,
+      { id: 'cooling', label: 'Periksa unit pendingin', title: 'UNIT PENDINGIN' });
+    P(446, 160, 14, 34, function () { drawFireExt(446, 160); }, true,
+      { id: 'pemadam', label: 'Ambil tabung pemadam', title: 'TABUNG PEMADAM' });
 
-    /* ===== GUDANG — x48-208 y256-384 ===== */
-    P(64, 296, 40, 48, function () { drawServerRack(64, 296, 40, 48); }); // rak lama
-    P(136, 272, 32, 46, function () { drawCabinet(136, 272); });          // kabinet
+    /* --- tengah: api di lantai (memblokir jalur bawah sampai dipadamkan) --- */
+    P(210, 150, 44, 26, function () { drawFloorFire(210, 150, t0); }, false,
+      { id: 'bekas', label: 'Periksa lantai', title: 'API DI LANTAI' });
 
-    /* ===== RUANG KONTROL — x352-592 y256-384 ===== */
-    P(368, 300, 48, 42, function () { drawSafeBox(368, 300, 48, 40); });  // vault
-    P(440, 286, 80, 22, function () { drawTerminalDesk(440, 286, 80); }); // meja kontrol
+    /* --- dinding kiri --- */
+    P(32, 100, 40, 44, function () { drawServerRack(32, 100, 40, 44); }, true,
+      { id: 'rakLama', label: 'Periksa rak lama', title: 'RAK LAMA',
+        flavor: 'Rak tua yang sudah tidak dipakai. Debu di depannya tidak tersentuh.', clueOk: true  });
+    P(32, 170, 32, 44, function () { drawCabinet(32, 170); }, true,
+      { id: 'kardus', label: 'Periksa kardus', title: 'KARDUS BEKAS',
+        flavor: 'Kardus bekas unit server. Sudah dilipat rapi, tidak ada isinya.', clueOk: true  });
+    P(32, 232, 20, 40, function () { drawMop(32, 232); }, true,
+      { id: 'tangga', label: 'Periksa tangga', title: 'TANGGA LIPAT',
+        flavor: 'Tangga lipat untuk menjangkau rak atas. Debu di pijakannya tipis \u2014 baru dipakai.', clueOk: true  });
+    P(80, 238, 18, 34, function () { drawDispenser(80, 238); }, true,
+      { id: 'jerigen', label: 'Periksa jerigen', title: 'JERIGEN KOSONG',
+        flavor: 'Jerigen plastik kosong. Tutupnya terbuka, dan baunya menyengat \u2014 bukan air.', clueOk: true  });
 
-    /* ===== pintu ===== */
-    P(286, 362, 36, 22, function () { drawDoor(286, 362); });
+    /* --- dinding bawah: vault & meja kontrol --- */
+    P(160, 244, 48, 40, function () { drawSafeBox(160, 244, 48, 40); }, true,
+      { id: 'vault', label: 'Buka vault', title: 'VAULT BUKTI' });
+    P(280, 248, 80, 20, function () { drawTerminalDesk(280, 248, 80); }, true,
+      { id: 'mejaKontrol', label: 'Periksa meja kontrol', title: 'MEJA KONTROL',
+        flavor: 'Monitor pemantauan, semuanya mati. Satu keyboard-nya berlubang bekas terbakar.' });
+    P(400, 246, 32, 44, function () { drawCabinet(400, 246); }, true,
+      { id: 'ac', label: 'Periksa AC', title: 'AC RUANG SERVER',
+        flavor: 'AC presisi, setelan 18 derajat. Filternya menghitam, sama seperti rak.' });
+    P(230, 232, 20, 40, function () { drawMop(230, 232); }, true,
+      { id: 'kabel', label: 'Periksa kabel lantai', title: 'KABEL LANTAI',
+        flavor: 'Kabel daya di bawah raised floor. Semua masih terpasang, tidak ada yang dicabut.' });
+
+    /* --- pintu (dinding bawah kiri) --- */
+    P(32, 246, 36, 20, function () { drawDoor(32, 246); }, true,
+      { id: 'door', label: 'Pintu keluar', title: 'PINTU KELUAR' });
     return L;
   }
-
   /* ---------- furniture tiap kasus ---------- */
 
   var FURN_LIB = [
@@ -835,32 +918,11 @@
     {
       id: 'c1', no: 'CASE FILE #01', title: 'Rekaman 23.47',
       place: 'LAB KOMPUTER 2', cam: 'CAM 02', loc: 'KORIDOR LANTAI 2',
-      mapW: 34, mapH: 24, spawn: { x: 264, y: 344 },
+      mapW: 28, mapH: 18, spawn: { x: 216, y: 240 },
       floor: labFloor, wall: labWall, decor: decorLab, props: propsLab,
-      // denah: lorong berbentuk T + 4 ruangan (lab utama, ruang guru, gudang, ruang istirahat)
-      plan: {
-        rooms: [
-          { c: 3,  r: 4,  w: 12, h: 7 },    // LAB KOMPUTER 2 (kiri atas)
-          { c: 20, r: 4,  w: 11, h: 7 },    // RUANG GURU (kanan atas)
-          { c: 3,  r: 15, w: 9,  h: 6 },    // GUDANG (kiri bawah)
-          { c: 20, r: 15, w: 11, h: 6 }     // RUANG ISTIRAHAT (kanan bawah)
-        ],
-        corridors: [
-          { c: 3,  r: 12, w: 28, h: 2 },    // lorong horizontal tengah
-          { c: 15, r: 4,  w: 4,  h: 10 },   // lorong vertikal tengah-atas
-          { c: 15, r: 15, w: 4,  h: 7 }     // lorong vertikal tengah-bawah
-        ],
-        doors: [
-          { c: 8,  r: 11, w: 2, h: 1 },     // lab -> lorong
-          { c: 24, r: 11, w: 2, h: 1 },     // ruang guru -> lorong
-          { c: 7,  r: 14, w: 2, h: 1 },     // gudang -> lorong
-          { c: 24, r: 14, w: 2, h: 1 },     // istirahat -> lorong
-          { c: 16, r: 3,  w: 2, h: 1 }      // lorong atas (buntu / pintu darurat)
-        ]
-      },
       lights: [
-        { x: 120, y: 100, r: 90 }, { x: 400, y: 100, r: 90 },
-        { x: 264, y: 200, r: 110 }, { x: 120, y: 290, r: 80 }, { x: 400, y: 290, r: 80 }
+        { x: 96, y: 88, r: 92 }, { x: 216, y: 88, r: 98 },
+        { x: 336, y: 88, r: 92 }, { x: 216, y: 208, r: 110 }
       ],
       messages: ['KUNCI DI POT', 'KUNCI LEMARI DI POT', 'AMBIL KUNCI DI POT', 'KUNCI ARSIP DI POT', 'KUNCI ADA DI POT'],
       suspects: [
@@ -985,31 +1047,11 @@
     {
       id: 'c2', no: 'CASE FILE #02', title: 'Jam Terakhir Bu Ratna',
       place: 'RUANG GURU', cam: 'CAM 05', loc: 'SAYAP GURU LANTAI 1',
-      mapW: 36, mapH: 26, spawn: { x: 120, y: 152 },
+      mapW: 30, mapH: 20, spawn: { x: 232, y: 232 },
       floor: libFloor, wall: libWall, decor: decorLib, props: propsTeacherRoom,
-      plan: {
-        rooms: [
-          { c: 3,  r: 4,  w: 11, h: 7 },    // RUANG GURU (kiri atas) - TKP
-          { c: 20, r: 4,  w: 13, h: 7 },    // RUANG RAPAT (kanan atas)
-          { c: 3,  r: 15, w: 8,  h: 7 },    // ARSIP (kiri bawah)
-          { c: 20, r: 15, w: 13, h: 7 }     // PANTRY (kanan bawah)
-        ],
-        corridors: [
-          { c: 3,  r: 12, w: 30, h: 2 },
-          { c: 15, r: 4,  w: 4,  h: 10 },
-          { c: 15, r: 15, w: 4,  h: 8 }
-        ],
-        doors: [
-          { c: 8,  r: 11, w: 2, h: 1 },
-          { c: 26, r: 11, w: 2, h: 1 },
-          { c: 6,  r: 14, w: 2, h: 1 },
-          { c: 26, r: 14, w: 2, h: 1 },
-          { c: 16, r: 3,  w: 2, h: 1 }
-        ]
-      },
       lights: [
-        { x: 120, y: 100, r: 88 }, { x: 420, y: 100, r: 92 },
-        { x: 280, y: 210, r: 116 }, { x: 110, y: 300, r: 78 }, { x: 420, y: 300, r: 78 }
+        { x: 112, y: 88, r: 96 }, { x: 352, y: 88, r: 96 },
+        { x: 232, y: 232, r: 118 }
       ],
       messages: ['KUNCI DI LEMARI ARSIP', 'KUNCI DI ARSIP', 'KUNCI ADA DI LEMARI ARSIP', 'AMBIL KUNCI DI ARSIP'],
       suspects: [
@@ -1160,31 +1202,11 @@
     {
       id: 'c3', no: 'CASE FILE #03', title: 'Api di Ruang Server',
       place: 'RUANG SERVER', cam: 'CAM 09', loc: 'RUANG SERVER LT. 3',
-      mapW: 42, mapH: 28, spawn: { x: 136, y: 168 },
+      mapW: 32, mapH: 20, spawn: { x: 248, y: 232 },
       floor: srvFloor, wall: srvWall, decor: decorSrv, props: propsServerFire,
-      plan: {
-        rooms: [
-          { c: 3,  r: 4,  w: 13, h: 8 },    // RUANG SERVER UTAMA (kiri atas) - TKP
-          { c: 22, r: 4,  w: 15, h: 8 },    // RUANG PANEL (kanan atas)
-          { c: 3,  r: 16, w: 10, h: 8 },    // GUDANG PERANGKAT (kiri bawah)
-          { c: 22, r: 16, w: 15, h: 8 }     // RUANG KONTROL (kanan bawah)
-        ],
-        corridors: [
-          { c: 3,  r: 13, w: 34, h: 2 },
-          { c: 17, r: 4,  w: 4,  h: 11 },
-          { c: 17, r: 16, w: 4,  h: 9 }
-        ],
-        doors: [
-          { c: 8,  r: 12, w: 2, h: 1 },
-          { c: 28, r: 12, w: 2, h: 1 },
-          { c: 6,  r: 15, w: 2, h: 1 },
-          { c: 28, r: 15, w: 2, h: 1 },
-          { c: 18, r: 3,  w: 2, h: 1 }
-        ]
-      },
       lights: [
-        { x: 130, y: 100, r: 92 }, { x: 450, y: 100, r: 96 },
-        { x: 328, y: 224, r: 120 }, { x: 110, y: 320, r: 84 }, { x: 450, y: 320, r: 84 }
+        { x: 120, y: 88, r: 94 }, { x: 376, y: 88, r: 94 },
+        { x: 248, y: 232, r: 118 }
       ],
       messages: ['KUNCI DI PANEL', 'KUNCI ADA DI PANEL', 'AMBIL KUNCI DI PANEL', 'KUNCI CADANGAN DI PANEL'],
       suspects: [
@@ -1383,25 +1405,79 @@
         }
       }
     }
-    INTERACTABLES = c.interactables;
+    // TITIK INTERAKSI OTOMATIS dari footprint perabot yang membawa metadata (ix).
+    // Ini menjamin posisi interaksi SELALU nempel di gambarnya.
+    INTERACTABLES = (function (propsNow) {
+      var out = [];
+      function stance(c, r) {
+        if (c < 1 || r < 2 || c >= MAP_W - 1 || r >= MAP_H - 1) return false;
+        return grid[r][c] === 0 && grid[r - 1][c] === 0;
+      }
+      for (var i = 0; i < propsNow.length; i++) {
+        var pr = propsNow[i];
+        if (!pr.ix) continue;
+        // pusat footprint
+        var cx = pr.x + (pr.w || 0) / 2, cy = pr.y + (pr.h || 0) / 2;
+        // cari tile stance yang MENEMPEL footprint (tepi), paling dekat pusat
+        var c0 = Math.floor(pr.x / T), c1 = Math.ceil((pr.x + (pr.w || 0)) / T);
+        var r0 = Math.floor(pr.y / T), r1 = Math.ceil((pr.y + (pr.h || 0)) / T);
+        var best = null, bd = 1e9;
+        for (var rr = r0 - 1; rr <= r1; rr++) {
+          for (var cc = c0 - 1; cc <= c1; cc++) {
+            if (!stance(cc, rr)) continue;
+            // harus menempel footprint (di tepi luar)
+            var touches = (cc >= c0 - 1 && cc < c1 && rr >= r0 - 1 && rr < r1);
+            if (!touches) continue;
+            var wx = cc * T + T / 2, wy = rr * T + T / 2;
+            var d = Math.hypot(wx - cx, wy - cy);
+            if (d < bd) { bd = d; best = { x: wx, y: wy }; }
+          }
+        }
+        // fallback: stance terdekat dari pusat (scan luas)
+        if (!best) {
+          for (var rr2 = 1; rr2 < MAP_H - 1; rr2++) {
+            for (var cc2 = 1; cc2 < MAP_W - 1; cc2++) {
+              if (!stance(cc2, rr2)) continue;
+              var d2 = Math.hypot(cc2 * T + T / 2 - cx, rr2 * T + T / 2 - cy);
+              if (d2 < bd) { bd = d2; best = { x: cc2 * T + T / 2, y: rr2 * T + T / 2 }; }
+            }
+          }
+        }
+        var it = {
+          id: pr.ix.id, x: best.x, y: best.y,
+          range: Math.max(pr.ix.range || 30, Math.ceil(bd) + 16),
+          label: pr.ix.label, title: pr.ix.title
+        };
+        if (pr.ix.flavor) it.flavor = pr.ix.flavor;
+        if (pr.ix.setsFlag) { it.setsFlag = pr.ix.setsFlag; it.setsFlagMsg = pr.ix.setsFlagMsg; }
+        if (pr.ix.clueOk) it.clueOk = true;
+        out.push(it);
+      }
+      return out;
+    })(propsNow);
     LIGHTS = c.lights;
-    // titik interaksi menempel ke lantai terdekat yang valid
+    // titik interaksi & spawn menempel ke tile STANCE — tile yang bisa ditempati
+    // pemain utuh (tile-nya DAN baris di atasnya kosong, karena hitbox tinggi 15px ke atas)
     (function () {
+      function stance(c, r) {
+        if (c < 1 || r < 2 || c >= MAP_W - 1 || r >= MAP_H - 1) return false;
+        return grid[r][c] === 0 && grid[r - 1][c] === 0;
+      }
       var sp0 = c.spawn;
       var sc0 = Math.floor(sp0.x / T), sr0 = Math.floor(sp0.y / T);
-      if (!grid[sr0] || grid[sr0][sc0] !== 0) {
-        // spawn juga dipindah ke LANTAI KOSONG terdekat (val 0, bukan perabot)
+      if (!stance(sc0, sr0)) {
+        // spawn dipindah ke tile stance terdekat
         var bestS = null, bdS = 1e9;
-        for (var rr3 = 1; rr3 < MAP_H - 1; rr3++) {
+        for (var rr3 = 2; rr3 < MAP_H - 1; rr3++) {
           for (var cc3 = 1; cc3 < MAP_W - 1; cc3++) {
-            if (grid[rr3][cc3] !== 0) continue;
+            if (!stance(cc3, rr3)) continue;
             var dd = Math.hypot(cc3 - sc0, rr3 - sr0);
             if (dd < bdS) { bdS = dd; bestS = [cc3, rr3]; }
           }
         }
         if (bestS) { c.spawn = { x: bestS[0] * T + T / 2, y: bestS[1] * T + T / 2 }; }
       }
-      // BFS dari spawn
+      // BFS stance dari spawn
       var seen2 = {};
       var q2 = [[Math.floor(c.spawn.x / T), Math.floor(c.spawn.y / T)]];
       seen2[q2[0].join(',')] = 1;
@@ -1412,7 +1488,7 @@
           var nc2 = cu2[0] + dirs2[d2][0], nr2 = cu2[1] + dirs2[d2][1];
           var k2 = nc2 + ',' + nr2;
           if (seen2[k2] || nc2 < 0 || nr2 < 0 || nc2 >= MAP_W || nr2 >= MAP_H) continue;
-          if (grid[nr2][nc2] !== 0) continue;
+          if (!stance(nc2, nr2)) continue;
           seen2[k2] = 1; q2.push([nc2, nr2]);
         }
       }
@@ -1424,9 +1500,15 @@
   }
 
   function placeClues() {
-    var pool = [], ex = (CUR && CUR.clueExclude) || {};
+    // petunjuk HANYA di objek clueOk yang bukan alat/pintu/kunci rantai
+    var lockIds = {};
+    for (var q = 0; q < CUR.quest.locks.length; q++) lockIds[CUR.quest.locks[q].at] = 1;
+    var pool = [];
     for (var i = 0; i < INTERACTABLES.length; i++) {
-      if (!ex[INTERACTABLES[i].id]) pool.push(INTERACTABLES[i].id);
+      var it = INTERACTABLES[i];
+      if (!it.clueOk) continue;
+      if (it.id === CUR.quest.tool || it.id === 'door' || lockIds[it.id]) continue;
+      pool.push(it.id);
     }
     for (var j = pool.length - 1; j > 0; j--) {
       var k = Math.floor(Math.random() * (j + 1));
@@ -1439,7 +1521,7 @@
   // geser titik interaksi ke tile lantai terdekat yang BISA dicapai —
   // dipanggil setelah collision dibangun, jadi titik interaksi selalu valid
   function snapInteractables(seen) {
-    // kumpulkan semua tile reachable sekali
+    // kumpulkan semua tile stance sekali (tile di mana pemain utuh bisa berdiri)
     var tiles = [];
     for (var key in seen) {
       var parts = key.split(',');
@@ -1714,6 +1796,27 @@
     R(x + 10, y, 12, 5, '#d8dde4');
   }
 
+  function drawFloorFire(px, py, t) {
+    R(px - 14, py - 10, 44, 26, 'rgba(26,15,10,.85)');
+    var flick = Math.sin((t || 0) * 9) * 2;
+    ctx.globalAlpha = 0.9;
+    R(px - 6, py - 14 + flick, 6, 14, 'rgba(255,140,40,.85)');
+    R(px + 2, py - 10 + flick * 0.6, 6, 10, 'rgba(255,90,20,.75)');
+    R(px - 2, py - 18 + flick, 4, 8, 'rgba(255,210,120,.85)');
+    ctx.globalAlpha = 1;
+  }
+
+
+  function drawChar(px, py) {
+    R(px - 14, py - 10, 44, 26, '#151311');
+    ctx.globalAlpha = 0.4;
+    R(px - 10, py - 6, 36, 18, '#2a2f36');
+    ctx.globalAlpha = 1;
+    R(px - 8, py - 4, 30, 3, 'rgba(120,160,200,.25)');
+    R(px - 2, py + 2, 18, 3, 'rgba(120,160,200,.18)');
+  }
+
+
   function drawFireExt(px, py) {
     var x = px, y = py;
     R(x + 2, y + 28, 12, 3, 'rgba(0,0,0,.32)');
@@ -1894,30 +1997,16 @@
     R(x + 18, y + 41, 6, 2, '#7fb8ee');
   }
 
-  function drawClock() {
-    // bayangan di dinding
-    R(296, 8, 20, 20, 'rgba(0,0,0,.28)');
-    // cincin gelap (bentuk lingkaran kasar)
-    R(301, 6, 10, 1, '#1c2531');
-    R(301, 25, 10, 1, '#1c2531');
-    R(299, 8, 2, 16, '#1c2531');
-    R(311, 8, 2, 16, '#1c2531');
-    R(299, 8, 14, 16, '#1c2531');
-    // muka jam
-    R(301, 9, 10, 14, '#e8eef6');
-    R(302, 8, 8, 1, '#e8eef6');
-    R(302, 24, 8, 1, '#e8eef6');
-    // angka 12/3/6/9
-    R(305, 10, 2, 1, '#9aa6b4');
-    R(305, 22, 2, 1, '#9aa6b4');
-    R(302, 15, 1, 2, '#9aa6b4');
-    R(309, 15, 1, 2, '#9aa6b4');
-    // jarum jam + menit
-    R(305, 11, 2, 6, '#232d3a');
-    R(306, 16, 4, 2, '#232d3a');
-    // poros merah
-    R(305, 16, 2, 2, '#c0392b');
+  function drawClock(px, py) {
+    var x = (px === undefined) ? 296 : px, y = (py === undefined) ? 8 : py;
+    R(x, y, 20, 20, 'rgba(0,0,0,.28)');
+    R(x + 1, y + 1, 18, 18, '#d8d0c0');
+    R(x + 1, y + 1, 18, 2, '#e8e0d0');
+    R(x + 9, y + 5, 2, 7, '#1a1410');
+    R(x + 9, y + 12, 7, 2, '#1a1410');
+    R(x + 2, y + 2, 16, 1, '#8a8274');
   }
+
 
   function drawPoster() {
     R(330, 10, 22, 28, '#39465a');

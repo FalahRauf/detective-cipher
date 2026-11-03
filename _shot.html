@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detektif Sandi — Rekaman 23.47</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- ================= TITLE ================= -->
+  <section class="screen active" id="scr-title">
+    <canvas id="tcv" width="640" height="360"></canvas>
+    <div class="title-top">
+      <h1>DETECTIVE<span>CIPHER</span></h1>
+      <p class="tagline">A noir puzzle about codes</p>
+    </div>
+    <div class="title-actions">
+      <button class="btn primary big" id="btn-start">START INVESTIGATION</button>
+      <button class="btn big" id="btn-help">HOW TO PLAY</button>
+    </div>
+  </section>
+
+  <!-- ================= SELECT (jalanan + senter) ================= -->
+  <section class="screen" id="scr-select">
+    <canvas id="scv" width="640" height="360"></canvas>
+    <button class="btn tiny select-back" id="btn-select-back">&larr; MENU</button>
+    <div class="select-hint">Gerakkan lampu dengan mouse &middot; arahkan ke sosok hitam, lalu klik untuk membuka kasusnya</div>
+  </section>
+
+  <!-- ================= CUTSCENE CCTV ================= -->
+  <section class="screen" id="scr-cutscene">
+    <canvas id="ccv" width="640" height="360"></canvas>
+    <div class="cut-caption" id="cut-caption"></div>
+    <div class="cut-skip">
+      <button class="btn tiny" id="btn-cut-skip">LEWATI &raquo;</button>
+    </div>
+    <button class="btn primary" id="btn-cut-next">LANJUT &rarr;</button>
+  </section>
+
+  <!-- ================= CUTSCENE 2: PAPAN KASUS ================= -->
+  <section class="screen" id="scr-board">
+    <canvas id="bcv" width="640" height="360"></canvas>
+    <div class="cut-caption" id="board-caption"></div>
+    <div class="cut-skip">
+      <button class="btn tiny" id="btn-board-skip">LEWATI &raquo;</button>
+    </div>
+    <button class="btn primary" id="btn-board-next">TURUN KE TKP &rarr;</button>
+  </section>
+
+  <!-- ================= PLAY ================= -->
+  <section class="screen" id="scr-play">
+    <canvas id="cv" width="320" height="180"></canvas>
+
+    <div class="p-top">
+      <span class="tag" id="hud-place">TKP &middot; LAB KOMPUTER 2</span>
+      <span class="p-obj" id="objective">Cari bukti &middot; 0/3</span>
+      <span class="key-badge" id="key-badge">KUNCI LEMARI</span>
+      <span class="guard-badge" id="guard-badge">AWAS PERANGKAP</span>
+      <button class="tool-btn" id="btn-tool" title="Alat dekripsi (T)">ALAT <b>T</b></button>
+      <span class="score">SKOR <b id="hud-score">1000</b></span>
+    </div>
+
+    <div class="p-prompt" id="prompt"><b>E</b><span id="prompt-label">Periksa</span></div>
+
+    <div class="p-dialog" id="dialog">
+      <div class="dlg-head"><span id="dlg-name">Monitor</span></div>
+      <div class="dlg-text" id="dlg-text"></div>
+      <div class="dlg-actions" id="dlg-actions"></div>
+    </div>
+
+    <div class="p-keys" id="p-keys">W A S D / panah untuk jalan &nbsp;&middot;&nbsp; E untuk interaksi</div>
+  </section>
+
+  <!-- ================= ALAT DEKRIPSI ================= -->
+  <section class="screen" id="scr-tool">
+    <header class="hud">
+      <div class="hud-left">
+        <span class="tag">ALAT DEKRIPSI</span>
+        <span class="hud-hint" id="tool-hint">Tempel pesan terenkripsi &amp; kuncinya, lalu jalankan</span>
+      </div>
+      <div class="hud-right">
+        <span class="score">SKOR <b id="hud-score-2">1000</b></span>
+      </div>
+    </header>
+
+    <div class="tool-wrap">
+      <div class="tool-main">
+        <div class="tool-box">
+          <label class="tool-label">PESAN TERENKRIPSI
+            <button class="btn tiny tool-paste" data-target="in-msg">TEMPEL</button>
+          </label>
+          <textarea id="in-msg" class="tool-input" rows="3" spellcheck="false"
+                    placeholder="tempel deretan huruf acak yang kamu temukan..."></textarea>
+        </div>
+
+        <div class="tool-box">
+          <label class="tool-label">KUNCI / FUNGSI
+            <button class="btn tiny tool-paste" data-target="in-key">TEMPEL</button>
+          </label>
+          <textarea id="in-key" class="tool-input mono" rows="4" spellcheck="false"
+                    placeholder="tempel fungsinya di sini, satu fungsi per baris..."></textarea>
+        </div>
+
+        <div class="tool-run">
+          <button class="btn primary" id="btn-encrypt">DEKRIPSI &rarr;</button>
+          <span class="tool-msg" id="tool-msg"></span>
+        </div>
+
+        <div class="tool-out-wrap" id="tool-out-wrap">
+          <div class="tool-out-label">HASIL DEKRIPSI</div>
+          <div class="tool-out" id="tool-out">&mdash;</div>
+          <div class="tool-steps" id="tool-steps"></div>
+        </div>
+      </div>
+
+      <aside class="tool-side">
+        <div class="tool-side-head">BUKTI DITEMUKAN</div>
+        <div class="tool-ev" id="tool-evidence"></div>
+      </aside>
+    </div>
+
+    <div class="desk-actions">
+      <button class="btn" id="btn-tool-back">&larr; KEMBALI KE TKP</button>
+      <button class="btn primary" id="btn-tool-done" style="display:none">BUKTI COCOK &middot; LANJUT &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ================= INTEROGASI ================= -->
+  <section class="screen" id="scr-interro">
+    <canvas id="icv" width="640" height="360"></canvas>
+    <div class="interro-head">
+      <span class="tag">RUANG INTEROGASI</span>
+      <span class="interro-hint">Arahkan lampu ke tersangka, lalu klik untuk memilih</span>
+    </div>
+    <button class="btn tiny interro-back" id="btn-interro-back">&larr; KEMBALI KE TKP</button>
+  </section>
+
+  <!-- ================= CUTSCENE VONIS ================= -->
+  <section class="screen" id="scr-verdict">
+    <canvas id="vcv" width="640" height="360"></canvas>
+    <div class="cut-caption" id="vd-caption"></div>
+    <div class="cut-skip">
+      <button class="btn tiny" id="btn-vd-skip">LEWATI &raquo;</button>
+    </div>
+    <button class="btn primary" id="btn-vd-next">LIHAT HASIL &rarr;</button>
+  </section>
+
+  <!-- ================= END ================= -->
+  <section class="screen" id="scr-end">
+    <div class="end-wrap">
+      <div class="verdict" id="verdict-stamp">TERBUKTI</div>
+      <h2 id="end-title">Kasus Selesai</h2>
+      <p class="end-text" id="end-text"></p>
+      <div class="end-stats">
+        <div class="stat"><span>SKOR</span><b id="end-score">0</b></div>
+        <div class="stat"><span>PERINGKAT</span><b id="end-rank">-</b></div>
+      </div>
+      <div class="end-actions">
+        <button class="btn primary" id="btn-again">ULANGI KASUS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- overlay transisi fade -->
+  <div id="fade"></div>
+
+</div>
+
+<!-- ================= MODAL ================= -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <span class="tag" id="modal-tag">BUKTI</span>
+      <button class="modal-x" id="modal-x">&times;</button>
+    </div>
+    <h3 id="modal-title">-</h3>
+    <p id="modal-desc">-</p>
+    <div class="payload" id="modal-payload">-</div>
+    <div class="modal-foot">
+      <button class="btn primary" id="modal-ok">MENGERTI</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= POPUP KASUS ================= -->
+<div class="modal" id="case-modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <span class="tag" id="cm-tag">CASE FILE #01</span>
+      <button class="modal-x" id="cm-x">&times;</button>
+    </div>
+    <h3 id="cm-title">-</h3>
+    <p id="cm-desc">-</p>
+    <div class="cm-diff-label" id="cm-diff-wrap">PILIH TINGKAT KESULITAN</div>
+    <div class="diff-row" id="cm-diffs"></div>
+    <div class="cm-locked" id="cm-locked">Kasus ini masih dalam perancangan — segera hadir.</div>
+  </div>
+</div>
+
+<!-- ================= POPUP KONFIRMASI MODE ================= -->
+<div class="modal" id="confirm-modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <span class="tag" id="cf-tag">MODE</span>
+    </div>
+    <h3>Yakin main mode ini?</h3>
+    <p id="cf-text">-</p>
+    <div class="modal-foot split">
+      <button class="btn" id="cf-cancel">BATAL</button>
+      <button class="btn primary" id="cf-start">MULAI KASUS</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="err"></div>
+
+<script src="game.js"></script>
+<script>
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var q=new URLSearchParams(location.search);
+    var G=window.GAME;
+    G.setCase(parseInt(q.get('c')||'0')); G.setDifficulty(q.get('d')||'normal'); G.resetGame();
+    G.showScreen('scr-play');
+  },250);
+});
+</script>
+</body>
+</html>

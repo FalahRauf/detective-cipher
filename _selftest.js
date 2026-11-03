@@ -111,13 +111,21 @@ for (const id of ['easy', 'normal', 'hard']) {
   for (const L of C.layers) if (gcdN(L.a, 26) !== 1) cop = false;
   ok(cop, 'semua koefisien koprima dengan 26');
 
-  const wantClues = (id === 'hard') ? 3 : 2;
-  ok(C.clues.length === wantClues, 'jumlah petunjuk = ' + C.clues.length);
+  const wantClues = C.clues.length;
   ok(Object.keys(G.state.clueMap).length === wantClues,
-     'petunjuk ditempatkan di ' + wantClues + ' barang acak');
+     'petunjuk ditempatkan di ' + wantClues + ' barang (sesuai clueCount kasus)');
 
-  const banned = Object.keys(G.state.clueMap).filter(k => ['monitor', 'pot', 'lemari', 'door'].indexOf(k) >= 0);
-  ok(banned.length === 0, 'petunjuk tidak menempel di alat/pot/lemari/pintu');
+  // semua petunjuk harus di objek clueOk (pantas menyembunyikan barang)
+  const notOk = Object.keys(G.state.clueMap).filter(k => {
+    const it = G.INTERACTABLES.find(p => p.id === k);
+    return !it || !it.clueOk;
+  });
+  ok(notOk.length === 0, 'semua petunjuk di objek clueOk' + (notOk.length ? ' — bocor: ' + notOk.join(',') : ''));
+
+  // petunjuk tidak boleh di alat/pintu/lock
+  const locked = Object.keys(G.state.clueMap).filter(k =>
+    k === G.CUR.quest.tool || k === 'door' || G.CUR.quest.locks.some(l => l.at === k));
+  ok(locked.length === 0, 'petunjuk tidak menempel di alat/pintu/kunci' + (locked.length ? ' — bocor: ' + locked.join(',') : ''));
 }
 
 console.log('\n== ALAT ENKRIPSI ==');
