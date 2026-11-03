@@ -215,10 +215,13 @@
      rooms: [{c,r,w,h}]  (koordinat tile)
      doors: [{c,r,w,h}]  (lubang penghubung; ditembus di dinding)
      corridors: [{c,r,w,h}] (lorong; lantainya tetap, bukan ruangan)
+
+     Setelah digali, fungsi ini MEMVERIFIKASI bahwa semua lantai
+     terhubung ke spawn. Kalau ada ruangan terputus, dibuatkan
+     lorong penyambung otomatis (carve) sampai tersambung.
      --------------------------------------------------------- */
-  function makeFloorPlan(w, h, rooms, doors, corridors) {
+  function makeFloorPlan(w, h, rooms, doors, corridors, spawn) {
     var g = [];
-    // mulai dari SEMUA dinding
     for (var r = 0; r < h; r++) {
       var row = [];
       for (var c = 0; c < w; c++) row.push(1);
@@ -234,6 +237,73 @@
     for (var i = 0; i < rooms.length; i++) carve(rooms[i]);
     for (var j = 0; j < corridors.length; j++) carve(corridors[j]);
     for (var k = 0; k < doors.length; k++) carve(doors[k]);
+
+    // --- verifikasi konektivitas ---
+    function bfs(sc, sr) {
+      var seen = {}, q = [[sc, sr]];
+      seen[sc + ',' + sr] = 1;
+      var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      while (q.length) {
+        var cur = q.shift();
+        for (var d = 0; d < 4; d++) {
+          var nc = cur[0] + dirs[d][0], nr = cur[1] + dirs[d][1];
+          var key = nc + ',' + nr;
+          if (seen[key] || nc < 1 || nr < 1 || nc >= w - 1 || nr >= h - 1) continue;
+          if (g[nr][nc] !== 0) continue;
+          seen[key] = 1;
+          q.push([nc, nr]);
+        }
+      }
+      return seen;
+    }
+
+    var sp = spawn || { x: w * T / 2, y: h * T / 2 };
+    var sc0 = Math.floor(sp.x / T), sr0 = Math.floor(sp.y / T);
+    // pastikan spawn di lantai
+    if (g[sr0] && g[sr0][sc0] !== 0) {
+      // cari lantai terdekat
+      var best = null, bd = 1e9;
+      for (var rr2 = 1; rr2 < h - 1; rr2++) {
+        for (var cc2 = 1; cc2 < w - 1; cc2++) {
+          if (g[rr2][cc2] !== 0) continue;
+          var dd = Math.hypot(cc2 - sc0, rr2 - sr0);
+          if (dd < bd) { bd = dd; best = [cc2, rr2]; }
+        }
+      }
+      if (best) { sc0 = best[0]; sr0 = best[1]; }
+    }
+
+    // sambungkan semua komponen lantai ke komponen spawn
+    for (var guard = 0; guard < 40; guard++) {
+      var seen = bfs(sc0, sr0);
+      // cari tile lantai yang belum terjangkau
+      var orphan = null;
+      for (var rr3 = 1; rr3 < h - 1 && !orphan; rr3++) {
+        for (var cc3 = 1; cc3 < w - 1; cc3++) {
+          if (g[rr3][cc3] === 0 && !seen[cc3 + ',' + rr3]) { orphan = [cc3, rr3]; break; }
+        }
+      }
+      if (!orphan) break;   // semua tersambung
+
+      // gali lorong L-shape dari orphan menuju tile terdekat yang terjangkau
+      var target = null, td = 1e9;
+      for (var key in seen) {
+        var parts = key.split(',');
+        var tc = +parts[0], tr = +parts[1];
+        var d2 = Math.abs(tc - orphan[0]) + Math.abs(tr - orphan[1]);
+        if (d2 < td) { td = d2; target = [tc, tr]; }
+      }
+      if (!target) break;
+      // horizontal dulu, lalu vertikal (1 tile lebar)
+      var x0 = Math.min(orphan[0], target[0]), x1 = Math.max(orphan[0], target[0]);
+      for (var cx = x0; cx <= x1; cx++) {
+        if (g[orphan[1]] && cx > 0 && cx < w - 1 && orphan[1] > 0 && orphan[1] < h - 1) g[orphan[1]][cx] = 0;
+      }
+      var y0 = Math.min(orphan[1], target[1]), y1 = Math.max(orphan[1], target[1]);
+      for (var cy = y0; cy <= y1; cy++) {
+        if (g[cy] && target[0] > 0 && target[0] < w - 1 && cy > 0 && cy < h - 1) g[cy][target[0]] = 0;
+      }
+    }
     return g;
   }
 
@@ -613,104 +683,108 @@
   function propsLab() {
     var list = [];
 
-    /* ===== LAB KOMPUTER 2 (kiri atas: c3-14, r4-10) ===== */
-    list.push({ y: 96,  fn: function () { drawDeskTop(56, 72, 96); } });          // meja guru
-    list.push({ y: 96,  fn: function () { drawMonitor(76, 62, 40, 26); } });
-    list.push({ y: 96,  fn: function () { drawChair(140, 84); } });
-    list.push({ y: 120, fn: function () { drawBoard(); } });                      // papan tulis (sudah digambar via drawBoard global)
-    list.push({ y: 136, fn: function () { drawBookshelf(); } });
-    list.push({ y: 150, fn: function () { drawBin(); } });
-    // deret meja siswa 2 baris
-    var labDesks = [[56, 140], [120, 140], [56, 176], [120, 176]];
+    /* ===== LAB KOMPUTER 2 — ruang c3-14 r4-10 → world x48-240 y64-176 ===== */
+    list.push({ y: 96,  fn: function () { drawDeskTop(64, 80, 80); } });
+    list.push({ y: 96,  fn: function () { drawMonitor(80, 70, 36, 24); } });
+    list.push({ y: 100, fn: function () { drawChair(152, 92); } });
+    list.push({ y: 76,  fn: function () { drawBoard(56, 68); } });          // papan tulis dinding atas
+    list.push({ y: 150, fn: function () { drawBookshelf(200, 96); } });     // rak di sudut kanan
+    list.push({ y: 172, fn: function () { drawBin(64, 156); } });           // sampah
+    // meja siswa 2x2 di bagian bawah ruangan
+    var labDesks = [[64, 112], [128, 112], [64, 144], [128, 144]];
     for (var i = 0; i < labDesks.length; i++) {
       (function (dx, dy) {
         list.push({ y: dy + 16, fn: function () { drawStudentDesk(dx, dy); } });
-        list.push({ y: dy + 26, fn: function () { drawChair(dx + 10, dy + 16); } });
+        list.push({ y: dy + 24, fn: function () { drawChair(dx + 10, dy + 16); } });
       })(labDesks[i][0], labDesks[i][1]);
     }
 
-    /* ===== RUANG GURU (kanan atas: c20-30, r4-10) ===== */
-    list.push({ y: 100, fn: function () { drawPrinterTable(); } });
-    list.push({ y: 140, fn: function () { drawCabinet(); } });
-    list.push({ y: 118, fn: function () { drawBookshelf(); } });
-    list.push({ y: 108, fn: function () { drawCorkBoard(); } });
+    /* ===== RUANG GURU — ruang c20-30 r4-10 → world x320-496 y64-176 ===== */
+    list.push({ y: 108, fn: function () { drawPrinterTable(336, 80); } });
+    list.push({ y: 152, fn: function () { drawCabinet(432, 96); } });
+    list.push({ y: 128, fn: function () { drawBookshelf(336, 120); } });
+    list.push({ y: 96,  fn: function () { drawCorkBoard(464, 72); } });
 
-    /* ===== GUDANG (kiri bawah: c3-11, r15-20) ===== */
-    list.push({ y: 300, fn: function () { drawPlant(); } });
-    list.push({ y: 286, fn: function () { drawDispenser(); } });
-    list.push({ y: 300, fn: function () { drawMop(); } });
+    /* ===== GUDANG — ruang c3-11 r15-20 → world x48-192 y240-336 ===== */
+    list.push({ y: 300, fn: function () { drawPlant(96, 272); } });
+    list.push({ y: 288, fn: function () { drawDispenser(152, 256); } });
+    list.push({ y: 316, fn: function () { drawMop(64, 288); } });
 
-    /* ===== RUANG ISTIRAHAT (kanan bawah: c20-30, r15-20) ===== */
-    list.push({ y: 296, fn: function () { drawStudentDesk(328, 272); } });
-    list.push({ y: 296, fn: function () { drawStudentDesk(408, 272); } });
-    list.push({ y: 300, fn: function () { drawRug(); } });
+    /* ===== RUANG ISTIRAHAT — ruang c20-30 r15-20 → world x320-496 y240-336 ===== */
+    list.push({ y: 300, fn: function () { drawStudentDesk(336, 272); } });
+    list.push({ y: 300, fn: function () { drawStudentDesk(424, 272); } });
+    list.push({ y: 330, fn: function () { drawRug(340, 296); } });
 
     /* ===== lorong: kabel lantai ===== */
-    list.push({ y: 200, fn: function () { drawCable(150, 196, 90); } });
+    list.push({ y: 210, fn: function () { drawCable(150, 200, 90); } });
 
-    list.push({ y: 360, fn: drawDoor });
+    /* ===== pintu keluar di lorong bawah ===== */
+    list.push({ y: 360, fn: function () { drawDoor(246, 340); } });
     return list;
   }
 
   /* ---------- props KASUS 2: ruang guru / rapat / arsip / pantry ---------- */
   function propsTeacherRoom() {
     var list = [];
-    /* RUANG GURU (kiri atas) — TKP */
-    list.push({ y: 100, fn: function () { drawDeskTop(56, 80, 96); } });
-    list.push({ y: 100, fn: function () { drawMonitor(76, 70, 40, 24); } });
-    list.push({ y: 108, fn: function () { drawChair(120, 92); } });
-    list.push({ y: 76,  fn: function () { drawBoard(); } });
-    list.push({ y: 156, fn: function () { drawBin(); } });
+    /* RUANG GURU — c3-13 r4-10 → x48-224 y64-176 (TKP) */
+    list.push({ y: 108, fn: function () { drawDeskTop(64, 88, 88); } });
+    list.push({ y: 108, fn: function () { drawMonitor(80, 78, 36, 24); } });
+    list.push({ y: 116, fn: function () { drawChair(160, 100); } });
+    list.push({ y: 80,  fn: function () { drawBoard(56, 70); } });
+    list.push({ y: 168, fn: function () { drawBin(64, 152); } });
 
-    /* RUANG RAPAT (kanan atas) */
-    list.push({ y: 104, fn: function () { drawDeskTop(340, 88, 140); } });
-    list.push({ y: 130, fn: function () { drawChair(360, 112); } });
-    list.push({ y: 130, fn: function () { drawChair(400, 112); } });
-    list.push({ y: 130, fn: function () { drawChair(440, 112); } });
-    list.push({ y: 96,  fn: function () { drawCorkBoard(); } });
-    list.push({ y: 104, fn: function () { drawPrinterTable(); } });
+    /* RUANG RAPAT — c20-32 r4-10 → x320-528 y64-176 */
+    list.push({ y: 120, fn: function () { drawDeskTop(352, 96, 120); } });
+    list.push({ y: 140, fn: function () { drawChair(368, 120); } });
+    list.push({ y: 140, fn: function () { drawChair(416, 120); } });
+    list.push({ y: 140, fn: function () { drawChair(464, 120); } });
+    list.push({ y: 96,  fn: function () { drawCorkBoard(336, 72); } });
+    list.push({ y: 160, fn: function () { drawPrinterTable(488, 100); } });
 
-    /* ARSIP (kiri bawah) */
-    list.push({ y: 300, fn: function () { drawBookshelf(); } });
-    list.push({ y: 300, fn: function () { drawCabinet(); } });
+    /* ARSIP — c3-10 r15-21 → x48-176 y240-352 */
+    list.push({ y: 320, fn: function () { drawBookshelf(56, 264); } });
+    list.push({ y: 288, fn: function () { drawCabinet(120, 248); } });
 
-    /* PANTRY (kanan bawah) */
-    list.push({ y: 300, fn: function () { drawDispenser(); } });
-    list.push({ y: 292, fn: function () { drawCabinet(); } });
-    list.push({ y: 300, fn: function () { drawPlant(); } });
-    list.push({ y: 288, fn: function () { drawDeskTop(432, 256, 72); } });
+    /* PANTRY — c20-32 r15-21 → x320-528 y240-352 */
+    list.push({ y: 320, fn: function () { drawDispenser(336, 288); } });
+    list.push({ y: 300, fn: function () { drawCabinet(400, 264); } });
+    list.push({ y: 328, fn: function () { drawPlant(480, 296); } });
+    list.push({ y: 288, fn: function () { drawDeskTop(432, 264, 72); } });
 
-    /* lorong */
-    list.push({ y: 220, fn: function () { drawRug(); } });
-    list.push({ y: 416, fn: function () { drawDoor(); } });
+    /* lorong + pintu */
+    list.push({ y: 226, fn: function () { drawRug(200, 196); } });
+    list.push({ y: 352, fn: function () { drawDoor(262, 332); } });
     return list;
   }
 
   /* ---------- props KASUS 3: server / panel / gudang / kontrol ---------- */
   function propsServerFire() {
     var list = [];
-    /* RUANG SERVER UTAMA (kiri atas) */
-    list.push({ y: 120, fn: function () { drawServerRack(48, 56, 48, 64); } });
-    list.push({ y: 120, fn: function () { drawServerRack(144, 56, 48, 64); } });
-    list.push({ y: 180, fn: function () { drawServerRack(48, 120, 48, 64); } });
-    list.push({ y: 180, fn: function () { drawServerRack(144, 120, 48, 64); } });
-    list.push({ y: 176, fn: function () { drawTerminalDesk(96, 152, 80); } });
+    /* RUANG SERVER UTAMA — c3-15 r4-11 → x48-256 y64-192 */
+    list.push({ y: 120, fn: function () { drawServerRack(56, 72, 40, 48); } });
+    list.push({ y: 120, fn: function () { drawServerRack(120, 72, 40, 48); } });
+    list.push({ y: 180, fn: function () { drawServerRack(56, 132, 40, 48); } });
+    list.push({ y: 180, fn: function () { drawServerRack(120, 132, 40, 48); } });
+    list.push({ y: 180, fn: function () { drawTerminalDesk(184, 148, 64); } });
 
-    /* RUANG PANEL (kanan atas) */
-    list.push({ y: 110, fn: function () { drawPanelBox(416, 80, 32, 32); } });
-    list.push({ y: 110, fn: function () { drawCoolingUnit(496, 56, 32, 48); } });
-    list.push({ y: 152, fn: function () { drawBin(); } });
+    /* RUANG PANEL — c22-36 r4-11 → x352-592 y64-192 */
+    list.push({ y: 120, fn: function () { drawPanelBox(368, 80, 32, 32); } });
+    list.push({ y: 130, fn: function () { drawCoolingUnit(432, 72, 40, 56); } });
+    list.push({ y: 180, fn: function () { drawBin(520, 156); } });
+    list.push({ y: 160, fn: function () { drawCabinet(480, 108); } });
 
-    /* GUDANG (kiri bawah) */
-    list.push({ y: 320, fn: function () { drawServerRack(48, 280, 32, 48); } });
-    list.push({ y: 320, fn: function () { drawCabinet(); } });
+    /* GUDANG — c3-12 r16-23 → x48-208 y256-384 */
+    list.push({ y: 340, fn: function () { drawServerRack(64, 296, 40, 48); } });
+    list.push({ y: 320, fn: function () { drawCabinet(136, 272); } });
+    list.push({ y: 350, fn: function () { drawMop(72, 320); } });
 
-    /* RUANG KONTROL (kanan bawah) */
-    list.push({ y: 320, fn: function () { drawSafeBox(416, 288, 48, 40); } });
-    list.push({ y: 304, fn: function () { drawTerminalDesk(368, 272, 80); } });
-    list.push({ y: 320, fn: function () { drawCabinet(); } });
+    /* RUANG KONTROL — c22-36 r16-23 → x352-592 y256-384 */
+    list.push({ y: 340, fn: function () { drawSafeBox(368, 304, 48, 40); } });
+    list.push({ y: 320, fn: function () { drawTerminalDesk(440, 288, 80); } });
+    list.push({ y: 340, fn: function () { drawCabinet(536, 296); } });
 
-    list.push({ y: 432, fn: function () { drawDoor(); } });
+    /* pintu */
+    list.push({ y: 384, fn: function () { drawDoor(286, 364); } });
     return list;
   }
 
@@ -918,7 +992,7 @@
     {
       id: 'c2', no: 'CASE FILE #02', title: 'Jam Terakhir Bu Ratna',
       place: 'RUANG GURU', cam: 'CAM 05', loc: 'SAYAP GURU LANTAI 1',
-      mapW: 36, mapH: 26, spawn: { x: 280, y: 384 },
+      mapW: 36, mapH: 26, spawn: { x: 120, y: 152 },
       floor: libFloor, wall: libWall, decor: decorLib, props: propsTeacherRoom,
       plan: {
         rooms: [
@@ -1017,7 +1091,7 @@
         { id: 'kopi',     x: 456, y: 264, range: 28, label: 'Periksa mesin kopi',  title: 'MESIN KOPI',
           flavor: 'Saringan kopinya masih lembap. Ada dua cangkir kotor di nampan, bukan satu.' },
         // --- pintu ---
-        { id: 'door',     x: 280, y: 400, range: 34, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
+        { id: 'door',     x: 280, y: 344, range: 40, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
       ],
       clueExclude: { komputer: 1, arsip: 1, loker: 1, brankas: 1, door: 1 },
       caps: [
@@ -1072,7 +1146,7 @@
     {
       id: 'c3', no: 'CASE FILE #03', title: 'Api di Ruang Server',
       place: 'RUANG SERVER', cam: 'CAM 09', loc: 'RUANG SERVER LT. 3',
-      mapW: 42, mapH: 28, spawn: { x: 328, y: 412 },
+      mapW: 42, mapH: 28, spawn: { x: 136, y: 168 },
       floor: srvFloor, wall: srvWall, decor: decorSrv, props: propsServerFire,
       plan: {
         rooms: [
@@ -1183,7 +1257,7 @@
           flavor: 'AC presisi, setelan 18 derajat. Filternya menghitam, sama seperti rak.' },
         { id: 'kabel',    x: 328, y: 316, range: 28, label: 'Periksa kabel lantai', title: 'KABEL LANTAI',
           flavor: 'Kabel daya di bawah raised floor. Semua masih terpasang, tidak ada yang dicabut.' },
-        { id: 'door',     x: 328, y: 428, range: 34, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
+        { id: 'door',     x: 304, y: 368, range: 40, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
       ],
       clueExclude: { terminal: 1, panel: 1, rakB: 1, cooling: 1, vault: 1, door: 1 },
       caps: [
@@ -1246,7 +1320,7 @@
     WORLD_H = MAP_H * T;
     // denah ruangan (lorong + banyak ruangan) atau grid lama
     if (c.plan) {
-      grid = makeFloorPlan(MAP_W, MAP_H, c.plan.rooms, c.plan.doors, c.plan.corridors);
+      grid = makeFloorPlan(MAP_W, MAP_H, c.plan.rooms, c.plan.doors, c.plan.corridors, c.spawn);
     } else {
       grid = makeGrid(MAP_W, MAP_H, c.furniture || []);
     }
@@ -1500,55 +1574,57 @@
     R(x + 24, y + 3, 4, 4, '#d8dde4');
   }
 
-  function drawCabinet() {
+  function drawCabinet(px, py) {
+    var x = (px === undefined) ? 352 : px, y = (py === undefined) ? 48 : py;
     var locked = !state.flags.key1;
-    R(352, 94, 32, 4, 'rgba(0,0,0,.35)');
-    R(352, 48, 32, 5, '#2f4d70');
-    R(352, 53, 32, 41, '#1d3552');
+    R(x, y + 46, 32, 4, 'rgba(0,0,0,.35)');
+    R(x, y, 32, 5, '#2f4d70');
+    R(x, y + 5, 32, 41, '#1d3552');
     for (var i = 0; i < 3; i++) {
-      var y = 56 + i * 13;
-      R(355, y, 26, 10, '#25405f');
-      R(355, y, 26, 1, '#325476');
-      R(365, y + 4, 8, 2, '#4d7296');
+      var sy = y + 8 + i * 13;
+      R(x + 3, sy, 26, 10, '#25405f');
+      R(x + 3, sy, 26, 1, '#325476');
+      R(x + 13, sy + 4, 8, 2, '#4d7296');
     }
-    R(352, 93, 32, 2, '#12202f');
-    R(352, 53, 1, 41, '#16283c');
-    R(383, 53, 1, 41, '#16283c');
+    R(x, y + 45, 32, 2, '#12202f');
+    R(x, y + 5, 1, 41, '#16283c');
+    R(x + 31, y + 5, 1, 41, '#16283c');
     if (locked) {
-      R(362, 66, 13, 11, '#f2b544');
-      R(365, 69, 7, 6, '#0d1118');
-      R(361, 63, 15, 4, '#f2b544');
+      R(x + 10, y + 18, 13, 11, '#f2b544');
+      R(x + 13, y + 21, 7, 6, '#0d1118');
+      R(x + 9, y + 15, 15, 4, '#f2b544');
     } else {
       ctx.globalAlpha = 0.18;
-      R(352, 53, 32, 41, '#46c98b');
+      R(x, y + 5, 32, 41, '#46c98b');
       ctx.globalAlpha = 1;
     }
   }
 
-  function drawPrinterTable() {
-    R(320, 94, 32, 3, 'rgba(0,0,0,.32)');
-    R(320, 64, 32, 10, '#4a3826');
-    R(320, 64, 32, 2, '#5f4a33');
-    R(320, 74, 32, 20, '#33261a');
-    R(322, 78, 28, 12, '#3d2d1f');
-    R(326, 82, 20, 3, '#2b2015');
-    // printer
-    R(324, 54, 24, 12, '#2b3440');
-    R(324, 54, 24, 3, '#3a4656');
-    R(327, 58, 18, 5, '#d8dde4');
-    R(327, 58, 18, 1, '#eef2f7');
-    R(330, 50, 12, 5, '#d8dde4');
+  function drawPrinterTable(px, py) {
+    var x = (px === undefined) ? 320 : px, y = (py === undefined) ? 50 : py;
+    R(x, y + 44, 32, 3, 'rgba(0,0,0,.32)');
+    R(x, y + 14, 32, 10, '#4a3826');
+    R(x, y + 14, 32, 2, '#5f4a33');
+    R(x, y + 24, 32, 20, '#33261a');
+    R(x + 2, y + 28, 28, 12, '#3d2d1f');
+    R(x + 6, y + 32, 20, 3, '#2b2015');
+    R(x + 4, y + 4, 24, 12, '#2b3440');
+    R(x + 4, y + 4, 24, 3, '#3a4656');
+    R(x + 7, y + 8, 18, 5, '#d8dde4');
+    R(x + 7, y + 8, 18, 1, '#eef2f7');
+    R(x + 10, y, 12, 5, '#d8dde4');
   }
 
-  function drawCorkBoard() {
-    R(272, 8, 34, 30, '#39465a');
-    R(273, 9, 32, 28, '#8a6a45');
-    R(276, 13, 10, 8, '#e8e2d2');
-    R(290, 12, 11, 10, '#d8e0e8');
-    R(277, 25, 12, 7, '#e8d8c8');
-    R(292, 25, 8, 8, '#c9d3de');
-    R(281, 16, 1, 1, '#c0392b');
-    R(295, 16, 1, 1, '#2b6ea8');
+  function drawCorkBoard(px, py) {
+    var x = (px === undefined) ? 272 : px, y = (py === undefined) ? 8 : py;
+    R(x, y, 34, 30, '#39465a');
+    R(x + 1, y + 1, 32, 28, '#8a6a45');
+    R(x + 4, y + 5, 10, 8, '#e8e2d2');
+    R(x + 18, y + 4, 11, 10, '#d8e0e8');
+    R(x + 5, y + 17, 12, 7, '#e8d8c8');
+    R(x + 20, y + 17, 8, 8, '#c9d3de');
+    R(x + 9, y + 8, 1, 1, '#c0392b');
+    R(x + 23, y + 8, 1, 1, '#2b6ea8');
   }
 
   function drawAC() {
@@ -1558,88 +1634,87 @@
     R(386, 21, 26, 1, '#9aa6b4');
   }
 
-  function drawMop() {
-    R(400, 176, 14, 3, 'rgba(0,0,0,.28)');
-    R(402, 160, 10, 16, '#4a5a6a');
-    R(402, 160, 10, 3, '#5d7183');
-    R(405, 148, 3, 14, '#8a6a45');
-    R(404, 174, 6, 3, '#3a4756');
+  function drawMop(px, py) {
+    var x = (px === undefined) ? 400 : px, y = (py === undefined) ? 148 : py;
+    R(x, y + 28, 14, 3, 'rgba(0,0,0,.28)');
+    R(x + 2, y + 12, 10, 16, '#4a5a6a');
+    R(x + 2, y + 12, 10, 3, '#5d7183');
+    R(x + 5, y, 3, 14, '#8a6a45');
+    R(x + 4, y + 26, 6, 3, '#3a4756');
   }
 
-  function drawRug() {
-    R(98, 114, 252, 44, '#22303a');
-    for (var i = 0; i < 14; i++) {
+  function drawRug(px, py) {
+    var x = (px === undefined) ? 98 : px, y = (py === undefined) ? 114 : py;
+    R(x, y, 168, 44, '#22303a');
+    for (var i = 0; i < 9; i++) {
       for (var j = 0; j < 5; j++) {
-        R(102 + i * 18, 118 + j * 8, 14, 1, ((i + j) % 2) ? '#1c2830' : '#26353f');
+        R(x + 4 + i * 18, y + 4 + j * 8, 14, 1, ((i + j) % 2) ? '#1c2830' : '#26353f');
       }
     }
-    R(98, 114, 252, 2, '#4a2f36');
-    R(98, 156, 252, 2, '#4a2f36');
-    R(98, 114, 2, 44, '#4a2f36');
-    R(348, 114, 2, 44, '#4a2f36');
-    for (var k = 0; k < 20; k++) {
-      R(99 + k * 13, 111, 1, 3, '#3a2a30');
-      R(99 + k * 13, 158, 1, 3, '#3a2a30');
-    }
+    R(x, y, 168, 2, '#4a2f36');
+    R(x, y + 42, 168, 2, '#4a2f36');
+    R(x, y, 2, 44, '#4a2f36');
+    R(x + 166, y, 2, 44, '#4a2f36');
   }
 
-  function drawBookshelf() {
-    R(32, 128, 32, 4, 'rgba(0,0,0,.32)');
-    R(32, 64, 32, 4, '#4a3728');
-    R(32, 68, 32, 60, '#2a1d14');
+  function drawBookshelf(px, py) {
+    var x = (px === undefined) ? 32 : px, y = (py === undefined) ? 64 : py;
+    R(x, y + 60, 32, 4, 'rgba(0,0,0,.32)');
+    R(x, y, 32, 4, '#4a3728');
+    R(x, y + 4, 32, 60, '#2a1d14');
     for (var s = 0; s < 3; s++) {
-      var y = 71 + s * 19;
-      R(34, y, 28, 16, '#1c130d');
+      var sy = y + 7 + s * 19;
+      R(x + 2, sy, 28, 16, '#1c130d');
       var cols = ['#7a3b3b', '#3b5a7a', '#4a7a4a', '#7a6a3b', '#5a3b7a'];
       for (var b = 0; b < 6; b++) {
         var bh = 10 + ((s + b) % 3);
-        R(35 + b * 4, y + 16 - bh, 3, bh, cols[(s * 3 + b) % 5]);
+        R(x + 3 + b * 4, sy + 16 - bh, 3, bh, cols[(s * 3 + b) % 5]);
       }
     }
-    R(32, 68, 32, 2, '#3a2a1e');
+    R(x, y + 4, 32, 2, '#3a2a1e');
   }
 
-  function drawBin() {
-    R(256, 126, 16, 3, 'rgba(0,0,0,.3)');
-    R(256, 111, 14, 4, '#3a4a5e');
-    R(257, 112, 12, 2, '#232c3a');
-    R(257, 115, 12, 11, '#2a3444');
-    R(258, 116, 1, 10, '#333f52');
-    R(261, 116, 1, 10, '#333f52');
-    R(264, 116, 1, 10, '#333f52');
-    R(270, 121, 5, 4, '#cfc9b6');
-    R(271, 122, 3, 2, '#e6e1d2');
+  function drawBin(px, py) {
+    var x = (px === undefined) ? 256 : px, y = (py === undefined) ? 111 : py;
+    R(x, y + 15, 16, 3, 'rgba(0,0,0,.3)');
+    R(x, y, 14, 4, '#3a4a5e');
+    R(x + 1, y + 1, 12, 2, '#232c3a');
+    R(x + 1, y + 4, 12, 11, '#2a3444');
+    R(x + 2, y + 5, 1, 10, '#333f52');
+    R(x + 5, y + 5, 1, 10, '#333f52');
+    R(x + 8, y + 5, 1, 10, '#333f52');
+    R(x + 14, y + 10, 5, 4, '#cfc9b6');
+    R(x + 15, y + 11, 3, 2, '#e6e1d2');
   }
 
-  function drawDispenser() {
-    R(384, 208, 14, 3, 'rgba(0,0,0,.3)');
-    R(385, 190, 12, 22, '#c9d3de');
-    R(385, 190, 12, 2, '#dfe6ee');
-    R(386, 178, 10, 12, '#5a93d6');
-    R(388, 176, 6, 3, '#4a7fb8');
-    R(388, 200, 5, 6, '#3a4756');
+  function drawDispenser(px, py) {
+    var x = (px === undefined) ? 384 : px, y = (py === undefined) ? 178 : py;
+    R(x + 1, y + 30, 14, 3, 'rgba(0,0,0,.3)');
+    R(x + 2, y + 12, 12, 22, '#c9d3de');
+    R(x + 2, y + 12, 12, 2, '#dfe6ee');
+    R(x + 3, y, 10, 12, '#5a93d6');
+    R(x + 5, y - 2, 6, 3, '#4a7fb8');
+    R(x + 5, y + 22, 5, 6, '#3a4756');
   }
 
-  function drawPlant() {
+  function drawPlant(px, py) {
+    var x = (px === undefined) ? 400 : px, y = (py === undefined) ? 224 : py;
     var ox = Math.round(potAnim * -15);
-    var x = 400, y = 224;
-
-    // bekas pot: lantai yang lebih bersih + kunci
+    // bekas pot + kunci (hanya di kasus yang punya lock pot)
     if (potAnim > 0.25) {
-      R(403, 233, 10, 11, '#1e2732');
-      R(402, 235, 12, 7, '#1e2732');
-      R(403, 233, 10, 1, '#252f3b');
+      R(x + 3, y + 9, 10, 11, '#1e2732');
+      R(x + 2, y + 11, 12, 7, '#1e2732');
+      R(x + 3, y + 9, 10, 1, '#252f3b');
       if (!state.flags.key1) {
-        R(404, 240, 8, 1, 'rgba(0,0,0,.35)');
-        R(404, 237, 6, 2, '#d8ac33');
-        R(404, 237, 6, 1, '#f2cd63');
-        R(409, 235, 3, 5, '#d8ac33');
-        R(410, 236, 1, 3, '#0d1218');
-        R(405, 239, 1, 2, '#d8ac33');
-        R(407, 239, 1, 2, '#d8ac33');
+        R(x + 4, y + 16, 8, 1, 'rgba(0,0,0,.35)');
+        R(x + 4, y + 13, 6, 2, '#d8ac33');
+        R(x + 4, y + 13, 6, 1, '#f2cd63');
+        R(x + 9, y + 11, 3, 5, '#d8ac33');
+        R(x + 10, y + 12, 1, 3, '#0d1218');
+        R(x + 5, y + 15, 1, 2, '#d8ac33');
+        R(x + 7, y + 15, 1, 2, '#d8ac33');
       }
     }
-
     R(x + 1 + ox, y + 22, 14, 3, 'rgba(0,0,0,.3)');
     R(x + 2 + ox, y + 8, 10, 12, '#6b4a33');
     R(x + 2 + ox, y + 8, 10, 1, '#7d5a40');
@@ -1665,22 +1740,23 @@
     R(46, 42, 68, 2, '#2b3644');
   }
 
-  function drawBoard() {
+  function drawBoard(px, py) {
+    var x = (px === undefined) ? 142 : px, y = (py === undefined) ? 6 : py;
     var got = !!state.collected.papan;
-    R(142, 6, 116, 38, '#2b3644');
-    R(144, 8, 112, 34, '#d5dee9');
-    R(144, 8, 112, 2, '#eef2f7');
-    R(152, 15, 40, 2, '#8fa0b4');
-    R(152, 21, 26, 2, '#8fa0b4');
-    R(152, 27, 54, 2, '#8fa0b4');
-    R(152, 33, 34, 2, '#8fa0b4');
+    R(x, y, 116, 38, '#2b3644');
+    R(x + 2, y + 2, 112, 34, '#d5dee9');
+    R(x + 2, y + 2, 112, 2, '#eef2f7');
+    R(x + 10, y + 9, 40, 2, '#8fa0b4');
+    R(x + 10, y + 15, 26, 2, '#8fa0b4');
+    R(x + 10, y + 21, 54, 2, '#8fa0b4');
+    R(x + 10, y + 27, 34, 2, '#8fa0b4');
     if (got) {
-      R(150, 20, 34, 8, 'rgba(242,181,68,.28)');
-      R(152, 23, 28, 3, '#d99b2c');
+      R(x + 8, y + 14, 34, 8, 'rgba(242,181,68,.28)');
+      R(x + 10, y + 17, 28, 3, '#d99b2c');
     }
-    R(142, 44, 116, 3, '#39465a');
-    R(150, 47, 6, 2, '#c9d3de');
-    R(160, 47, 6, 2, '#7fb8ee');
+    R(x, y + 38, 116, 3, '#39465a');
+    R(x + 8, y + 41, 6, 2, '#c9d3de');
+    R(x + 18, y + 41, 6, 2, '#7fb8ee');
   }
 
   function drawClock() {
@@ -1725,14 +1801,15 @@
     R(336, 53, 4, 4, '#1c2531');
   }
 
-  function drawDoor() {
-    R(190, 270, 36, 18, '#1c2531');
-    R(192, 272, 32, 16, '#4a3524');
-    R(194, 274, 28, 14, '#6b4d33');
-    R(194, 274, 28, 2, '#7d5a40');
-    R(218, 280, 3, 3, '#e0c069');
-    R(206, 268, 8, 4, '#2b3644');
-    R(207, 269, 6, 2, '#8a99ad');
+  function drawDoor(px, py) {
+    var x = (px === undefined) ? 190 : px, y = (py === undefined) ? 268 : py;
+    R(x, y + 2, 36, 18, '#1c2531');
+    R(x + 2, y + 4, 32, 16, '#4a3524');
+    R(x + 4, y + 6, 28, 14, '#6b4d33');
+    R(x + 4, y + 6, 28, 2, '#7d5a40');
+    R(x + 28, y + 12, 3, 3, '#e0c069');
+    R(x + 16, y, 8, 4, '#2b3644');
+    R(x + 17, y + 1, 6, 2, '#8a99ad');
   }
 
   function drawCable(x, y, len) {
