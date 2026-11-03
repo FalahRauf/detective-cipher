@@ -28,11 +28,28 @@ python -m http.server 8000
 
 ## Tiga Kasus
 
-| # | Kasus | Kejahatan | Lokasi | Peta | Ruangan | Kunci berurutan |
+| # | Kasus | Kejahatan | Lokasi | Peta | Ruangan | Langkah |
 |---|---|---|---|---|---|---|
 | 01 | **Rekaman 23.47** | Penculikan | Lab Komputer 2 | 34 × 24 | 4 + lorong | 2 |
-| 02 | **Jam Terakhir Bu Ratna** | **Pembunuhan** | Sayap Guru | 36 × 26 | 4 + lorong | 3 |
-| 03 | **Api di Ruang Server** | **Pembakaran sengaja** | Ruang Server Lt. 3 | 42 × 28 | 4 + lorong | 4 |
+| 02 | **Jam Terakhir Bu Ratna** | **Pembunuhan** | Sayap Guru | 36 × 26 | 4 + lorong | 4 |
+| 03 | **Api di Ruang Server** | **Pembakaran sengaja** | Ruang Server Lt. 3 | 42 × 28 | 4 + lorong | 6 |
+
+### Rantai penemuan tiap kasus (sengaja dibedakan)
+
+**Kasus 1 — pot → kunci → lemari**
+Dekripsi pesan → pot digeser → kunci → lemari arsip → bukti.
+
+**Kasus 2 — korban → loker → jas → brankas** *(rantai terpanjang, ada twist)*
+Dekripsi pesan → **laci meja korban** → kunci loker → **loker guru** → kunci brankas + catatan
+"jas cadangan di lemari arsip" → **lemari arsip** (temukan jas korban, kunci kedua di sakunya)
+→ **brankas** (butuh dua kunci) → bukti.
+
+**Kasus 3 — padamkan api dulu** *(mekanik unik)*
+Dekripsi pesan → **ambil tabung pemadam** → **padamkan api di lantai** (membuka jalan ke ruang
+kontrol) → panel alarm → kunci kartu → rak B → kunci tabung → unit pendingin → kunci induk
+→ vault → bukti.
+
+Jadi tiap kasus punya **alur yang berbeda**, bukan sekadar ganti nama objek.
 
 Peta tiap kasus dibagi jadi **beberapa ruangan yang dihubungkan lorong**, bukan satu kotak besar:
 ruang utama (TKP), ruang kerja, gudang, dan ruang kontrol. Kamu harus berjalan menembus lorong

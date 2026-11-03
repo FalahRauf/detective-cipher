@@ -683,42 +683,56 @@
   function propsLab() {
     var list = [];
 
-    /* ===== LAB KOMPUTER 2 — ruang c3-14 r4-10 → world x48-240 y64-176 ===== */
-    list.push({ y: 96,  fn: function () { drawDeskTop(64, 80, 80); } });
-    list.push({ y: 96,  fn: function () { drawMonitor(80, 70, 36, 24); } });
-    list.push({ y: 100, fn: function () { drawChair(152, 92); } });
-    list.push({ y: 76,  fn: function () { drawBoard(56, 68); } });          // papan tulis dinding atas
-    list.push({ y: 150, fn: function () { drawBookshelf(200, 96); } });     // rak di sudut kanan
-    list.push({ y: 172, fn: function () { drawBin(64, 156); } });           // sampah
-    // meja siswa 2x2 di bagian bawah ruangan
-    var labDesks = [[64, 112], [128, 112], [64, 144], [128, 144]];
+    /* =========================================================
+       LAB KOMPUTER 2 — ruang c3-14 r4-10
+       world: x 48..240, y 64..176   (dinding di c2 & c15, r3 & r11)
+       ========================================================= */
+    // papan tulis menempel dinding atas (y 68-106)
+    list.push({ y: 106, fn: function () { drawBoard(56, 68); } });
+    // meja guru di bawah papan (y 110-130)
+    list.push({ y: 132, fn: function () { drawDeskTop(64, 112, 72); } });
+    list.push({ y: 132, fn: function () { drawMonitor(78, 104, 32, 22); } });
+    // rak buku di sudut kanan ruangan (x 196-228)
+    list.push({ y: 160, fn: function () { drawBookshelf(196, 100); } });
+    // tempat sampah dekat pintu ruangan
+    list.push({ y: 172, fn: function () { drawBin(56, 156); } });
+    // meja siswa 2x2 — semua di dalam y 134..176
+    var labDesks = [[64, 136], [120, 136], [64, 160], [120, 160]];
     for (var i = 0; i < labDesks.length; i++) {
       (function (dx, dy) {
-        list.push({ y: dy + 16, fn: function () { drawStudentDesk(dx, dy); } });
-        list.push({ y: dy + 24, fn: function () { drawChair(dx + 10, dy + 16); } });
+        list.push({ y: dy + 14, fn: function () { drawStudentDesk(dx, dy); } });
       })(labDesks[i][0], labDesks[i][1]);
     }
 
-    /* ===== RUANG GURU — ruang c20-30 r4-10 → world x320-496 y64-176 ===== */
-    list.push({ y: 108, fn: function () { drawPrinterTable(336, 80); } });
-    list.push({ y: 152, fn: function () { drawCabinet(432, 96); } });
-    list.push({ y: 128, fn: function () { drawBookshelf(336, 120); } });
-    list.push({ y: 96,  fn: function () { drawCorkBoard(464, 72); } });
+    /* =========================================================
+       RUANG GURU — ruang c20-30 r4-10
+       world: x 320..496, y 64..176
+       ========================================================= */
+    list.push({ y: 96,  fn: function () { drawCorkBoard(456, 68); } });      // papan pengumuman
+    list.push({ y: 130, fn: function () { drawPrinterTable(336, 80); } });   // printer
+    list.push({ y: 160, fn: function () { drawCabinet(424, 108); } });       // lemari arsip
+    list.push({ y: 172, fn: function () { drawBookshelf(336, 110); } });     // rak guru
 
-    /* ===== GUDANG — ruang c3-11 r15-20 → world x48-192 y240-336 ===== */
-    list.push({ y: 300, fn: function () { drawPlant(96, 272); } });
-    list.push({ y: 288, fn: function () { drawDispenser(152, 256); } });
-    list.push({ y: 316, fn: function () { drawMop(64, 288); } });
+    /* =========================================================
+       GUDANG — ruang c3-11 r15-20
+       world: x 48..192, y 240..336
+       ========================================================= */
+    list.push({ y: 306, fn: function () { drawPlant(64, 276); } });          // pot
+    list.push({ y: 292, fn: function () { drawDispenser(112, 264); } });     // dispenser
+    list.push({ y: 320, fn: function () { drawMop(160, 292); } });           // alat pel
 
-    /* ===== RUANG ISTIRAHAT — ruang c20-30 r15-20 → world x320-496 y240-336 ===== */
+    /* =========================================================
+       RUANG ISTIRAHAT — ruang c20-30 r15-20
+       world: x 320..496, y 240..336
+       ========================================================= */
     list.push({ y: 300, fn: function () { drawStudentDesk(336, 272); } });
-    list.push({ y: 300, fn: function () { drawStudentDesk(424, 272); } });
-    list.push({ y: 330, fn: function () { drawRug(340, 296); } });
+    list.push({ y: 300, fn: function () { drawStudentDesk(400, 272); } });
+    list.push({ y: 322, fn: function () { drawRug(340, 300); } });           // karpet kecil di ruang istirahat
 
-    /* ===== lorong: kabel lantai ===== */
-    list.push({ y: 210, fn: function () { drawCable(150, 200, 90); } });
-
-    /* ===== pintu keluar di lorong bawah ===== */
+    /* =========================================================
+       LORONG (r12-13, y 192..224) + pintu keluar
+       ========================================================= */
+    list.push({ y: 210, fn: function () { drawCable(150, 200, 80); } });
     list.push({ y: 360, fn: function () { drawDoor(246, 340); } });
     return list;
   }
@@ -742,17 +756,18 @@
     list.push({ y: 160, fn: function () { drawPrinterTable(488, 100); } });
 
     /* ARSIP — c3-10 r15-21 → x48-176 y240-352 */
-    list.push({ y: 320, fn: function () { drawBookshelf(56, 264); } });
-    list.push({ y: 288, fn: function () { drawCabinet(120, 248); } });
+    list.push({ y: 330, fn: function () { drawBookshelf(56, 264); } });
+    list.push({ y: 300, fn: function () { drawCabinet(112, 248); } });
 
     /* PANTRY — c20-32 r15-21 → x320-528 y240-352 */
     list.push({ y: 320, fn: function () { drawDispenser(336, 288); } });
     list.push({ y: 300, fn: function () { drawCabinet(400, 264); } });
     list.push({ y: 328, fn: function () { drawPlant(480, 296); } });
     list.push({ y: 288, fn: function () { drawDeskTop(432, 264, 72); } });
+    list.push({ y: 288, fn: function () { drawLockerUnit(384, 248); } });   // loker guru
 
     /* lorong + pintu */
-    list.push({ y: 226, fn: function () { drawRug(200, 196); } });
+    list.push({ y: 300, fn: function () { drawRug(360, 276); } });
     list.push({ y: 352, fn: function () { drawDoor(262, 332); } });
     return list;
   }
@@ -761,10 +776,10 @@
   function propsServerFire() {
     var list = [];
     /* RUANG SERVER UTAMA — c3-15 r4-11 → x48-256 y64-192 */
-    list.push({ y: 120, fn: function () { drawServerRack(56, 72, 40, 48); } });
-    list.push({ y: 120, fn: function () { drawServerRack(120, 72, 40, 48); } });
-    list.push({ y: 180, fn: function () { drawServerRack(56, 132, 40, 48); } });
-    list.push({ y: 180, fn: function () { drawServerRack(120, 132, 40, 48); } });
+    list.push({ y: 122, fn: function () { drawServerRack(56, 72, 40, 48); } });
+    list.push({ y: 122, fn: function () { drawServerRack(104, 72, 40, 48); } });
+    list.push({ y: 184, fn: function () { drawServerRack(56, 132, 40, 48); } });
+    list.push({ y: 184, fn: function () { drawServerRack(104, 132, 40, 48); } });
     list.push({ y: 180, fn: function () { drawTerminalDesk(184, 148, 64); } });
 
     /* RUANG PANEL — c22-36 r4-11 → x352-592 y64-192 */
@@ -772,6 +787,7 @@
     list.push({ y: 130, fn: function () { drawCoolingUnit(432, 72, 40, 56); } });
     list.push({ y: 180, fn: function () { drawBin(520, 156); } });
     list.push({ y: 160, fn: function () { drawCabinet(480, 108); } });
+    list.push({ y: 130, fn: function () { drawFireExt(512, 96); } });       // tabung pemadam
 
     /* GUDANG — c3-12 r16-23 → x48-208 y256-384 */
     list.push({ y: 340, fn: function () { drawServerRack(64, 296, 40, 48); } });
@@ -903,41 +919,45 @@
         ]
       },
       interactables: [
-        // --- LAB KOMPUTER 2 (kiri atas, c3-14 r4-10) ---
-        { id: 'monitor',  x: 120, y: 92,  range: 34, label: 'Pakai alat dekripsi', title: 'KOMPUTER GURU' },
-        { id: 'papan',    x: 168, y: 68,  range: 34, label: 'Periksa papan tulis',  title: 'PAPAN TULIS',
+        /* --- LAB KOMPUTER 2 (x48-240 y64-176) --- */
+        { id: 'monitor',  x: 94,  y: 124, range: 34, label: 'Pakai alat dekripsi', title: 'KOMPUTER GURU' },
+        { id: 'papan',    x: 114, y: 90,  range: 36, label: 'Periksa papan tulis',  title: 'PAPAN TULIS',
           flavor: 'Sisa materi jaringan minggu lalu. Ada tulisan "praktek jumat" yang sudah setengah terhapus.' },
-        { id: 'sampah',   x: 196, y: 140, range: 30, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
-          flavor: 'Bungkus snack, sobekan kertas tugas, dan satu gelas plastik. Tidak ada yang berguna.' },
-        { id: 'meja1',    x: 72,  y: 152, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 1',
-          flavor: 'Ada tulisan "JANGAN DUDUK SINI" pakai tip-ex. Laci kosong.' },
-        { id: 'meja2',    x: 140, y: 152, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 2',
-          flavor: 'Serutan pensil dan satu penghapus karet. Monitor masih menyala di halaman login.' },
-        { id: 'kabel',    x: 176, y: 176, range: 28, label: 'Periksa kabel lantai',  title: 'KABEL LANTAI',
-          flavor: 'Kabel LAN berserakan. Satu ujung lepas, tapi colokannya memang sudah longgar.' },
-        // --- RUANG GURU (kanan atas, c20-30 r4-10) ---
-        { id: 'printer',  x: 344, y: 84,  range: 32, label: 'Periksa printer',       title: 'PRINTER',
-          flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering dan menguning.' },
-        { id: 'rak',      x: 456, y: 100, range: 34, label: 'Periksa rak buku',      title: 'RAK BUKU',
+        { id: 'rak',      x: 212, y: 130, range: 34, label: 'Periksa rak buku',      title: 'RAK BUKU',
           flavor: 'Buku manual jaringan berdebu. Satu slot kosong, tapi lapisan debunya rata \u2014 sudah lama.' },
-        { id: 'jam',      x: 388, y: 60,  range: 40, label: 'Periksa jam dinding',   title: 'JAM DINDING',
-          flavor: 'Jamnya berhenti di 23.12. Baterainya mati sejak lama \u2014 ini bukan petunjuk.' },
-        { id: 'ac',       x: 470, y: 58,  range: 40, label: 'Periksa AC',            title: 'AC',
-          flavor: 'Masih dingin dan berdebu. Filternya belum dibersihkan sejak awal semester.' },
-        { id: 'poster',   x: 340, y: 58,  range: 38, label: 'Periksa poster',        title: 'POSTER TATA TERTIB',
-          flavor: 'Sudut bawahnya terkelupas dan lembap. Isinya cuma aturan pemakaian lab.' },
-        { id: 'lemari',   x: 448, y: 152, range: 32, label: 'Buka lemari arsip',     title: 'LEMARI ARSIP' },
-        // --- GUDANG (kiri bawah, c3-11 r15-20) ---
-        { id: 'pot',      x: 96,  y: 300, range: 32, label: 'Periksa pot tanaman',   title: 'POT TANAMAN' },
-        { id: 'dispenser',x: 152, y: 272, range: 30, label: 'Periksa dispenser',     title: 'DISPENSER',
-          flavor: 'Galon hampir habis. Cuma tetesan air di lantai, bukan jejak kaki.' },
-        // --- RUANG ISTIRAHAT (kanan bawah, c20-30 r15-20) ---
-        { id: 'meja3',    x: 344, y: 288, range: 28, label: 'Periksa meja',          title: 'MEJA ISTIRAHAT',
+        { id: 'sampah',   x: 63,  y: 166, range: 30, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
+          flavor: 'Bungkus snack, sobekan kertas tugas, dan satu gelas plastik. Tidak ada yang berguna.' },
+        { id: 'meja1',    x: 80,  y: 150, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 1',
+          flavor: 'Ada tulisan "JANGAN DUDUK SINI" pakai tip-ex. Laci kosong.' },
+        { id: 'meja2',    x: 136, y: 150, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 2',
+          flavor: 'Serutan pensil dan satu penghapus karet. Monitor masih menyala di halaman login.' },
+        { id: 'meja3',    x: 80,  y: 174, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 3',
           flavor: 'Coretan jadwal piket di permukaan meja. Tidak lebih dari itu.' },
-        { id: 'meja4',    x: 440, y: 288, range: 28, label: 'Periksa sofa',          title: 'SOFA LUSUH',
+        { id: 'meja4',    x: 136, y: 174, range: 28, label: 'Periksa meja siswa',    title: 'MEJA SISWA \u00b7 4',
+          flavor: 'Kursinya ditarik agak jauh, seperti ditinggal buru-buru. Tapi tidak ada apa-apa.' },
+        { id: 'kabel',    x: 190, y: 210, range: 28, label: 'Periksa kabel lantai',  title: 'KABEL LANTAI',
+          flavor: 'Kabel LAN berserakan. Satu ujung lepas, tapi colokannya memang sudah longgar.' },
+        /* --- RUANG GURU (x320-496 y64-176) --- */
+        { id: 'printer',  x: 352, y: 110, range: 32, label: 'Periksa printer',       title: 'PRINTER',
+          flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering dan menguning.' },
+        { id: 'lemari',   x: 440, y: 140, range: 34, label: 'Buka lemari arsip',     title: 'LEMARI ARSIP' },
+        { id: 'rakGuru',  x: 352, y: 152, range: 30, label: 'Periksa rak guru',      title: 'RAK GURU',
+          flavor: 'Binder administrasi kelas. Semua rapi menurut bulan.' },
+        { id: 'papanGuru',x: 473, y: 90,  range: 34, label: 'Periksa papan pengumuman', title: 'PAPAN PENGUMUMAN',
+          flavor: 'Jadwal piket dan surat edaran. Tidak ada yang mencurigakan.' },
+        /* --- GUDANG (x48-192 y240-336) --- */
+        { id: 'pot',      x: 71,  y: 292, range: 32, label: 'Periksa pot tanaman',   title: 'POT TANAMAN' },
+        { id: 'dispenser',x: 118, y: 278, range: 30, label: 'Periksa dispenser',     title: 'DISPENSER',
+          flavor: 'Galon hampir habis. Cuma tetesan air di lantai, bukan jejak kaki.' },
+        { id: 'mop',      x: 167, y: 306, range: 28, label: 'Periksa alat pel',      title: 'ALAT PEL',
+          flavor: 'Alat pel bersandar di dinding. Lantainya di sekitarnya masih lembap.' },
+        /* --- RUANG ISTIRAHAT (x320-496 y240-336) --- */
+        { id: 'sofa1',    x: 352, y: 290, range: 30, label: 'Periksa meja istirahat', title: 'MEJA ISTIRAHAT',
+          flavor: 'Cangkir kopi kosong dan bungkus mie instan. Tidak ada yang aneh.' },
+        { id: 'sofa2',    x: 416, y: 290, range: 30, label: 'Periksa sofa',          title: 'SOFA LUSUH',
           flavor: 'Bantalnya penyok, seperti baru dipakai tidur. Tidak ada yang tertinggal.' },
-        // --- pintu keluar (lorong bawah) ---
-        { id: 'door',     x: 264, y: 352, range: 32, label: 'Pintu keluar',          title: 'PINTU KELUAR' }
+        /* --- pintu keluar (lorong bawah) --- */
+        { id: 'door',     x: 264, y: 350, range: 40, label: 'Pintu keluar',          title: 'PINTU KELUAR' }
       ],
       clueExclude: { monitor: 1, pot: 1, lemari: 1, door: 1 },
       caps: [
@@ -1029,71 +1049,89 @@
       quest: {
         tool: 'komputer', toolTitle: 'LAPTOP BU RATNA',
         locks: [
-          { at: 'arsip', need: null, flag: 'key1', anim: true,
-            obj: 'Periksa lemari arsip di sayap kiri', title: 'LEMARI ARSIP',
-            locked: 'Lemari arsip logam, terkunci. Tapi pintunya tidak rapat \u2014 ada yang memaksanya.',
-            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Lemari ini memang tidak terkunci sempurna.',
-            action: 'Tarik pintu lemari',
-            after: 'Pintu terbuka. Di rak paling atas, di balik map-map lama, ada <b>kunci kecil</b> dengan label "LOKER GURU".',
-            take: 'Ambil kunci',
-            done: 'Lemari arsip sudah kamu periksa. Sisanya cuma map berdebu.' },
+          /* 1) Meja korban — titik awal, bukan lemari. Di laci ada kunci kecil. */
+          { at: 'mejaKorban', need: null, flag: 'key1', anim: true,
+            obj: 'Periksa meja korban', title: 'MEJA BU RATNA',
+            locked: 'Meja kerja Bu Ratna. Kopinya masih setengah, kursinya tergeser ke belakang.',
+            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Kamu membuka laci meja itu.',
+            action: 'Buka laci meja',
+            after: 'Laci pertama berisi alat tulis. Laci kedua — yang terkunci — terbuka dengan kunci kecil yang terselip di bawah tumpukan kertas: <b>kunci loker</b>.',
+            take: 'Ambil kunci loker',
+            done: 'Laci meja sudah kamu periksa. Sisanya cuma alat tulis.' },
+
+          /* 2) Loker guru — berisi kunci brankas + petunjuk soal jas korban */
           { at: 'loker', need: 'key1', flag: 'key2',
             obj: 'Buka loker guru', title: 'LOKER GURU',
-            locked: 'Baris loker besi di dinding. Satu pintu berlabel "R. RATNA".',
-            ready: 'Kunci tadi pas dengan gembok loker.',
+            locked: 'Baris loker besi di pantry. Satu pintu berlabel "R. RATNA".',
+            ready: 'Kunci loker masuk dengan pas.',
             action: 'Buka loker',
-            after: 'Di dalam loker: <b>kunci kedua</b> yang lebih panjang, dan satu map bertulis "BERKAS \u2014 JANGAN DIBUKA".',
-            take: 'Ambil kunci kedua',
+            after: 'Di dalam loker: <b>kunci brankas</b>, dan catatan kecil — "jas cadangan di lemari arsip, saku kanan".',
+            take: 'Ambil kunci brankas',
             done: 'Loker sudah kosong. Cuma jas hujan tua di pintu sebelah.' },
-          { at: 'brankas', need: 'key2', flag: 'evidence', final: true,
+
+          /* 3) Lemari arsip — bukan untuk kunci, tapi untuk JAS korban (kunci ketiga di saku) */
+          { at: 'arsip', need: 'key2', flag: 'key3',
+            obj: 'Periksa lemari arsip', title: 'LEMARI ARSIP',
+            locked: 'Lemari arsip logam di sayap kiri. Pintunya tidak rapat — ada yang memaksanya.',
+            ready: 'Kamu ingat catatan di loker: jas cadangan ada di sini.',
+            action: 'Buka lemari',
+            after: 'Di balik map-map lama ada <b>jas cadangan Bu Ratna</b>. Di saku kanannya, selembar kertas bertuliskan sandi tambahan — dan <b>kunci brankas kedua</b>.',
+            take: 'Ambil kunci kedua',
+            done: 'Lemari arsip sudah kamu periksa. Sisanya cuma map berdebu.' },
+
+          /* 4) Brankas — bukti akhir, butuh DUA kunci */
+          { at: 'brankas', need: 'key3', flag: 'evidence', final: true,
             obj: 'Buka brankas berkas', title: 'BRANKAS BERKAS',
-            locked: 'Brankas besi di balik lemari. Lubang kuncinya dua kali lebih besar dari yang tadi.',
-            ready: 'Kunci kedua masuk. Tuasnya berat, tapi berputar.',
+            locked: 'Brankas besi di pantry. Lubang kuncinya dua — satu di kiri, satu di kanan.',
+            ready: 'Kedua kunci masuk. Tuasnya berat, tapi berputar.',
             action: 'Buka brankas',
-            after: 'Di dalamnya: <b>berkas nilai yang diubah</b> dan satu surat ancaman bertanda tangan \u2014 bukan tulisan Bu Ratna.',
+            after: 'Di dalamnya: <b>berkas nilai yang diubah</b> dan satu surat ancaman bertanda tangan — bukan tulisan Bu Ratna.',
             take: 'Bawa ke ruang interogasi',
             done: 'Brankas sudah kosong.' }
         ]
       },
       interactables: [
-        // --- RUANG GURU (TKP, kiri atas) ---
-        { id: 'komputer', x: 96,  y: 96,  range: 36, label: 'Pakai alat dekripsi', title: 'LAPTOP BU RATNA' },
-        { id: 'mejaGuru', x: 140, y: 132, range: 30, label: 'Periksa meja korban', title: 'MEJA BU RATNA',
-          flavor: 'Kopi masih setengah, sudah dingin. Kursinya tergeser sedikit ke belakang \u2014 seperti berdiri buru-buru.' },
-        { id: 'papan',    x: 96,  y: 68,  range: 38, label: 'Periksa papan tulis', title: 'PAPAN TULIS',
-          flavor: 'Masih ada tulisan fungsi komposisi dari kelas tadi. Ada satu rumus yang dilingkari dua kali.' },
-        { id: 'jam',      x: 168, y: 64,  range: 40, label: 'Periksa jam dinding', title: 'JAM DINDING',
-          flavor: 'Berhenti di 16.42. Baterainya baru diganti \u2014 ini bukan kebetulan.' },
-        { id: 'kaca',     x: 40,  y: 68,  range: 40, label: 'Periksa jendela',     title: 'JENDELA',
-          flavor: 'Terkunci dari dalam. Kacanya berembun di sisi luar, bukan dalam.' },
-        { id: 'sampah',   x: 176, y: 152, range: 28, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
+        /* ===== RUANG GURU (TKP) — c3-13 r4-10 → x48-224 y64-176 ===== */
+        // meja korban di (64,88) w88 -> tengah (108,104)
+        { id: 'mejaKorban', x: 106, y: 106, range: 34, label: 'Periksa meja korban', title: 'MEJA BU RATNA' },
+        // laptop di (80,78) -> (98,90) — alat dekripsi, sedikit di atas meja
+        { id: 'komputer', x: 96,  y: 88,  range: 32, label: 'Pakai alat dekripsi', title: 'LAPTOP BU RATNA' },
+        // papan tulis (56,70) w116 -> (114,90)
+        { id: 'papan',    x: 114, y: 92,  range: 36, label: 'Periksa papan tulis', title: 'PAPAN TULIS',
+          flavor: 'Masih ada tulisan fungsi komposisi dari kelas tadi. Satu rumus dilingkari dua kali.' },
+        // kursi (160,100) -> (168,116)
+        { id: 'kursi',    x: 168, y: 118, range: 30, label: 'Periksa kursi korban', title: 'KURSI KORBAN',
+          flavor: 'Tergeser jauh dari meja, seperti korban berdiri buru-buru sebelum sesuatu terjadi.' },
+        // sampah (64,152) -> (72,166)
+        { id: 'sampah',   x: 74,  y: 164, range: 28, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
           flavor: 'Sobekan kertas, puntung pensil, dan satu gelas plastik kopi yang masih basah.' },
-        // --- RUANG RAPAT (kanan atas) ---
-        { id: 'printer',  x: 360, y: 92,  range: 32, label: 'Periksa printer',     title: 'PRINTER',
+        /* ===== RUANG RAPAT — x320-528 y64-176 ===== */
+        // meja rapat (352,96) w120 -> (412,112)
+        { id: 'mejaRapat',x: 412, y: 114, range: 34, label: 'Periksa meja rapat',  title: 'MEJA RAPAT',
+          flavor: 'Daftar hadir rapat pukul 15.00. Tiga nama, satu tanda tangan beda tinta.' },
+        { id: 'printer',  x: 504, y: 112, range: 32, label: 'Periksa printer',     title: 'PRINTER',
           flavor: 'Baki kertasnya kosong. Ada sobekan nyangkut di roller, sudah mengering.' },
-        { id: 'papanRapat',x: 440, y: 68, range: 40, label: 'Periksa papan rapat', title: 'PAPAN RAPAT',
-          flavor: 'Daftar hadir rapat pukul 15.00. Tiga nama, satu tanda tangan terlihat berbeda tintanya.' },
-        { id: 'kursiRapat',x: 400, y: 132, range: 30, label: 'Periksa kursi rapat', title: 'KURSI RAPAT',
-          flavor: 'Enam kursi, semuanya rapi. Tidak ada yang tergeser sejak rapat.' },
-        { id: 'ac',       x: 480, y: 64,  range: 40, label: 'Periksa AC',          title: 'AC',
-          flavor: 'Menyala, dingin. Setelannya 18 derajat \u2014 lebih dingin dari biasanya.' },
-        // --- ARSIP (kiri bawah) ---
-        { id: 'arsip',    x: 72,  y: 300, range: 34, label: 'Periksa lemari arsip', title: 'LEMARI ARSIP' },
-        { id: 'kardus',   x: 140, y: 296, range: 28, label: 'Periksa kardus',      title: 'KARDUS BERKAS',
-          flavor: 'Kardus penuh berkas lama. Debu di atasnya tebal dan tidak terganggu.' },
-        { id: 'rakArsip', x: 48,  y: 272, range: 32, label: 'Periksa rak arsip',   title: 'RAK ARSIP',
-          flavor: 'Map-map per tahun ajaran. Satu slot kosong, tapi debunya rata \u2014 sudah lama kosong.' },
-        // --- PANTRY (kanan bawah) ---
-        { id: 'loker',    x: 400, y: 296, range: 34, label: 'Buka loker guru',     title: 'LOKER GURU' },
-        { id: 'brankas',  x: 480, y: 300, range: 34, label: 'Buka brankas',        title: 'BRANKAS BERKAS' },
-        { id: 'dispenser',x: 340, y: 300, range: 28, label: 'Periksa dispenser',   title: 'DISPENSER',
+        { id: 'cork',     x: 353, y: 90,  range: 34, label: 'Periksa papan pengumuman', title: 'PAPAN PENGUMUMAN',
+          flavor: 'Jadwal piket dan edaran. Tidak ada yang mencurigakan.' },
+        /* ===== ARSIP — x48-176 y240-352 ===== */
+        // rak (56,264) -> (72,296)
+        { id: 'rakArsip', x: 72,  y: 296, range: 32, label: 'Periksa rak arsip',   title: 'RAK ARSIP',
+          flavor: 'Map-map per tahun ajaran. Satu slot kosong, tapi debunya rata — sudah lama kosong.' },
+        // lemari (120,248) -> (136,272)
+        { id: 'arsip',    x: 136, y: 274, range: 34, label: 'Periksa lemari arsip', title: 'LEMARI ARSIP' },
+        /* ===== PANTRY — x320-528 y240-352 ===== */
+        // loker — perabot baru di pantry
+        { id: 'loker',    x: 400, y: 274, range: 34, label: 'Buka loker guru',     title: 'LOKER GURU' },
+        // brankas
+        { id: 'brankas',  x: 480, y: 292, range: 34, label: 'Buka brankas',        title: 'BRANKAS BERKAS' },
+        { id: 'dispenser',x: 342, y: 288, range: 28, label: 'Periksa dispenser',   title: 'DISPENSER',
           flavor: 'Galon masih penuh. Tidak ada tetesan di lantai.' },
-        { id: 'kopi',     x: 456, y: 264, range: 28, label: 'Periksa mesin kopi',  title: 'MESIN KOPI',
+        { id: 'kopi',     x: 432, y: 272, range: 28, label: 'Periksa mesin kopi',  title: 'MESIN KOPI',
           flavor: 'Saringan kopinya masih lembap. Ada dua cangkir kotor di nampan, bukan satu.' },
-        // --- pintu ---
+        /* ===== pintu ===== */
         { id: 'door',     x: 280, y: 344, range: 40, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
       ],
-      clueExclude: { komputer: 1, arsip: 1, loker: 1, brankas: 1, door: 1 },
+      clueExclude: { komputer: 1, mejaKorban: 1, arsip: 1, loker: 1, brankas: 1, door: 1 },
       caps: [
         { t: 1.2,  s: 'Kamera 05 \u2014 sayap guru, lantai satu.' },
         { t: 3.6,  s: 'Pukul 16.12 \u2014 Bu Ratna masuk ruang guru sendirian.' },
@@ -1183,10 +1221,26 @@
       quest: {
         tool: 'terminal', toolTitle: 'TERMINAL KONTROL',
         locks: [
-          { at: 'panel', need: null, flag: 'key1', anim: true,
+          { at: 'pemadam', need: null, flag: 'ext', anim: false,
+            obj: 'Ambil tabung pemadam', title: 'TABUNG PEMADAM',
+            locked: 'Tabung pemadam di dinding. Segelnya masih utuh \u2014 tidak pernah dipakai malam itu.',
+            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Kamu melepas tabungnya dari dudukan.',
+            action: 'Ambil tabung',
+            after: 'Tabung pemadam terlepas dari dudukan. Berat, tapi bisa dibawa.',
+            take: 'Bawa tabung',
+            done: 'Dudukan tabung sudah kosong.' },
+          { at: 'bekas', need: 'ext', flag: 'fireout', anim: true,
+            obj: 'Padamkan api di lantai', title: 'API DI LANTAI',
+            locked: 'Api masih menyala di lantai, memblokir jalan ke ruang kontrol. Kamu butuh pemadam.',
+            ready: 'Kamu menyemprotkan isi tabung ke titik api.',
+            action: 'Semprot pemadam',
+            after: 'Api padam. Di bawah jelaga, lantainya menunjukkan pola aneh: lingkaran bekas bahan bakar \u2014 bukan korsleting.',
+            take: 'Periksa bekasnya',
+            done: 'Api sudah padam. Bekas lingkarannya masih jelas.' },
+          { at: 'panel', need: 'fireout', flag: 'key1',
             obj: 'Buka panel alarm', title: 'PANEL ALARM',
-            locked: 'Panel alarm di dinding. Bautnya masih rapat \u2014 tapi ada goresan baru di sekelilingnya.',
-            ready: 'Pesan yang baru kamu buka berbunyi: <code>{plain}</code>. Panel ini jelas baru dibuka-tutup: bautnya mengkilap, goresannya masih terang.',
+            locked: 'Panel alarm di ruang panel. Bautnya masih rapat \u2014 tapi ada goresan baru di sekelilingnya.',
+            ready: 'Jalan sudah aman. Panel ini jelas baru dibuka-tutup: bautnya mengkilap.',
             action: 'Buka panel alarm',
             after: 'Di dalam panel: kabel sensor yang <b>diputus</b>, dan terselip <b>kunci kartu</b> bertanda "RAK B".',
             take: 'Ambil kunci kartu',
@@ -1196,7 +1250,7 @@
             locked: 'Rak server terkunci. Pembaca kartunya berkedip merah \u2014 tidak ada catatan akses.',
             ready: 'Kartu itu pas. Lampu pembaca berubah hijau.',
             action: 'Tempel kartu',
-            after: 'Di dalam rak, di antara dua unit server: <b>kunci tabung</b>, dan sisa <b>kain berminyak</b> yang terselip di celah rak.',
+            after: 'Di dalam rak: <b>kunci tabung</b>, dan sisa <b>kain berminyak</b> terselip di celah rak.',
             take: 'Ambil kunci tabung',
             done: 'Rak B sudah terbuka. Servernya hangus di bagian belakang.' },
           { at: 'cooling', need: 'key2', flag: 'key3',
@@ -1218,48 +1272,44 @@
         ]
       },
       interactables: [
-        // --- RUANG SERVER UTAMA (TKP, kiri atas) ---
-        { id: 'terminal', x: 112, y: 104, range: 38, label: 'Pakai alat dekripsi', title: 'TERMINAL KONTROL' },
-        { id: 'rakA',     x: 72,  y: 72,  range: 32, label: 'Periksa rak server A', title: 'RAK SERVER A',
+        { id: 'rakA',     x: 76,  y: 96,  range: 32, label: 'Periksa rak server A', title: 'RAK SERVER A',
           flavor: 'Delapan unit server, semuanya hangus di sisi belakang. Kerangkanya masih panas.' },
-        { id: 'rakB',     x: 168, y: 76,  range: 34, label: 'Periksa rak server B', title: 'RAK SERVER B' },
-        { id: 'rakC',     x: 72,  y: 136, range: 32, label: 'Periksa rak server C', title: 'RAK SERVER C',
+        { id: 'rakB',     x: 140, y: 96,  range: 34, label: 'Periksa rak server B', title: 'RAK SERVER B' },
+        { id: 'rakC',     x: 76,  y: 156, range: 32, label: 'Periksa rak server C', title: 'RAK SERVER C',
           flavor: 'Kipasnya meleleh. Debu di filter menghitam \u2014 bukan debu biasa, ini jelaga.' },
-        { id: 'rakD',     x: 168, y: 136, range: 32, label: 'Periksa rak server D', title: 'RAK SERVER D',
+        { id: 'rakD',     x: 140, y: 156, range: 32, label: 'Periksa rak server D', title: 'RAK SERVER D',
           flavor: 'Satu unit mati total. Kabelnya masih terpasang rapi, tapi konektornya meleleh.' },
-        { id: 'bekas',    x: 128, y: 160, range: 30, label: 'Periksa lantai',       title: 'BEKAS API DI LANTAI',
-          flavor: 'Ada pola menghitam di lantai, membentuk seperti lingkaran. Ini titik api pertama \u2014 bukan dari rak.' },
-        // --- RUANG PANEL (kanan atas) ---
-        { id: 'panel',    x: 440, y: 96,  range: 34, label: 'Periksa panel alarm',  title: 'PANEL ALARM' },
-        { id: 'cooling',  x: 520, y: 76,  range: 34, label: 'Periksa unit pendingin', title: 'UNIT PENDINGIN' },
-        { id: 'sensor',   x: 400, y: 68,  range: 38, label: 'Periksa panel sensor', title: 'PANEL SENSOR',
+        { id: 'terminal', x: 216, y: 162, range: 34, label: 'Pakai alat dekripsi', title: 'TERMINAL KONTROL' },
+        { id: 'bekas',    x: 128, y: 172, range: 30, label: 'Periksa lantai',       title: 'API DI LANTAI' },
+        { id: 'panel',    x: 384, y: 98,  range: 34, label: 'Periksa panel alarm',  title: 'PANEL ALARM' },
+        { id: 'cooling',  x: 452, y: 100, range: 34, label: 'Periksa unit pendingin', title: 'UNIT PENDINGIN' },
+        { id: 'pemadam',  x: 520, y: 96,  range: 32, label: 'Periksa tabung pemadam', title: 'TABUNG PEMADAM' },
+        { id: 'sensor',   x: 400, y: 72,  range: 34, label: 'Periksa panel sensor', title: 'PANEL SENSOR',
           flavor: 'Sensor suhu dan asap. Catatannya berhenti pukul 23.11 \u2014 satu menit sebelum api.' },
-        { id: 'pemadam',  x: 480, y: 136, range: 32, label: 'Periksa tabung pemadam', title: 'TABUNG PEMADAM',
-          flavor: 'Segel tabungnya masih utuh. Tidak pernah dipakai \u2014 padahal ada kebakaran.' },
-        { id: 'jam',      x: 400, y: 136, range: 38, label: 'Periksa jam digital', title: 'JAM DIGITAL',
+        { id: 'jam',      x: 496, y: 72,  range: 34, label: 'Periksa jam digital', title: 'JAM DIGITAL',
           flavor: 'Menunjukkan 23.58, masih berjalan. Ini jam yang tidak bisa dipalsukan.' },
-        // --- GUDANG PERANGKAT (kiri bawah) ---
-        { id: 'kardus',   x: 72,  y: 320, range: 30, label: 'Periksa kardus',      title: 'KARDUS BEKAS',
-          flavor: 'Kardus bekas unit server. Sudah dilipat rapi, tidak ada isinya.' },
-        { id: 'tangga',   x: 144, y: 320, range: 28, label: 'Periksa tangga',      title: 'TANGGA LIPAT',
-          flavor: 'Tangga lipat untuk menjangkau rak atas. Debu di pijakannya tipis \u2014 baru dipakai.' },
-        { id: 'jerigen',  x: 56,  y: 288, range: 30, label: 'Periksa jerigen',     title: 'JERIGEN KOSONG',
-          flavor: 'Jerigen plastik kosong. Tutupnya terbuka, dan baunya menyengat \u2014 bukan air.' },
-        { id: 'rakLama',  x: 152, y: 288, range: 30, label: 'Periksa rak lama',    title: 'RAK LAMA',
+        { id: 'binPanel', x: 560, y: 168, range: 28, label: 'Periksa tempat sampah', title: 'TEMPAT SAMPAH',
+          flavor: 'Sobekan kabel, isolasi bekas, dan sarung tangan karet sekali pakai.' },
+        { id: 'rakLama',  x: 84,  y: 320, range: 32, label: 'Periksa rak lama',    title: 'RAK LAMA',
           flavor: 'Rak tua yang sudah tidak dipakai. Debu di depannya tidak tersentuh.' },
-        // --- RUANG KONTROL (kanan bawah) ---
-        { id: 'vault',    x: 440, y: 328, range: 34, label: 'Buka vault',          title: 'VAULT BUKTI' },
-        { id: 'mejaKontrol', x: 400, y: 288, range: 30, label: 'Periksa meja kontrol', title: 'MEJA KONTROL',
+        { id: 'kardus',   x: 152, y: 300, range: 30, label: 'Periksa kardus',      title: 'KARDUS BEKAS',
+          flavor: 'Kardus bekas unit server. Sudah dilipat rapi, tidak ada isinya.' },
+        { id: 'tangga',   x: 84,  y: 352, range: 28, label: 'Periksa tangga',      title: 'TANGGA LIPAT',
+          flavor: 'Tangga lipat untuk menjangkau rak atas. Debu di pijakannya tipis \u2014 baru dipakai.' },
+        { id: 'jerigen',  x: 152, y: 348, range: 30, label: 'Periksa jerigen',     title: 'JERIGEN KOSONG',
+          flavor: 'Jerigen plastik kosong. Tutupnya terbuka, dan baunya menyengat \u2014 bukan air.' },
+        { id: 'vault',    x: 392, y: 326, range: 34, label: 'Buka vault',          title: 'VAULT BUKTI' },
+        { id: 'mejaKontrol', x: 480, y: 306, range: 32, label: 'Periksa meja kontrol', title: 'MEJA KONTROL',
           flavor: 'Monitor pemantauan, semuanya mati. Satu keyboard-nya berlubang bekas terbakar.' },
-        { id: 'cctv',     x: 512, y: 288, range: 34, label: 'Periksa kamera CCTV', title: 'KAMERA CCTV',
+        { id: 'cctv',     x: 552, y: 296, range: 32, label: 'Periksa kamera CCTV', title: 'KAMERA CCTV',
           flavor: 'Kamera 09. Lampu rekamnya mati. Kabelnya tertekuk \u2014 diputar ke dinding sebelum api.' },
-        { id: 'ac',       x: 512, y: 328, range: 34, label: 'Periksa AC',          title: 'AC RUANG SERVER',
+        { id: 'ac',       x: 552, y: 340, range: 32, label: 'Periksa AC',          title: 'AC RUANG SERVER',
           flavor: 'AC presisi, setelan 18 derajat. Filternya menghitam, sama seperti rak.' },
-        { id: 'kabel',    x: 328, y: 316, range: 28, label: 'Periksa kabel lantai', title: 'KABEL LANTAI',
+        { id: 'kabel',    x: 320, y: 300, range: 28, label: 'Periksa kabel lantai', title: 'KABEL LANTAI',
           flavor: 'Kabel daya di bawah raised floor. Semua masih terpasang, tidak ada yang dicabut.' },
         { id: 'door',     x: 304, y: 368, range: 40, label: 'Pintu keluar',        title: 'PINTU KELUAR' }
       ],
-      clueExclude: { terminal: 1, panel: 1, rakB: 1, cooling: 1, vault: 1, door: 1 },
+      clueExclude: { terminal: 1, pemadam: 1, bekas: 1, panel: 1, rakB: 1, cooling: 1, vault: 1, door: 1 },
       caps: [
         { t: 1.2,  s: 'Kamera 09 \u2014 ruang server, lantai tiga.' },
         { t: 3.4,  s: 'Pukul 23.08 \u2014 semua rak normal. Lampu hijau, suhu stabil.' },
@@ -1615,6 +1665,42 @@
     R(x + 10, y, 12, 5, '#d8dde4');
   }
 
+  function drawFireExt(px, py) {
+    var x = px, y = py;
+    R(x + 2, y + 28, 12, 3, 'rgba(0,0,0,.32)');
+    R(x + 3, y + 4, 10, 26, '#8c2b22');       // tabung
+    R(x + 3, y + 4, 10, 2, '#a8382c');
+    R(x + 3, y + 12, 10, 2, '#6e211a');
+    R(x + 3, y + 20, 10, 2, '#6e211a');
+    R(x + 5, y, 6, 5, '#2a2a2a');             // kepala
+    R(x + 12, y + 6, 6, 2, '#3a3a3a');        // selang
+    R(x + 16, y + 6, 2, 6, '#3a3a3a');
+    R(x + 5, y + 9, 6, 3, '#e8e2d2');         // label
+  }
+
+  function drawLockerUnit(px, py) {
+    var x = px, y = py;
+    R(x, y + 56, 40, 4, 'rgba(0,0,0,.34)');
+    R(x, y, 40, 56, '#2a3440');
+    R(x, y, 40, 2, '#3a4656');
+    // 2 pintu
+    R(x + 2, y + 4, 17, 50, '#333f4d');
+    R(x + 21, y + 4, 17, 50, '#333f4d');
+    R(x + 2, y + 4, 17, 1, '#455364');
+    R(x + 21, y + 4, 17, 1, '#455364');
+    // ventilasi
+    for (var i = 0; i < 3; i++) {
+      R(x + 5, y + 8 + i * 3, 11, 1, '#212a34');
+      R(x + 24, y + 8 + i * 3, 11, 1, '#212a34');
+    }
+    // handle
+    R(x + 15, y + 28, 3, 6, '#8a99ad');
+    R(x + 22, y + 28, 3, 6, '#8a99ad');
+    // label
+    R(x + 5, y + 44, 11, 5, '#d8dde4');
+    R(x + 24, y + 44, 11, 5, '#d8dde4');
+  }
+
   function drawCorkBoard(px, py) {
     var x = (px === undefined) ? 272 : px, y = (py === undefined) ? 8 : py;
     R(x, y, 34, 30, '#39465a');
@@ -1645,16 +1731,16 @@
 
   function drawRug(px, py) {
     var x = (px === undefined) ? 98 : px, y = (py === undefined) ? 114 : py;
-    R(x, y, 168, 44, '#22303a');
-    for (var i = 0; i < 9; i++) {
-      for (var j = 0; j < 5; j++) {
+    R(x, y, 120, 40, '#22303a');
+    for (var i = 0; i < 6; i++) {
+      for (var j = 0; j < 4; j++) {
         R(x + 4 + i * 18, y + 4 + j * 8, 14, 1, ((i + j) % 2) ? '#1c2830' : '#26353f');
       }
     }
-    R(x, y, 168, 2, '#4a2f36');
-    R(x, y + 42, 168, 2, '#4a2f36');
-    R(x, y, 2, 44, '#4a2f36');
-    R(x + 166, y, 2, 44, '#4a2f36');
+    R(x, y, 120, 2, '#4a2f36');
+    R(x, y + 38, 120, 2, '#4a2f36');
+    R(x, y, 2, 40, '#4a2f36');
+    R(x + 118, y, 2, 40, '#4a2f36');
   }
 
   function drawBookshelf(px, py) {
