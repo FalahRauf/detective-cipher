@@ -3,3 +3,4 @@ _shots/
 .DS_Store
 Thumbs.db
 kunci_tables.md
+_*.py

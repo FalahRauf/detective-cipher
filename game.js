@@ -63,25 +63,25 @@
       id: 'easy', label: 'EASY',
       layers: [ { a: 3, b: 7 }, { a: 1, b: 5 } ],
       clueCount: 2,
-      guards: 0,
+      traps: 0,
       confirm: 'Mode EASY \u2014 pesan Nayla dienkripsi dua lapis. Cari pesannya dan kuncinya di lab, ' +
-               'lalu buka sandinya dengan alat dekripsi di komputer guru. Tidak ada penjaga berpatroli.'
+               'buka sandinya lewat alat dekripsi yang kamu bawa (tombol T). Tidak ada perangkap.'
     },
     normal: {
       id: 'normal', label: 'NORMAL',
       layers: [ { a: 3, b: 7 }, { a: 1, b: 5 }, { a: 1, b: -6 } ],
       clueCount: 2,
-      guards: 1,
-      confirm: 'Mode NORMAL \u2014 tiga lapis komposisi fungsi, plus SATU penjaga berpatroli dengan lampu. ' +
-               'Kalau kena sorotnya, kamu diantar balik ke pintu masuk dan kehilangan poin.'
+      traps: 2,
+      confirm: 'Mode NORMAL \u2014 tiga lapis komposisi fungsi, plus DUA perangkap buatan pelaku tersembunyi di lantai. ' +
+               'Kena = kehilangan poin. Perhatikan kilau & retakan di lantai.'
     },
     hard: {
       id: 'hard', label: 'HARD',
       layers: [ { a: 5, b: 2 }, { a: 3, b: 3 }, { a: 1, b: -4 } ],
       clueCount: 3,
-      guards: 2,
-      confirm: 'Mode HARD \u2014 kuncinya disobek jadi dua bagian dan disimpan terpisah, plus DUA penjaga ' +
-               'berpatroli dengan sorot lampu yang lebih lebar dan lebih cepat. Jangan sampai ketahuan.'
+      traps: 4,
+      confirm: 'Mode HARD \u2014 kuncinya disobek jadi dua bagian dan disimpan terpisah, plus EMPAT perangkap ' +
+               'termasuk lantai rapuh yang bisa membuatmu jatuh. Perhatikan lantai dengan teliti.'
     }
   };
 
@@ -680,128 +680,101 @@
 
   /* ---------- daftar prop per kasus ---------- */
 
+  // format: {x,y = pojok kiri atas px, w,h = ukuran px, fn = gambar, s = solid (default true)}
   function propsLab() {
-    var list = [];
+    var L = [];
+    function P(x, y, w, h, fn, s) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: s !== false }); }
 
-    /* =========================================================
-       LAB KOMPUTER 2 — ruang c3-14 r4-10
-       world: x 48..240, y 64..176   (dinding di c2 & c15, r3 & r11)
-       ========================================================= */
-    // papan tulis menempel dinding atas (y 68-106)
-    list.push({ y: 106, fn: function () { drawBoard(56, 68); } });
-    // meja guru di bawah papan (y 110-130)
-    list.push({ y: 132, fn: function () { drawDeskTop(64, 112, 72); } });
-    list.push({ y: 132, fn: function () { drawMonitor(78, 104, 32, 22); } });
-    // rak buku di sudut kanan ruangan (x 196-228)
-    list.push({ y: 160, fn: function () { drawBookshelf(196, 100); } });
-    // tempat sampah dekat pintu ruangan
-    list.push({ y: 172, fn: function () { drawBin(56, 156); } });
-    // meja siswa 2x2 — semua di dalam y 134..176
+    /* ===== LAB KOMPUTER 2 — x48-240 y64-176 ===== */
+    P(56, 66, 116, 42, function () { drawBoard(56, 66); });           // papan tulis
+    P(64, 110, 72, 22, function () { drawDeskTop(64, 110, 72); });    // meja guru
+    P(76, 96, 36, 18, function () { drawMonitor(76, 96, 36, 18); });  // monitor di meja
+    P(196, 96, 32, 68, function () { drawBookshelf(196, 96); });      // rak buku
+    P(56, 156, 18, 18, function () { drawBin(56, 156); });            // tempat sampah
     var labDesks = [[64, 136], [120, 136], [64, 160], [120, 160]];
     for (var i = 0; i < labDesks.length; i++) {
       (function (dx, dy) {
-        list.push({ y: dy + 14, fn: function () { drawStudentDesk(dx, dy); } });
+        P(dx, dy, 32, 16, function () { drawStudentDesk(dx, dy); });
       })(labDesks[i][0], labDesks[i][1]);
     }
 
-    /* =========================================================
-       RUANG GURU — ruang c20-30 r4-10
-       world: x 320..496, y 64..176
-       ========================================================= */
-    list.push({ y: 96,  fn: function () { drawCorkBoard(456, 68); } });      // papan pengumuman
-    list.push({ y: 130, fn: function () { drawPrinterTable(336, 80); } });   // printer
-    list.push({ y: 160, fn: function () { drawCabinet(424, 108); } });       // lemari arsip
-    list.push({ y: 172, fn: function () { drawBookshelf(336, 110); } });     // rak guru
+    /* ===== RUANG GURU — x320-496 y64-176 ===== */
+    P(336, 80, 32, 46, function () { drawPrinterTable(336, 80); });   // printer
+    P(424, 108, 32, 46, function () { drawCabinet(424, 108); });      // lemari arsip
+    P(336, 120, 32, 68, function () { drawBookshelf(336, 120); });    // rak guru
 
-    /* =========================================================
-       GUDANG — ruang c3-11 r15-20
-       world: x 48..192, y 240..336
-       ========================================================= */
-    list.push({ y: 306, fn: function () { drawPlant(64, 276); } });          // pot
-    list.push({ y: 292, fn: function () { drawDispenser(112, 264); } });     // dispenser
-    list.push({ y: 320, fn: function () { drawMop(160, 292); } });           // alat pel
+    /* ===== GUDANG — x48-192 y240-336 ===== */
+    P(64, 262, 20, 42, function () { drawPlant(64, 262); });          // pot
+    P(108, 250, 18, 34, function () { drawDispenser(108, 250); });    // dispenser
+    P(156, 282, 16, 44, function () { drawMop(156, 282); });          // alat pel
 
-    /* =========================================================
-       RUANG ISTIRAHAT — ruang c20-30 r15-20
-       world: x 320..496, y 240..336
-       ========================================================= */
-    list.push({ y: 300, fn: function () { drawStudentDesk(336, 272); } });
-    list.push({ y: 300, fn: function () { drawStudentDesk(400, 272); } });
-    list.push({ y: 322, fn: function () { drawRug(340, 300); } });           // karpet kecil di ruang istirahat
+    /* ===== RUANG ISTIRAHAT — x320-496 y240-336 ===== */
+    P(336, 270, 32, 16, function () { drawStudentDesk(336, 270); });
+    P(408, 270, 32, 16, function () { drawStudentDesk(408, 270); });
 
-    /* =========================================================
-       LORONG (r12-13, y 192..224) + pintu keluar
-       ========================================================= */
-    list.push({ y: 210, fn: function () { drawCable(150, 200, 80); } });
-    list.push({ y: 360, fn: function () { drawDoor(246, 340); } });
-    return list;
+    /* ===== lorong + pintu ===== */
+    P(246, 338, 36, 22, function () { drawDoor(246, 338); });         // pintu keluar
+    return L;
   }
 
   /* ---------- props KASUS 2: ruang guru / rapat / arsip / pantry ---------- */
   function propsTeacherRoom() {
-    var list = [];
-    /* RUANG GURU — c3-13 r4-10 → x48-224 y64-176 (TKP) */
-    list.push({ y: 108, fn: function () { drawDeskTop(64, 88, 88); } });
-    list.push({ y: 108, fn: function () { drawMonitor(80, 78, 36, 24); } });
-    list.push({ y: 116, fn: function () { drawChair(160, 100); } });
-    list.push({ y: 80,  fn: function () { drawBoard(56, 70); } });
-    list.push({ y: 168, fn: function () { drawBin(64, 152); } });
+    var L = [];
+    function P(x, y, w, h, fn) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: true }); }
 
-    /* RUANG RAPAT — c20-32 r4-10 → x320-528 y64-176 */
-    list.push({ y: 120, fn: function () { drawDeskTop(352, 96, 120); } });
-    list.push({ y: 140, fn: function () { drawChair(368, 120); } });
-    list.push({ y: 140, fn: function () { drawChair(416, 120); } });
-    list.push({ y: 140, fn: function () { drawChair(464, 120); } });
-    list.push({ y: 96,  fn: function () { drawCorkBoard(336, 72); } });
-    list.push({ y: 160, fn: function () { drawPrinterTable(488, 100); } });
+    /* ===== RUANG GURU (TKP) — x48-224 y64-176 ===== */
+    P(56, 66, 116, 42, function () { drawBoard(56, 66); });           // papan tulis
+    P(64, 110, 88, 22, function () { drawDeskTop(64, 110, 88); });    // meja korban
+    P(76, 96, 36, 18, function () { drawMonitor(76, 96, 36, 18); });  // laptop
 
-    /* ARSIP — c3-10 r15-21 → x48-176 y240-352 */
-    list.push({ y: 330, fn: function () { drawBookshelf(56, 264); } });
-    list.push({ y: 300, fn: function () { drawCabinet(112, 248); } });
+    /* ===== RUANG RAPAT — x320-528 y64-176 ===== */
+    P(352, 112, 120, 20, function () { drawDeskTop(352, 112, 120); });// meja rapat
+    P(336, 68, 34, 30, function () { drawCorkBoard(336, 68); });      // papan pengumuman
+    P(488, 96, 32, 46, function () { drawPrinterTable(488, 96); });   // printer
 
-    /* PANTRY — c20-32 r15-21 → x320-528 y240-352 */
-    list.push({ y: 320, fn: function () { drawDispenser(336, 288); } });
-    list.push({ y: 300, fn: function () { drawCabinet(400, 264); } });
-    list.push({ y: 328, fn: function () { drawPlant(480, 296); } });
-    list.push({ y: 288, fn: function () { drawDeskTop(432, 264, 72); } });
-    list.push({ y: 288, fn: function () { drawLockerUnit(384, 248); } });   // loker guru
+    /* ===== ARSIP — x48-176 y240-352 ===== */
+    P(56, 260, 32, 68, function () { drawBookshelf(56, 260); });      // rak arsip
+    P(112, 248, 32, 46, function () { drawCabinet(112, 248); });      // lemari arsip
 
-    /* lorong + pintu */
-    list.push({ y: 300, fn: function () { drawRug(360, 276); } });
-    list.push({ y: 352, fn: function () { drawDoor(262, 332); } });
-    return list;
+    /* ===== PANTRY — x320-528 y240-352 ===== */
+    P(384, 248, 40, 58, function () { drawLockerUnit(384, 248); });   // loker guru
+    P(464, 264, 32, 46, function () { drawCabinet(464, 264); });      // kabinet
+    P(336, 286, 18, 34, function () { drawDispenser(336, 286); });    // dispenser
+
+    /* ===== pintu ===== */
+    P(262, 330, 36, 22, function () { drawDoor(262, 330); });
+    return L;
   }
 
   /* ---------- props KASUS 3: server / panel / gudang / kontrol ---------- */
   function propsServerFire() {
-    var list = [];
-    /* RUANG SERVER UTAMA — c3-15 r4-11 → x48-256 y64-192 */
-    list.push({ y: 122, fn: function () { drawServerRack(56, 72, 40, 48); } });
-    list.push({ y: 122, fn: function () { drawServerRack(104, 72, 40, 48); } });
-    list.push({ y: 184, fn: function () { drawServerRack(56, 132, 40, 48); } });
-    list.push({ y: 184, fn: function () { drawServerRack(104, 132, 40, 48); } });
-    list.push({ y: 180, fn: function () { drawTerminalDesk(184, 148, 64); } });
+    var L = [];
+    function P(x, y, w, h, fn) { L.push({ x: x, y: y, w: w, h: h, fn: fn, s: true }); }
 
-    /* RUANG PANEL — c22-36 r4-11 → x352-592 y64-192 */
-    list.push({ y: 120, fn: function () { drawPanelBox(368, 80, 32, 32); } });
-    list.push({ y: 130, fn: function () { drawCoolingUnit(432, 72, 40, 56); } });
-    list.push({ y: 180, fn: function () { drawBin(520, 156); } });
-    list.push({ y: 160, fn: function () { drawCabinet(480, 108); } });
-    list.push({ y: 130, fn: function () { drawFireExt(512, 96); } });       // tabung pemadam
+    /* ===== RUANG SERVER UTAMA — x48-256 y64-192 ===== */
+    P(56, 72, 40, 48, function () { drawServerRack(56, 72, 40, 48); });
+    P(104, 72, 40, 48, function () { drawServerRack(104, 72, 40, 48); });
+    P(56, 132, 40, 44, function () { drawServerRack(56, 132, 40, 44); });
+    P(104, 132, 40, 44, function () { drawServerRack(104, 132, 40, 44); });
+    P(176, 148, 64, 22, function () { drawTerminalDesk(176, 148, 64); }); // terminal
 
-    /* GUDANG — c3-12 r16-23 → x48-208 y256-384 */
-    list.push({ y: 340, fn: function () { drawServerRack(64, 296, 40, 48); } });
-    list.push({ y: 320, fn: function () { drawCabinet(136, 272); } });
-    list.push({ y: 350, fn: function () { drawMop(72, 320); } });
+    /* ===== RUANG PANEL — x352-592 y64-192 ===== */
+    P(368, 76, 32, 34, function () { drawPanelBox(368, 76, 32, 32); });   // panel alarm
+    P(428, 68, 40, 58, function () { drawCoolingUnit(428, 68, 40, 56); });// pendingin
+    P(512, 92, 14, 34, function () { drawFireExt(512, 92); });            // pemadam
+    P(472, 96, 24, 24, function () { drawCabinet(472, 96); });            // kabinet kecil
 
-    /* RUANG KONTROL — c22-36 r16-23 → x352-592 y256-384 */
-    list.push({ y: 340, fn: function () { drawSafeBox(368, 304, 48, 40); } });
-    list.push({ y: 320, fn: function () { drawTerminalDesk(440, 288, 80); } });
-    list.push({ y: 340, fn: function () { drawCabinet(536, 296); } });
+    /* ===== GUDANG — x48-208 y256-384 ===== */
+    P(64, 296, 40, 48, function () { drawServerRack(64, 296, 40, 48); }); // rak lama
+    P(136, 272, 32, 46, function () { drawCabinet(136, 272); });          // kabinet
 
-    /* pintu */
-    list.push({ y: 384, fn: function () { drawDoor(286, 364); } });
-    return list;
+    /* ===== RUANG KONTROL — x352-592 y256-384 ===== */
+    P(368, 300, 48, 42, function () { drawSafeBox(368, 300, 48, 40); });  // vault
+    P(440, 286, 80, 22, function () { drawTerminalDesk(440, 286, 80); }); // meja kontrol
+
+    /* ===== pintu ===== */
+    P(286, 362, 36, 22, function () { drawDoor(286, 362); });
+    return L;
   }
 
   /* ---------- furniture tiap kasus ---------- */
@@ -1065,8 +1038,8 @@
             locked: 'Baris loker besi di pantry. Satu pintu berlabel "R. RATNA".',
             ready: 'Kunci loker masuk dengan pas.',
             action: 'Buka loker',
-            after: 'Di dalam loker: <b>kunci brankas</b>, dan catatan kecil — "jas cadangan di lemari arsip, saku kanan".',
-            take: 'Ambil kunci brankas',
+            after: 'Di dalam loker: <b>kunci brankas</b>, catatan kecil bertulis — "brankas butuh jamnya. Dan jas cadangan ada di lemari arsip, periksa sakunya".',
+            take: 'Simpan catatan',
             done: 'Loker sudah kosong. Cuma jas hujan tua di pintu sebelah.' },
 
           /* 3) Lemari arsip — bukan untuk kunci, tapi untuk JAS korban (kunci ketiga di saku) */
@@ -1100,6 +1073,9 @@
         { id: 'papan',    x: 114, y: 92,  range: 36, label: 'Periksa papan tulis', title: 'PAPAN TULIS',
           flavor: 'Masih ada tulisan fungsi komposisi dari kelas tadi. Satu rumus dilingkari dua kali.' },
         // kursi (160,100) -> (168,116)
+        { id: 'jam',      x: 190, y: 74,  range: 40, label: 'Periksa jam dinding', title: 'JAM DINDING',
+          setsFlag: 'jam', setsFlagMsg: 'Petunjuk angka dicatat: 16.42',
+          flavor: 'Jam berhenti di 16.42 — tepat saat kejadian. Baterainya baru diganti, ini bukan kebetulan. Kamu mencatat angkanya.' },
         { id: 'kursi',    x: 168, y: 118, range: 30, label: 'Periksa kursi korban', title: 'KURSI KORBAN',
           flavor: 'Tergeser jauh dari meja, seperti korban berdiri buru-buru sebelum sesuatu terjadi.' },
         // sampah (64,152) -> (72,166)
@@ -1374,7 +1350,19 @@
     } else {
       grid = makeGrid(MAP_W, MAP_H, c.furniture || []);
     }
-    // perabot tetap ditumpuk di atas denah
+    // COLLISION DARI FOOTPRINT PERABOT — satu sumber data untuk gambar & tabrakan
+    var propsNow = c.props ? c.props() : [];
+    for (var pi2 = 0; pi2 < propsNow.length; pi2++) {
+      var pr = propsNow[pi2];
+      if (pr.s === false) continue;
+      var c0 = Math.floor(pr.x / T), c1 = Math.ceil((pr.x + (pr.w || 0)) / T);
+      var r0 = Math.floor(pr.y / T), r1 = Math.ceil((pr.y + (pr.h || 0)) / T);
+      for (var rr2 = r0; rr2 < r1; rr2++) {
+        for (var cc2 = c0; cc2 < c1; cc2++) {
+          if (grid[rr2] && cc2 >= 0 && cc2 < MAP_W) grid[rr2][cc2] = 2;
+        }
+      }
+    }
     if (c.furniture) {
       for (var fi = 0; fi < c.furniture.length; fi++) {
         var d = c.furniture[fi];
@@ -1397,6 +1385,39 @@
     }
     INTERACTABLES = c.interactables;
     LIGHTS = c.lights;
+    // titik interaksi menempel ke lantai terdekat yang valid
+    (function () {
+      var sp0 = c.spawn;
+      var sc0 = Math.floor(sp0.x / T), sr0 = Math.floor(sp0.y / T);
+      if (!grid[sr0] || grid[sr0][sc0] !== 0) {
+        // spawn juga dipindah ke LANTAI KOSONG terdekat (val 0, bukan perabot)
+        var bestS = null, bdS = 1e9;
+        for (var rr3 = 1; rr3 < MAP_H - 1; rr3++) {
+          for (var cc3 = 1; cc3 < MAP_W - 1; cc3++) {
+            if (grid[rr3][cc3] !== 0) continue;
+            var dd = Math.hypot(cc3 - sc0, rr3 - sr0);
+            if (dd < bdS) { bdS = dd; bestS = [cc3, rr3]; }
+          }
+        }
+        if (bestS) { c.spawn = { x: bestS[0] * T + T / 2, y: bestS[1] * T + T / 2 }; }
+      }
+      // BFS dari spawn
+      var seen2 = {};
+      var q2 = [[Math.floor(c.spawn.x / T), Math.floor(c.spawn.y / T)]];
+      seen2[q2[0].join(',')] = 1;
+      var dirs2 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      while (q2.length) {
+        var cu2 = q2.shift();
+        for (var d2 = 0; d2 < 4; d2++) {
+          var nc2 = cu2[0] + dirs2[d2][0], nr2 = cu2[1] + dirs2[d2][1];
+          var k2 = nc2 + ',' + nr2;
+          if (seen2[k2] || nc2 < 0 || nr2 < 0 || nc2 >= MAP_W || nr2 >= MAP_H) continue;
+          if (grid[nr2][nc2] !== 0) continue;
+          seen2[k2] = 1; q2.push([nc2, nr2]);
+        }
+      }
+      snapInteractables(seen2);
+    })();
     var hp = $('hud-place');
     if (hp) hp.innerHTML = 'TKP &middot; ' + c.place;
     return c;
@@ -1415,6 +1436,32 @@
     for (var c = 0; c < CASE.clues.length; c++) state.clueMap[pool[c]] = CASE.clues[c];
   }
 
+  // geser titik interaksi ke tile lantai terdekat yang BISA dicapai —
+  // dipanggil setelah collision dibangun, jadi titik interaksi selalu valid
+  function snapInteractables(seen) {
+    // kumpulkan semua tile reachable sekali
+    var tiles = [];
+    for (var key in seen) {
+      var parts = key.split(',');
+      tiles.push([+parts[0], +parts[1]]);
+    }
+    for (var i = 0; i < INTERACTABLES.length; i++) {
+      var it = INTERACTABLES[i];
+      var best = null, bd = 1e9;
+      for (var t = 0; t < tiles.length; t++) {
+        var wx = tiles[t][0] * T + T / 2, wy = tiles[t][1] * T + T / 2 + 6;
+        var d = Math.hypot(wx - it.x, wy - it.y);
+        if (d < bd) { bd = d; best = { x: wx, y: wy, d: d }; }
+      }
+      if (best) {
+        it.ox = it.x; it.oy = it.y;
+        it.x = best.x; it.y = best.y;
+        // objek jauh dari perabotnya -> perbesar range biar tetap bisa diinteraksi
+        if (best.d > (it.range || 30)) it.range = Math.ceil(best.d) + 18;
+      }
+    }
+  }
+
   function propById(id) {
     for (var i = 0; i < INTERACTABLES.length; i++) if (INTERACTABLES[i].id === id) return INTERACTABLES[i];
     return null;
@@ -1423,34 +1470,25 @@
   /* =========================================================
      4. SPRITE PEMAIN (16 x 24)
      ========================================================= */
-  var PAL = {
-    '.': null,
-    'h': '#2b1e17', 'H': '#453122',
-    's': '#e8b48a', 'S': '#c9936d',
-    'e': '#14181f',
-    'b': '#2f4a6e', 'B': '#41669a',
-    'p': '#1c242f', 'o': '#0f141b'
-  };
-
   var SPR_DOWN = [
-    '.....hhhhhh.....',
-    '....hhhhhhhh....',
-    '...hhhhhhhhhh...',
-    '..hhhhhhhhhhhh..',
-    '.hhhhhhhhhhhhhh.',
+    '.....tttttt.....',
+    '....tttttttt....',
+    '...tttttttttt...',
+    '..tttttttttttt..',
+    '.tttttttttttttt.',
     '....ssssssss....',
     '....sesssses....',
     '....ssssssss....',
     '....ssssssss....',
-    '...bbbbbbbbbb...',
-    '..bbbbbbbbbbbb..',
-    '.bbBbbbbbbbbBbb.',
-    '.bbBbbbbbbbbBbb.',
-    '.bbbbbbbbbbbbbb.',
-    '.bbbbbbbbbbbbbb.',
-    '..bbbbbbbbbbbb..',
-    '..bbbbbbbbbbbb..',
-    '...bbbbbbbbbb...',
+    '...cccccccccc...',
+    '..cccccccccccc..',
+    '.ccCccccccccCcc.',
+    '.ccCccccccccCcc.',
+    '.cccccccccccccc.',
+    '.cccccccccccccc.',
+    '..cccccccccccc..',
+    '..cccccccccccc..',
+    '...cccccccccc...',
     '...pppppppppp...',
     '...pppppppppp...',
     '...pppp..pppp...',
@@ -1459,24 +1497,24 @@
     '...oooo..oooo...'
   ];
   var SPR_UP = [
-    '.....hhhhhh.....',
-    '....hhhhhhhh....',
-    '...hhhhhhhhhh...',
-    '..hhhhhhhhhhhh..',
-    '.hhhhhhhhhhhhhh.',
-    '....hhhhhhhh....',
-    '....hhhhhhhh....',
-    '....hhhhhhhh....',
-    '....hhhhhhhh....',
-    '...bbbbbbbbbb...',
-    '..bbbbbbbbbbbb..',
-    '.bbBbbbbbbbbBbb.',
-    '.bbBbbbbbbbbBbb.',
-    '.bbbbbbbbbbbbbb.',
-    '.bbbbbbbbbbbbbb.',
-    '..bbbbbbbbbbbb..',
-    '..bbbbbbbbbbbb..',
-    '...bbbbbbbbbb...',
+    '.....tttttt.....',
+    '....tttttttt....',
+    '...tttttttttt...',
+    '..tttttttttttt..',
+    '.tttttttttttttt.',
+    '....tttttttt....',
+    '....tttttttt....',
+    '....tttttttt....',
+    '....tttttttt....',
+    '...cccccccccc...',
+    '..cccccccccccc..',
+    '.ccCccccccccCcc.',
+    '.ccCccccccccCcc.',
+    '.cccccccccccccc.',
+    '.cccccccccccccc.',
+    '..cccccccccccc..',
+    '..cccccccccccc..',
+    '...cccccccccc...',
     '...pppppppppp...',
     '...pppppppppp...',
     '...pppp..pppp...',
@@ -1485,24 +1523,24 @@
     '...oooo..oooo...'
   ];
   var SPR_SIDE = [
-    '.....hhhhhh.....',
-    '....hhhhhhhh....',
-    '...hhhhhhhhhh...',
-    '..hhhhhhhhhhhh..',
-    '.hhhhhhhhhhhhhh.',
+    '.....tttttt.....',
+    '....tttttttt....',
+    '...tttttttttt...',
+    '..tttttttttttt..',
+    '.tttttttttttttt.',
     '.....ssssssss...',
     '.....sssssses...',
     '.....ssssssss...',
     '.....ssssssss...',
-    '....bbbbbbbbb...',
-    '...bbbbbbbbbb...',
-    '..bBbbbbbbbbb...',
-    '..bBbbbbbbbbb...',
-    '..bbbbbbbbbbb...',
-    '..bbbbbbbbbbb...',
-    '...bbbbbbbbb....',
-    '...bbbbbbbbb....',
-    '...bbbbbbbbb....',
+    '....ccccccccc...',
+    '...cccccccccc...',
+    '..cCccccccccc...',
+    '..cCccccccccc...',
+    '..ccccccccccc...',
+    '..ccccccccccc...',
+    '...ccccccccc....',
+    '...ccccccccc....',
+    '...ccccccccc....',
     '...pppppppp.....',
     '...pppppppp.....',
     '...pppppppp.....',
@@ -1510,6 +1548,17 @@
     '...oooo..ooo....',
     '...oooo..ooo....'
   ];
+
+  var PAL = {
+    '.': null,
+    't': '#3a2a18',                     // fedora
+    's': '#e8b48a',                     // kulit
+    'e': '#14181f',                     // mata
+    'c': '#8a7455', 'C': '#6e5c42',     // mantel khaki
+    'p': '#2a2d38',                     // celana
+    'o': '#12141b'                      // sepatu
+  };
+
 
   /* =========================================================
      5. STATE
@@ -2009,11 +2058,15 @@
     drawRug();
     CUR.decor();
 
-    var list = CUR.props();
-    for (var gi = 0; gi < guards.length; gi++) {
-      (function (gg) {
-        list.push({ y: gg.y, fn: function () { drawGuard(gg); } });
-      })(guards[gi]);
+    var list = [];
+    var rawProps = CUR.props();
+    for (var k2 = 0; k2 < rawProps.length; k2++) {
+      var pr2 = rawProps[k2];
+      if (pr2.fn) {
+        list.push({ y: (pr2.y + (pr2.h || 0)), fn: pr2.fn, x: pr2.x, w: pr2.w || 0 });
+      } else {
+        list.push(pr2);
+      }
     }
     list.push({ y: player.y, fn: function () { drawPlayerShadow(Math.round(player.x), Math.round(player.y)); } });
     list.push({ y: player.y, fn: drawPlayer });
@@ -2023,297 +2076,115 @@
 
     ctx.restore();
 
+    drawTraps();
     drawDust();
     if (vig) ctx.drawImage(vig, 0, 0);
   }
 
   /* =========================================================
-     8B. PENJAGA — patroli + sorot lampu (makin sulit per mode)
+     8B. PERANGKAP — dipasang tersangka untuk menghalangi penyelidikan.
+         Spawn ACAK tiap main. NORMAL = 2, HARD = 4. EASY = tidak ada.
      ========================================================= */
-  var guards = [];
-  var guardCaught = 0;          // berapa kali ketahuan (buat statistik & ending)
-  var caughtCooldown = 0;       // jeda biar tidak langsung ketahuan lagi
+  var traps = [];
+  var trapCooldown = 0;
+  var trapHits = 0;
 
-  // rute patroli per kasus — semua titik WAJIB di lorong (grid kosong),
-  // supaya penjaga tidak pernah menembus dinding saat berjalan lurus antar titik
-  var GUARD_ROUTES = {
-    c1: [
-      [{ x: 64,  y: 200 }, { x: 464, y: 200 }],          // lorong horizontal tengah
-      [{ x: 264, y: 200 }, { x: 264, y: 296 }]           // lorong vertikal bawah
-    ],
-    c2: [
-      [{ x: 64,  y: 208 }, { x: 496, y: 208 }],          // lorong horizontal (r12-13)
-      [{ x: 272, y: 96  }, { x: 272, y: 336 }],          // lorong vertikal (c15-18)
-      [{ x: 112, y: 208 }, { x: 112, y: 208 }]           // cadangan: titik diam
-    ],
-    c3: [
-      [{ x: 64,  y: 224 }, { x: 560, y: 224 }],          // lorong horizontal (r13-14)
-      [{ x: 304, y: 96  }, { x: 304, y: 392 }]           // lorong vertikal (c17-20)
-    ]
+  var TRAP_TYPES = {
+    wire:  { label: 'KABEL ALARM',   penalty: 100, msg: 'Kaki kamu menyentuh kabel alarm \u2014 alarm berbunyi nyaring!' },
+    trip:  { label: 'TALI UMPAN',    penalty: 60,  msg: 'Kamu tersandung tali tipis di lantai. Lututmu berdarah.' },
+    floor: { label: 'LANTAI RAPUH',  penalty: 80,  msg: 'Lantai itu rapuh! Kamu nyaris jatuh ke ruang bawah tanah.' }
   };
 
-  // buang titik rute yang jatuh di tile padat, lalu sambungkan ulang jadi rute aman
-  function sanitizeRoute(pts) {
-    var safe = [];
-    for (var i = 0; i < pts.length; i++) {
-      var tc = Math.floor(pts[i].x / T), tr = Math.floor(pts[i].y / T);
-      if (solidTile(tc, tr)) continue;
-      safe.push(pts[i]);
+  function trapCfg() { return { easy: 0, normal: 2, hard: 4 }[diff.id] || 0; }
+
+  function spawnTraps() {
+    traps = [];
+    var n = trapCfg();
+    if (!n || !CUR) return;
+    // kumpulkan tile lantai yang aman: bukan dekat spawn, bukan dekat objek penting
+    var sp = CUR.spawn;
+    var sc = Math.floor(sp.x / T), sr = Math.floor(sp.y / T);
+    var reserved = {};
+    for (var i = 0; i < INTERACTABLES.length; i++) {
+      var it = INTERACTABLES[i];
+      var tc = Math.floor(it.x / T), tr = Math.floor(it.y / T);
+      for (var dc = -1; dc <= 1; dc++) for (var dr = -1; dr <= 1; dr++) reserved[(tc + dc) + ',' + (tr + dr)] = 1;
     }
-    return safe.length >= 2 ? safe : null;
-  }
+    for (var dc2 = -4; dc2 <= 4; dc2++) for (var dr2 = -4; dr2 <= 4; dr2++) reserved[(sc + dc2) + ',' + (sr + dr2)] = 1;
 
-  // cari titik acak yang aman di ruangan (fallback kalau rute habis)
-  function randomSafePoint() {
-    for (var tries = 0; tries < 200; tries++) {
-      var tc = 3 + Math.floor(Math.random() * Math.max(1, MAP_W - 6));
-      var tr = 4 + Math.floor(Math.random() * Math.max(1, MAP_H - 8));
-      if (!solidTile(tc, tr)) return { x: tc * T + T / 2, y: tr * T + T / 2 };
-    }
-    return { x: MAP_W * T / 2, y: MAP_H * T / 2 };
-  }
-
-  // konfigurasi per tingkat: jumlah penjaga, kecepatan, sudut sorot, jarak pandang
-  var GUARD_CFG = {
-    easy:   { count: 0, speed: 0,  cone: 0,  range: 0  },
-    normal: { count: 1, speed: 34, cone: 0.42, range: 84 },
-    hard:   { count: 2, speed: 46, cone: 0.58, range: 110 }
-  };
-
-  function guardCfg() { return GUARD_CFG[diff.id] || GUARD_CFG.easy; }
-
-  // bangun jalur aman antar dua titik: bergerak per-sumbu, hanya lewat tile kosong (BFS grid)
-  function pathBetween(ax, ay, bx, by) {
-    var sc = Math.floor(ax / T), sr = Math.floor(ay / T);
-    var ec = Math.floor(bx / T), er = Math.floor(by / T);
-    if (sc === ec && sr === er) return [{ x: bx, y: by }];
-    var key = function (c, r) { return c + ',' + r; };
-    var prev = {}, seen = {}, q = [[sc, sr]];
-    seen[key(sc, sr)] = 1;
-    var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-    var found = false;
-    while (q.length) {
-      var cur = q.shift();
-      if (cur[0] === ec && cur[1] === er) { found = true; break; }
-      for (var i = 0; i < dirs.length; i++) {
-        var nc = cur[0] + dirs[i][0], nr = cur[1] + dirs[i][1];
-        var k = key(nc, nr);
-        if (seen[k]) continue;
-        if (nc < 0 || nr < 0 || nc >= MAP_W || nr >= MAP_H) continue;
-        if (grid[nr][nc] !== 0) continue;
-        seen[k] = 1;
-        prev[k] = cur;
-        q.push([nc, nr]);
+    var pool = [];
+    for (var r = 3; r < MAP_H - 1; r++) {
+      for (var c = 2; c < MAP_W - 1; c++) {
+        if (grid[r][c] !== 0) continue;
+        if (reserved[c + ',' + r]) continue;
+        pool.push([c, r]);
       }
     }
-    if (!found) return null;
-    // rekonstruksi jalur jadi titik-titik world
-    var path = [], node = [ec, er];
-    while (node) {
-      path.unshift({ x: node[0] * T + T / 2, y: node[1] * T + T / 2 });
-      node = prev[key(node[0], node[1])];
+    // acak
+    for (var j = pool.length - 1; j > 0; j--) {
+      var k = Math.floor(Math.random() * (j + 1));
+      var tmp = pool[j]; pool[j] = pool[k]; pool[k] = tmp;
     }
-    path.push({ x: bx, y: by });
-    return path;
+    var types = ['wire', 'trip', 'floor'];
+    for (var t2 = 0; t2 < n && t2 < pool.length; t2++) {
+      traps.push({ c: pool[t2][0], r: pool[t2][1], type: types[t2 % types.length], done: false });
+    }
+    trapHits = 0;
   }
 
-  // gabungkan rute jadi jalur penuh yang aman (tiap segmen lewat BFS)
-  function buildSafeRoute(pts) {
-    if (!pts || pts.length < 2) return null;
-    var full = [{ x: pts[0].x, y: pts[0].y }];
-    for (var i = 1; i < pts.length; i++) {
-      var seg = pathBetween(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
-      if (!seg) return null;
-      for (var j = 0; j < seg.length; j++) full.push(seg[j]);
-    }
-    return full.length >= 2 ? full : null;
-  }
-
-  function spawnGuards() {
-    guards = [];
-    var cfg = guardCfg();
-    if (!cfg.count) return;
-    var routes = (CUR && GUARD_ROUTES[CUR.id]) || GUARD_ROUTES.c1;
-    for (var i = 0; i < cfg.count && i < routes.length; i++) {
-      var r = buildSafeRoute(routes[i]);
-      // rute tidak layak -> pakai jalur acak yang aman
-      if (!r) {
-        var p1 = randomSafePoint(), p2 = randomSafePoint();
-        r = buildSafeRoute([p1, p2]) || [p1, p2];
+  function updateTraps(dt) {
+    if (trapCooldown > 0) trapCooldown -= dt;
+    if (!traps.length || trapCooldown > 0 || dialogOpen) return;
+    var pc = Math.floor(player.x / T), pr = Math.floor(player.y / T);
+    for (var i = 0; i < traps.length; i++) {
+      var t = traps[i];
+      if (t.done || t.c !== pc || t.r !== pr) continue;
+      t.done = true;
+      trapHits++;
+      trapCooldown = 1.2;
+      var cfgT = TRAP_TYPES[t.type];
+      state.score = Math.max(0, state.score - cfgT.penalty);
+      updateScore();
+      updateGuardHud();
+      toast('PERANGKAP: ' + cfgT.label + ' \u00b7 \u2212' + cfgT.penalty + ' poin');
+      if (t.type === 'floor') {
+        // jatuh: kembali ke titik masuk
+        var sp = CUR.spawn;
+        player.x = sp.x; player.y = sp.y;
+        cam.x = Math.round(Math.max(0, Math.min(WORLD_W - VW, player.x - VW / 2)));
+        cam.y = Math.round(Math.max(0, Math.min(WORLD_H - VH, player.y - VH / 2)));
       }
-      guards.push({
-        pts: r, seg: 0, t: 0, x: r[0].x, y: r[0].y,
-        dir: 1, angle: 0, speed: cfg.speed * (0.85 + i * 0.15),
-        pause: 0, alert: 0
-      });
+      openDialog('PERANGKAP', cfgT.msg + ' ' +
+        (t.type === 'floor' ? 'Kamu merangkak kembali ke titik masuk.' : 'Hati-hati \u2014 tersangka mungkin tahu ada yang menyelidik.'),
+        [{ label: 'Aduh', fn: closeDialog }]);
+      return;
     }
   }
 
-  function updateGuards(dt) {
-    if (!guards.length) return;
-    var cfg = guardCfg();
-    if (caughtCooldown > 0) caughtCooldown -= dt;
-
-    for (var i = 0; i < guards.length; i++) {
-      var g = guards[i];
-
-      // jeda saat sampai di titik
-      if (g.pause > 0) {
-        g.pause -= dt;
-        // saat berhenti, penjaga menoleh (sapu pandangan)
-        g.angle += Math.sin(t0 * 1.6 + i) * dt * 1.5;
-        continue;
-      }
-
-      var a = g.pts[g.seg];
-      var b = g.pts[(g.seg + 1) % g.pts.length];
-      var dx = b.x - a.x, dy = b.y - a.y;
-      var len = Math.hypot(dx, dy) || 1;
-      g.t += (g.speed * dt) / len;
-
-      if (g.t >= 1) {
-        g.t = 0;
-        g.seg = (g.seg + 1) % g.pts.length;
-        g.pause = 0.7 + Math.random() * 0.9;   // berhenti sejenak di tiap titik
-        a = g.pts[g.seg];
-        b = g.pts[(g.seg + 1) % g.pts.length];
-      }
-
-      g.x = a.x + (b.x - a.x) * g.t;
-      g.y = a.y + (b.y - a.y) * g.t;
-      // jangan pernah berdiri di tile padat — kalau iya, lompat ke titik berikutnya
-      if (solidTile(Math.floor(g.x / T), Math.floor(g.y / T))) {
-        g.t = 0;
-        g.seg = (g.seg + 1) % g.pts.length;
-        g.pause = 0.4;
-        continue;
-      }
-      // arah hadap = arah gerak
-      var want = Math.atan2(b.y - a.y, b.x - a.x);
-      var diffA = want - g.angle;
-      while (diffA > Math.PI) diffA -= Math.PI * 2;
-      while (diffA < -Math.PI) diffA += Math.PI * 2;
-      g.angle += diffA * Math.min(1, dt * 6);
-    }
-
-    // deteksi: pemain di dalam kerucut sorot?
-    if (caughtCooldown <= 0 && !dialogOpen && activeScreen === 'scr-play') {
-      for (var j = 0; j < guards.length; j++) {
-        if (guardSees(guards[j], cfg)) { onCaught(guards[j]); break; }
+  function drawTraps() {
+    for (var i = 0; i < traps.length; i++) {
+      var t = traps[i];
+      if (t.done) continue;
+      var x = t.c * T, y = t.r * T;
+      if (t.type === 'wire') {
+        // kabel tipis melintang dengan kilau kecil
+        R(x, y + 9, T, 1, 'rgba(60,50,40,.85)');
+        R(x + 5, y + 8, 2, 1, 'rgba(255,220,140,.75)');
+        R(x + 11, y + 10, 2, 1, 'rgba(255,220,140,.45)');
+      } else if (t.type === 'trip') {
+        // tali umpan lebih rendah
+        R(x, y + 13, T, 1, 'rgba(70,55,40,.8)');
+        R(x + 3, y + 12, 2, 1, 'rgba(230,200,150,.55)');
+      } else {
+        // lantai rapuh: retakan halus
+        R(x + 3, y + 3, 1, 10, 'rgba(0,0,0,.4)');
+        R(x + 8, y + 2, 1, 12, 'rgba(0,0,0,.35)');
+        R(x + 5, y + 7, 6, 1, 'rgba(0,0,0,.4)');
+        R(x + 10, y + 4, 3, 1, 'rgba(255,255,255,.05)');
       }
     }
   }
 
-  function guardSees(g, cfg) {
-    var dx = player.x - g.x, dy = player.y - g.y;
-    var dist = Math.hypot(dx, dy);
-    if (dist > cfg.range) return false;
-    var ang = Math.atan2(dy, dx);
-    var d = ang - g.angle;
-    while (d > Math.PI) d -= Math.PI * 2;
-    while (d < -Math.PI) d += Math.PI * 2;
-    if (Math.abs(d) > cfg.cone) return false;
-    // dinding menghalangi pandangan
-    return !sightBlocked(g.x, g.y, player.x, player.y);
-  }
-
-  function sightBlocked(x0, y0, x1, y1) {
-    var steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 8);
-    for (var i = 1; i < steps; i++) {
-      var t = i / steps;
-      var x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
-      if (solidTile(Math.floor(x / T), Math.floor(y / T))) return true;
-    }
-    return false;
-  }
-
-  function onCaught(g) {
-    caughtCooldown = 3.2;
-    guardCaught++;
-    g.alert = 1;
-    var penalty = 120;
-    state.score = Math.max(0, state.score - penalty);
-    updateScore();
-    toast('Ketahuan penjaga \u00b7 \u2212' + penalty + ' poin');
-    // penjaga mengembalikan pemain ke titik masuk
-    var sp = CUR.spawn || { x: 216, y: 240 };
-    player.x = sp.x; player.y = sp.y;
-    cam.x = Math.round(Math.max(0, Math.min(WORLD_W - VW, player.x - VW / 2)));
-    cam.y = Math.round(Math.max(0, Math.min(WORLD_H - VH, player.y - VH / 2)));
-    openDialog('PENJAGA',
-      'Seorang penjaga menghentikannya. <b>"Jam segini masih di sini? Keluar."</b><br>' +
-      'Kamu diantar kembali ke pintu masuk \u2014 dan harus mengulang jalanmu. ' +
-      'Hindari sorot lampunya: <b>berhenti</b> saat lampu mendekat, jangan jalan di depan kerucut cahaya.',
-      [{ label: 'Mengerti', fn: function () { closeDialog(); } }]);
-  }
-
-  // sprite penjaga 16x24 — sama tinggi dengan pemain, dibedakan warna seragamnya
-  var SPR_GUARD_DOWN = [
-    '.....gggggg.....',
-    '....gggggggg....',
-    '...gggggggggg...',
-    '..gggggggggggg..',
-    '.gggggggggggggg.',
-    '....ssssssss....',
-    '....sesssses....',
-    '....ssssssss....',
-    '....ssssssss....',
-    '...uuuuuuuuuu...',
-    '..uuuuuuuuuuuu..',
-    '.uuUuuuuuuuuUuu.',
-    '.uuUuuuuuuuuUuu.',
-    '.uuuuuuuuuuuuuu.',
-    '.uuuuuuuuuuuuuu.',
-    '..uuuuuuuuuuuu..',
-    '..uuuuuuuuuuuu..',
-    '...uuuuuuuuuu...',
-    '...pppppppppp...',
-    '...pppppppppp...',
-    '...pppp..pppp...',
-    '...pppp..pppp...',
-    '...oooo..oooo...',
-    '...oooo..oooo...'
-  ];
-
-  function drawGuard(g) {
-    var x = Math.round(g.x), y = Math.round(g.y);
-    // sorot lampu
-    var cfg = guardCfg();
-    if (cfg.range > 0) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      var gx = x, gy = y - 12;
-      var ex = gx + Math.cos(g.angle) * cfg.range;
-      var ey = gy + Math.sin(g.angle) * cfg.range;
-      var grd = ctx.createLinearGradient(gx, gy, ex, ey);
-      grd.addColorStop(0, 'rgba(255,240,190,.22)');
-      grd.addColorStop(1, 'rgba(255,240,190,.02)');
-      ctx.fillStyle = grd;
-      var px2 = Math.cos(g.angle + Math.PI / 2), py2 = Math.sin(g.angle + Math.PI / 2);
-      var w = cfg.range * 0.30;
-      ctx.beginPath();
-      ctx.moveTo(gx, gy);
-      ctx.lineTo(ex + px2 * w, ey + py2 * w);
-      ctx.lineTo(ex - px2 * w, ey - py2 * w);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-    // bayangan kontak
-    ctx.fillStyle = 'rgba(0,0,0,.32)';
-    ctx.fillRect(x - 7, y - 3, 14, 3);
-    // badan penjaga: sprite 16x24, seragam biru tua
-    drawSprite(SPR_GUARD_DOWN, x - 8, y - 24, false, {
-      '.': null,
-      'g': '#16233a', 's': '#e0aa7e', 'e': '#14181f',
-      'u': '#1d2f4d', 'U': '#2a456d',
-      'p': '#0f1620', 'o': '#080d14'
-    });
-    // lampu di tangan
-    var lx = x + Math.cos(g.angle) * 7;
-    var ly = y - 14 + Math.sin(g.angle) * 4;
-    R(lx - 1, ly - 1, 3, 3, '#ffe9b0');
-  }
   function solidTile(c, r) {
     if (c < 0 || r < 0 || c >= MAP_W || r >= MAP_H) return true;
     return grid[r][c] !== 0;
@@ -2354,7 +2225,7 @@
     if (dx !== 0 && !blocked(player.x + dx * sp, player.y)) player.x += dx * sp;
     if (dy !== 0 && !blocked(player.x, player.y + dy * sp)) player.y += dy * sp;
 
-    updateGuards(dt);
+    updateTraps(dt);
 
     if (state.flags._s_key1 && potAnim < 1) potAnim = Math.min(1, potAnim + dt * 2.6);
 
@@ -2450,7 +2321,7 @@
     if (!CASE || !CUR) return;
     var n = cluesFound();
     if (n < CASE.clues.length) { el.innerHTML = 'Cari petunjuk &middot; ' + n + '/' + CASE.clues.length; return; }
-    if (!state.decrypted) { el.innerHTML = 'Buka pesan di <b>alat dekripsi</b>'; return; }
+    if (!state.decrypted) { el.innerHTML = 'Buka <b>ALAT</b> (tombol T) &middot; masukkan petunjuk'; return; }
     var locks = CUR.quest.locks;
     for (var i = 0; i < locks.length; i++) {
       if (state.flags[locks[i].flag]) continue;
@@ -2464,13 +2335,11 @@
   function updateGuardHud() {
     var el = $('guard-badge');
     if (!el) return;
-    var n = guards.length;
-    if (!n) { el.classList.remove('show'); return; }
+    var n = traps.length;
+    if (!n) { el.classList.remove('show', 'alert'); return; }
     el.classList.add('show');
-    el.textContent = guardCaught > 0
-      ? 'PENJAGA \u00d7 ' + n + ' \u00b7 KETAHUAN ' + guardCaught
-      : 'PENJAGA \u00d7 ' + n;
-    el.classList.toggle('alert', guardCaught > 0);
+    el.classList.toggle('alert', trapHits > 0);
+    el.textContent = trapHits > 0 ? 'PERANGKAP · ' + trapHits + ' TERPICU' : 'AWAS PERANGKAP × ' + n;
   }
 
   function keyCount() {
@@ -2572,22 +2441,9 @@
     var p = propById(id);
     if (!p) return;
 
-    /* ---- alat dekripsi ---- */
+    /* ---- komputer/terminal: tetap bisa membuka alat (selain tombol HUD) ---- */
     if (id === CUR.quest.tool) {
-      var n = cluesFound();
-      if (n < CASE.clues.length) {
-        openDialog(CUR.quest.toolTitle,
-          'Alat dekripsi yang dipakai pelaku. Layarnya menunggu dua hal: <b>pesan terenkripsi</b> dan ' +
-          '<b>kunci fungsinya</b>. Kamu baru punya <b>' + n + '/' + CASE.clues.length + '</b> petunjuk.',
-          [{ label: 'Cari dulu', fn: closeDialog }]);
-        return;
-      }
-      openDialog(CUR.quest.toolTitle,
-        'Pesan terenkripsi dan kuncinya sudah lengkap. Alat ini bisa dijalankan sekarang.',
-        [
-          { label: 'Buka alat', primary: true, fn: function () { closeDialog(); openTool(); } },
-          { label: 'Tutup', fn: closeDialog }
-        ]);
+      openTool();
       return;
     }
 
@@ -3248,12 +3104,11 @@
     state.win = false;
     state.picked = null;
     potAnim = 0;
-    guardCaught = 0;
-    caughtCooldown = 0;
+    trapCooldown = 0;
     loadCase(state.caseId);
     CASE = buildCase(diff);
     placeClues();
-    spawnGuards();
+    spawnTraps();
     updateGuardHud();
     updateScore();
     updateObjective();
@@ -3373,6 +3228,7 @@
       if (k === 'arrowup' || k === 'arrowdown' || k === 'arrowleft' || k === 'arrowright' || k === ' ') e.preventDefault();
       keys[k] = true;
       if (k === 'e') onInteractKey();
+      if (k === 't' && activeScreen === 'scr-play' && !dialogOpen) openTool();
     });
     window.addEventListener('keyup', function (e) { keys[e.key.toLowerCase()] = false; });
     window.addEventListener('blur', function () { keys = {}; });
@@ -5151,13 +5007,11 @@
       return 'none';
     },
     hitSeat: hitSeat,
-    guards: function () { return guards; },
-    guardCfg: guardCfg,
-    guardCaught: function () { return guardCaught; },
-    spawnGuards: spawnGuards,
-    updateGuards: updateGuards,
+    traps: function () { return traps; },
+    spawnTraps: spawnTraps,
+    updateTraps: updateTraps,
     draw: function () { draw(); },
-    guardSees: function (i) { return guardSees(guards[i], guardCfg()); },
+    trapCfg: trapCfg,
     setPlayer: function (x, y) { player.x = x; player.y = y; },
     showScreen: showScreen, finish: finish,
     resetBoard: function () { boardTime = 0; }, resetCut: function () { cutTime = 0; },
