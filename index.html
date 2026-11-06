@@ -59,8 +59,14 @@
       <span class="p-obj" id="objective">Cari bukti &middot; 0/3</span>
       <span class="key-badge" id="key-badge">KUNCI LEMARI</span>
       <span class="guard-badge" id="guard-badge">AWAS PERANGKAP</span>
+      <span class="timer" id="hud-timer">--:--</span>
       <button class="tool-btn" id="btn-tool" title="Alat dekripsi (T)">ALAT <b>T</b></button>
       <span class="score">SKOR <b id="hud-score">1000</b></span>
+    </div>
+
+    <div class="p-quest" id="quest">
+      <div class="q-head"><span>TUGAS</span><button class="q-toggle" id="quest-toggle" title="Kecilkan / besarkan panel">&minus;</button></div>
+      <ul id="quest-steps"></ul>
     </div>
 
     <div class="p-prompt" id="prompt"><b>E</b><span id="prompt-label">Periksa</span></div>
@@ -154,11 +160,11 @@
       <div class="verdict" id="verdict-stamp">TERBUKTI</div>
       <h2 id="end-title">Kasus Selesai</h2>
       <p class="end-text" id="end-text"></p>
-      <div class="end-stats">
+      <div class="end-stats" id="end-stats">
         <div class="stat"><span>SKOR</span><b id="end-score">0</b></div>
         <div class="stat"><span>PERINGKAT</span><b id="end-rank">-</b></div>
       </div>
-      <div class="end-actions">
+      <div class="end-actions" id="end-actions">
         <button class="btn primary" id="btn-again">ULANGI KASUS</button>
       </div>
     </div>

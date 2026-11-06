@@ -118,8 +118,8 @@ for (let ci = 0; ci < 3; ci++) {
   for (const L of C.quest.locks) {
     if (!ids[L.at]) bug('lock "' + L.at + '" menunjuk objek yang tidak ada');
   }
-  // --- quest tool harus ada
-  if (!ids[C.quest.tool]) bug('alat dekripsi "' + C.quest.tool + '" tidak ada di interactables');
+  // --- quest tool (kalau kasus masih punya meja dekripsi) harus ada
+  if (C.quest.tool && !ids[C.quest.tool]) bug('alat dekripsi "' + C.quest.tool + '" tidak ada di interactables');
 
   // --- clue placement: cek pool cukup
   const ex = C.clueExclude || {};

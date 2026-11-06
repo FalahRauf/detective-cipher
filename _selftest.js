@@ -145,10 +145,54 @@ ok(G.parseFns('f(x)=3x+7\ng(x)=x+5').length === 2, 'parser menerima format tanpa
 ok(G.parseFns('3x + 7\nx - 4').length === 2, 'parser menerima baris tanpa nama fungsi');
 ok(G.parseFns('c = f(g(x))\nf(x) = 3x + 7\ng(x) = x + 5').length === 2, 'baris komposisi tidak dihitung sebagai fungsi');
 
+/* ---------- REGRESI: tembok sisa furnitur & gate panel kasus 3 ---------- */
+console.log('## REGRESI: API PADAM = JALAN TERBUKA, PANEL TERGATE');
+(function () {
+  // kasus 3: panel tidak boleh bisa di-interaksi sebelum langkah api selesai
+  G.setCase(2); G.setDifficulty('easy'); G.resetGame(); G.showScreen('scr-play');
+  const panel = G.INTERACTABLES.find(p => p.id === 'panel');
+  G.setPlayer(panel.x, panel.y);
+  ok(!G.nearest() || G.nearest().id !== 'panel', 'panel belum muncul di prompt sebelum api padam');
+  G.interact('panel');
+  ok(!document.getElementById('dialog').classList.contains('show'),
+     'interaksi panel sebelum api padam tidak membuka dialog');
+
+  // api padam (akhir semprotan) -> celah dinding langsung terbuka, panel masih tergate
+  G.state.flags.fire_bekas = true;
+  ok(!G.solidTile(14, 13) && !G.solidTile(15, 13),
+     'celah dinding langsung terbuka saat api padam (belum Periksa bekasnya)');
+  ok(!G.nearest() || G.nearest().id !== 'panel', 'panel tetap tergate sebelum bekas api diperiksa');
+
+  // langkah bekas selesai -> panel aktif
+  G.state.flags.fireout = true;
+  G.setPlayer(panel.x, panel.y);
+  ok(G.nearest() && G.nearest().id === 'panel', 'panel bisa di-interaksi setelah api padam + bekas diperiksa');
+  G.closeDialog();
+
+  // kasus 1: tabrakan pot ikut pindah setelah geseran selesai (tidak ada tembok sisa)
+  G.setCase(0); G.setDifficulty('easy'); G.resetGame(); G.showScreen('scr-play');
+  G.state.flags._s_key1 = true; G.state.flags.key1 = true;
+  for (let i = 0; i < 40; i++) G.step(0.05);
+  ok(!G.solidTile(2, 15) && !G.solidTile(2, 16), 'bekas pot bisa dipijak setelah pot digeser');
+  ok(G.solidTile(3, 15) && G.solidTile(3, 16), 'pot yang sudah digeser tetap solid di posisi barunya');
+  const disp = G.INTERACTABLES.find(p => p.id === 'dispenser');
+  const dc = Math.floor(disp.x / 16), dr = Math.floor(disp.y / 16);
+  ok(!G.solidTile(dc, dr), 'titik interaksi dispenser tidak tertimbun pot (' + dc + ',' + dr + ')');
+  G.setPlayer(disp.x, disp.y);
+  ok(G.nearest() && G.nearest().id === 'dispenser', 'dispenser tetap bisa diperiksa setelah pot digeser');
+  G.closeDialog();
+})();
+
+
 console.log('\n== ALUR LENGKAP ==');
 G.setDifficulty('normal');
 G.resetGame();
 G.showScreen('scr-play');
+// tombol ALAT di HUD harus benar-benar membuka alat (bukan cuma tombol T)
+document.getElementById('btn-tool').click();
+ok(G.screen() === 'scr-tool', 'tombol ALAT di HUD membuka alat dekripsi');
+document.getElementById('btn-tool-back').click();
+ok(G.screen() === 'scr-play', 'tombol kembali menutup alat dekripsi');
 const C3 = G.CASE;
 const clueIds = Object.keys(G.state.clueMap);
 ok(G.cluesFound() === 0, 'awal: 0 petunjuk');
@@ -184,7 +228,9 @@ ok(G.screen() === 'scr-interro', 'layar interogasi tampil');
 ok(G.hitSeat(158, 240) === 0 && G.hitSeat(482, 240) === 2, 'tiga kursi terdeteksi klik');
 ok(G.hitSeat(600, 60) === -1, 'klik di luar tersangka tidak memilih');
 
-G.chooseSuspect(1);
+const ci2 = G.CASE.suspects.findIndex(s => s.id === G.CASE.culprit);
+ok(ci2 >= 0, 'pelaku ada di daftar tersangka');
+G.chooseSuspect(ci2);
 ok(G.screen() === 'scr-verdict', 'pilih tersangka -> cutscene vonis');
 ok(G.state.win === true, 'tersangka benar -> vonis benar');
 
@@ -194,7 +240,8 @@ ok(document.getElementById('verdict-stamp').textContent === 'TERBUKTI', 'stempel
 
 G.resetGame();
 G.openInterro();
-G.chooseSuspect(0);
+const cw0 = G.CASE.suspects.findIndex(s => s.id !== G.CASE.culprit);
+G.chooseSuspect(cw0);
 ok(G.state.win === false, 'tersangka salah -> vonis salah');
 ok(G.state.score === 750, 'salah tuduh memotong 250 poin (' + G.state.score + ')');
 
@@ -299,6 +346,35 @@ function finish() {
   await wait(480);
   ok(G.screen() === 'scr-play', 'papan selesai -> fade-out OTOMATIS ke gameplay');
 
+  /* ---------- vonis: percakapan selesai -> fade OTOMATIS ke layar hasil ---------- */
+  await wait(400);   // biarkan fade papan sebelumnya tuntas (flag fading bersih)
+  G.setCase(0); G.setDifficulty('easy'); G.resetGame();
+  G.openInterro();
+  ok(G.screen() === 'scr-interro', 'interogasi tampil sebelum vonis');
+  const vIdx = G.CASE.suspects.findIndex(s => s.id === G.CASE.culprit);
+  G.chooseSuspect(vIdx);
+  ok(G.screen() === 'scr-verdict', 'pilih tersangka -> cutscene vonis');
+  const vLines = (G.CUR.verdict && G.CUR.verdict.win ? G.CUR.verdict.win.length : 3);   // vonis memakai data kasus mentah (CUR)
+  for (let i = 0; i < Math.ceil((vLines * 4.2 + 2.2) / 0.1); i++) G.verdictTick(0.1);
+  ok(document.getElementById('fade').classList.contains('show'), 'vonis selesai -> fade-out OTOMATIS tanpa klik');
+  ok(G.screen() === 'scr-verdict', 'masih di cutscene vonis selama fade');
+  await wait(480);
+  ok(G.screen() === 'scr-end', 'berganti ke layar hasil saat gelap');
+  ok(document.getElementById('verdict-stamp').textContent === 'TERBUKTI', 'stempel TERBUKTI tampil');
+  await wait(480);
+  ok(!document.getElementById('fade').classList.contains('show'), 'fade-in selesai di layar hasil');
+
+  // tombol LEWATI pada vonis tetap berfungsi
+  G.setCase(1); G.setDifficulty('easy'); G.resetGame();
+  G.openInterro();
+  const wIdx = G.CASE.suspects.findIndex(s => s.id === G.CASE.culprit);
+  G.chooseSuspect(wIdx);
+  document.getElementById('btn-vd-skip').dispatch('click');
+  ok(document.getElementById('fade').classList.contains('show'), 'LEWATI vonis -> fade manual tetap jalan');
+  await wait(920);
+  ok(G.screen() === 'scr-end', 'LEWATI -> layar hasil');
+  ok(document.getElementById('verdict-stamp').textContent === 'TERBUKTI', 'stempel TERBUKTI via LEWATI');
+
 
   /* ---------- tiga kasus x tiga mode: alur penuh ---------- */
   for (let ci = 0; ci < 3; ci++) {
@@ -312,6 +388,16 @@ function finish() {
       ok(C.clues.length === (G.CUR.clueCount[d] || 0) || C.clues.length >= 2, tag + ': jumlah petunjuk sesuai');
       ok(C.layers.every(L => gcdN(L.a, 26) === 1), tag + ': semua koefisien koprima 26');
 
+      // kasus 3: ambil tabung + padamkan api dulu (api menghalangi barang di dekatnya)
+      if (ci === 2) {
+        G.resolveLock('pemadam'); G.closeDialog();
+        ['api1', 'api2', 'api3', 'bekas'].forEach(fid => {
+          G.interact(fid);
+          if (G.isSpraying()) G.sprayTick(2.2);
+          G.closeDialog();
+        });
+      }
+
       Object.keys(G.state.clueMap).forEach(id => { G.interact(id); G.closeDialog(); });
       ok(G.cluesFound() === C.clues.length, tag + ': semua petunjuk terkumpul');
 
@@ -323,7 +409,7 @@ function finish() {
       ok(document.getElementById('tool-out').textContent === C.plain, tag + ': hasil = pesan asli');
 
       const steps = [];
-      G.CUR.quest.locks.forEach(L => steps.push(G.resolveLock(L.at)));
+      G.CUR.quest.locks.forEach(L => { if (!G.state.flags[L.flag]) steps.push(G.resolveLock(L.at)); });
       ok(steps.every(x => x === 'ok'), tag + ': ' + steps.length + ' kunci terbuka berurutan');
       ok(G.state.collected.evidence === true, tag + ': bukti didapat');
 

@@ -107,6 +107,18 @@ for (let ci = 0; ci < 3; ci++) {
     const gotTraps = G.traps().length;
     if (gotTraps !== wantTraps) bug('perangkap ' + gotTraps + ', harusnya ' + wantTraps);
 
+    // --- 0. ambil tabung pemadam & padamkan semua api (kasus 3)
+    if (ci === 2) {
+      if (!teleportNear('pemadam')) bug('tidak bisa ke tabung pemadam');
+      G.resolveLock('pemadam'); G.closeDialog();
+      for (const fid of ['api1', 'api2', 'api3', 'bekas']) {
+        if (!teleportNear(fid)) { bug('tidak bisa ke api ' + fid); continue; }
+        G.interact(fid);
+        if (G.isSpraying()) G.sprayTick(2.2);
+        G.closeDialog();
+      }
+    }
+
     // --- 1. kumpulkan petunjuk
     unlockAllClues();
     const nFound = Object.keys(G.state.found).length;
@@ -118,6 +130,7 @@ for (let ci = 0; ci < 3; ci++) {
     // --- 3. ikuti rantai kunci sesuai urutan
     const locks = G.CUR.quest.locks;
     for (const L of locks) {
+      if (G.state.flags[L.flag]) continue;      // sudah dikerjakan di langkah persiapan
       const res = G.resolveLock(L.at);
       if (res !== 'ok') bug('lock "' + L.at + '" resolve = ' + res);
     }

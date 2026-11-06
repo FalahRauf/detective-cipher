@@ -228,7 +228,10 @@ html, body {
   font-size: 11px;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: #8d99ab;
+  color: #cfd8e6;
+  background: rgba(6,9,14,.72);
+  padding: 6px 14px;
+  border: 1px solid rgba(120,140,170,.22);
   text-shadow: 0 2px 8px rgba(0,0,0,.95);
   pointer-events: none;
   white-space: nowrap;
@@ -344,6 +347,18 @@ html, body {
   background: linear-gradient(rgba(4,6,10,.92) 0%, rgba(4,6,10,.55) 70%, transparent 100%);
   pointer-events: none;
 }
+.timer {
+  font-family: var(--mono, monospace);
+  font-size: 13px; font-weight: 700; letter-spacing: .10em;
+  color: #cfd8e6;
+  padding: 4px 10px;
+  border: 1px solid rgba(120,140,170,.30);
+  border-radius: 3px;
+  background: rgba(8,11,16,.65);
+}
+.timer.low { color: #ff7a6b; border-color: rgba(255,122,107,.55); animation: tpulse 1s infinite; }
+@keyframes tpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
 .p-obj {
   font-size: 12px;
   letter-spacing: .16em;
@@ -506,6 +521,54 @@ html, body {
   pointer-events: none;
 }
 .p-dialog.show ~ .p-keys { opacity: 0; }
+
+
+/* panel tugas di pojok kanan atas */
+.p-quest {
+  position: absolute;
+  left: 20px; top: 72px;
+  width: 248px;
+  padding: 9px 12px 10px;
+  background: rgba(8,11,17,.84);
+  border: 1px solid rgba(120,140,170,.18);
+  border-left: 2px solid var(--amber-dim);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.p-quest .q-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 9px; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 6px;
+}
+.q-toggle {
+  pointer-events: auto;
+  width: 16px; height: 16px; line-height: 1;
+  padding: 0; margin-left: 8px;
+  font-size: 12px; font-weight: 700;
+  color: var(--dim);
+  background: rgba(120,140,170,.12);
+  border: 1px solid rgba(120,140,170,.28);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.q-toggle:hover { color: var(--amber); border-color: var(--amber-dim); }
+.p-quest.min { width: auto; max-width: 232px; padding: 7px 11px; }
+.p-quest.min ul li { display: none; }
+.p-quest.min ul li.now { display: flex; }
+.p-quest.min .q-head { margin-bottom: 5px; }
+.p-quest ul { list-style: none; margin: 0; padding: 0; }
+.p-quest li {
+  display: flex; gap: 7px; align-items: baseline;
+  font-size: 11px; line-height: 1.5; letter-spacing: .02em;
+  color: #4f5b6d; margin: 1px 0;
+}
+.p-quest li i { font-style: normal; flex: 0 0 10px; text-align: center; font-size: 10px; }
+.p-quest li.done { color: #4a7a5e; }
+.p-quest li.done i { color: var(--green); }
+.p-quest li.done span { text-decoration: line-through; text-decoration-color: rgba(74,122,94,.45); }
+.p-quest li.now { color: var(--amber); }
+.p-quest li.now i { color: var(--amber); }
+.p-quest li.now span { font-weight: 600; }
 
 /* =========================================================
    DESK
@@ -693,6 +756,8 @@ html, body {
   border-top: 1px solid var(--line-soft);
   border-bottom: 1px solid var(--line-soft);
 }
+.end-stats, .end-actions { transition: opacity .45s ease, transform .45s ease; }
+.end-stats.wait, .end-actions.wait { opacity: 0; transform: translateY(8px); pointer-events: none; }
 .stat span { display: block; font-size: 10px; letter-spacing: .26em; color: var(--dim); margin-bottom: 8px; }
 .stat b { font-size: 32px; color: var(--amber); }
 

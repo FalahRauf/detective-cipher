@@ -35,8 +35,8 @@ python -m http.server 8000
 | 03 | **Api di Ruang Server** | **Pembakaran sengaja** | Ruang Server Lt. 3 | 32 × 20 | 6 |
 
 Satu TKP besar per kasus: perabot nempel dinding, tengah terbuka untuk menyelidik.
-**Alat dekripsi dibawa detektif** — buka lewat tombol **ALAT** di HUD atau tombol **T**,
-tidak perlu mencari komputer.
+**Alat dekripsi dibawa detektif** — buka lewat tombol **ALAT** di HUD atau tombol **T**.
+Tidak ada meja/komputer dekripsi di TKP: alatnya selalu ikut si detektif.
 
 ### Rantai penemuan tiap kasus (sengaja dibedakan)
 
@@ -49,9 +49,11 @@ Dekripsi pesan → **laci meja korban** → kunci loker → **loker guru** → k
 → **brankas** (butuh dua kunci) → bukti.
 
 **Kasus 3 — padamkan api dulu** *(mekanik unik)*
-Dekripsi pesan → **ambil tabung pemadam** → **padamkan api di lantai** (membuka jalan ke ruang
-kontrol) → panel alarm → kunci kartu → rak B → kunci tabung → unit pendingin → kunci induk
-→ vault → bukti.
+Dekripsi pesan → **ambil tabung pemadam** → **padamkan api di lantai** (api benar-benar menutup
+satu-satunya celah di dinding partisi — selama menyala, sayap belakang tidak bisa dicapai;
+begitu padam, celahnya langsung bisa dilewati) → panel alarm *(tidak bisa di-interaksi sebelum
+api padam dan bekasnya diperiksa — promptnya baru muncul saat giliran langkah itu)*
+→ kunci kartu → rak B → kunci tabung → unit pendingin → kunci induk → vault → bukti.
 
 Jadi tiap kasus punya **alur yang berbeda**, bukan sekadar ganti nama objek.
 
@@ -66,8 +68,9 @@ Tiap kasus punya **EASY / NORMAL / HARD**, jadi total **9 mode**. Yang naik buka
 
 ### Perangkap
 
-Pelaku memasang perangkap untuk menghalangi penyelidikan. Posisinya **acak tiap main** dan
-tandanya samar — perhatikan kilau kabel & retakan lantai:
+Pelaku memasang perangkap untuk menghalangi penyelidikan. Posisinya **acak tiap main**.
+Di **NORMAL** tandanya kelihatan jelas (kabel dengan kilau logam, tali tipis, retakan lantai);
+di **HARD** sengaja dibuat **translusen/samar** — harus diperhatikan benar-benar:
 
 | Perangkap | Penalti | Efek |
 |---|---|---|
@@ -88,7 +91,7 @@ Jumlah petunjuk naik mengikuti kasus: kasus 1 = 2–3 petunjuk, kasus 2 = 3–4,
 4. **Papan kasus** — foto terpin, tali merah, deduksi.
 5. **Investigasi TKP** — **semua barang** bisa diperiksa. Beberapa menyimpan **pesan terenkripsi**
    dan **sobekan kunci**; sisanya memberi alasan kenapa kosong.
-6. **Alat dekripsi** — buka di komputer/terminal, tempel sandi + kunci, jalankan.
+6. **Alat dekripsi** — buka dari alat yang dibawa detektif (tombol ALAT / T), tempel sandi + kunci, jalankan.
    Hasilnya kalimat yang menunjuk lokasi kunci pertama.
 7. **Rantai kunci** — buka kunci 1 → dapat kunci 2 → buka kunci 2 → … sampai bukti.
    Kasus 1 dua langkah, kasus 2 tiga langkah, kasus 3 empat langkah.
@@ -119,10 +122,11 @@ Aturan yang selalu berlaku: huruf dipetakan `A=1 … Z=26`, hasil dikembalikan k
 terbalik, alat menolak dengan pesan *"Hasilnya belum jadi kalimat"* — jadi `f(g(x))` vs `g(f(x))`
 terlihat akibatnya langsung, bukan cuma dihafal.
 
-## Pesan & Kunci Diacak
+## Pesan & Kunci
 
-Pesan asli, fungsi, dan **lokasi petunjuk** diacak setiap kali kasus dimulai. Jadi tidak ada satu
-jawaban tetap yang bisa dihafal. Untuk mencetak jawaban dari sesi berjalan:
+Pesan asli dan fungsinya **tetap per kasus + tingkat** (biar jawaban bisa dinilai), tapi
+**lokasi petunjuk diacak setiap kali main** — jadi tidak bisa dihafal urutannya.
+Untuk mencetak jawaban dari sesi berjalan:
 
 ```bash
 node _genkunci.js
@@ -138,6 +142,7 @@ style.css        — tema noir, layout 1280×720
 game.js          — mesin game, 3 peta, puzzle, render pixel-art (data kasus di blok CASES)
 KUNCI-JAWABAN.md — panduan penilaian untuk guru
 _selftest.js     — uji otomatis (node _selftest.js): 9 mode, alur penuh, alat, interogasi
+_geomtest.js     — uji tata letak (node _geomtest.js): tabrakan = gambar = titik interaksi
 _genkunci.js     — pencetak tabel kunci jawaban (node _genkunci.js)
 ```
 
@@ -148,7 +153,11 @@ Semua grafis digambar lewat `<canvas>` — **tanpa aset eksternal**, jadi aman d
 - Stage dikunci 1280×720 lalu di-scale ke viewport, jadi aman untuk proyektor.
 - Menu, pilih kasus, cutscene, papan kasus, ruang interogasi, dan cutscene vonis memakai canvas
   640×360 yang di-stretch dengan `image-rendering: pixelated` supaya tetap tajam.
-- Peta dibuat dari daftar furniture `{c, r, w, h, draw}` — collision grid dan gambarnya dihasilkan
-  dari sumber yang sama, jadi tidak mungkin meleset.
-- `_selftest.js` menjalankan **9 mode penuh** (3 kasus × 3 tingkat): 168 assertion — sandi,
+- Peta dibuat dari daftar perabot `{c, r, w, h, draw}` dalam satuan **tile**. Satu perabot = satu
+  kotak: gambar, tabrakan, dan titik interaksi dihitung dari kotak yang sama, jadi perabot tidak
+  bisa meleset dari posisinya. Tiap fungsi gambar wajib muat di dalam kotaknya (diuji `_geomtest.js`).
+- Titik interaksi tiap perabot adalah tile kosong yang menempel kotaknya sendiri, dan jaraknya
+  diukur dari **kotak** perabot (bukan dari satu titik), maksimal 30px. Jadi tidak ada lagi objek
+  yang bisa diperiksa dari seberang ruangan, dan objek yang sedang dihadapi selalu menang.
+- `_selftest.js` menjalankan **9 mode penuh** (3 kasus × 3 tingkat): 170 assertion — sandi,
   dekripsi, rantai kunci, bukti, interogasi, sampai layar akhir.
