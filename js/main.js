@@ -308,6 +308,35 @@
     }
     return false;
   }
+  // dipakai kalau sebuah perabot bergeser (mis. pot) menimpa posisi pemain:
+  // dorong ke sisi terdekat yang kosong supaya tidak terjepit
+  function unstickPlayer() {
+    if (!boxBlocked(player.x, player.y)) return;
+    var rs = solidRects();
+    for (var i = 0; i < rs.length; i++) {
+      var q = rs[i];
+      var x0 = player.x - 4, x1 = player.x + 4, y0 = player.y - 4, y1 = player.y;
+      if (!(x1 > q.x && x0 < q.x + q.w && y1 > q.y && y0 < q.y + q.h)) continue;
+      var opts = [
+        { x: q.x - 4.5, y: player.y },
+        { x: q.x + q.w + 4.5, y: player.y },
+        { x: player.x, y: q.y - 0.5 },
+        { x: player.x, y: q.y + q.h + 4.5 }
+      ];
+      opts.sort(function (a, b) {
+        var da = Math.abs(a.x - player.x) + Math.abs(a.y - player.y);
+        var db = Math.abs(b.x - player.x) + Math.abs(b.y - player.y);
+        return da - db;
+      });
+      for (var j = 0; j < opts.length; j++) {
+        if (!boxBlocked(opts[j].x, opts[j].y)) {
+          player.x = opts[j].x; player.y = opts[j].y;
+          snapCam();
+          return;
+        }
+      }
+    }
+  }
 
   /* =========================================================
      8. API UNTUK SKRIP KASUS (dipakai handler di data.js)
@@ -1169,7 +1198,7 @@
       tw.t += dt;
       var p = Math.min(1, tw.t / tw.d);
       tw.o[tw.k] = tw.from + (tw.to - tw.from) * (1 - Math.pow(1 - p, 3));
-      if (p >= 1) { tweens.splice(i, 1); if (tw.after) tw.after(); }
+      if (p >= 1) { tweens.splice(i, 1); unstickPlayer(); if (tw.after) tw.after(); }
     }
     if (spray) {
       spray.t += dt;
