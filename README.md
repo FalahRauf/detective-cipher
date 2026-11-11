@@ -1,7 +1,8 @@
-# Detective Cipher — 3 Kasus
+# Detektif Sandi — Tiga Kasus, Satu Dalang
 
 Game detektif pixel-art untuk tugas **Matematika: Fungsi Komposisi & Fungsi Invers**.
-Temukan pesan terenkripsi, buka dengan alat dekripsi, ikuti rantai kunci, lalu tuduh pelakunya.
+Setiap pesan penting dikunci berlapis, `c = f(g(x))`. Untuk membacanya kamu harus membuka lapis
+**dari yang terluar** — urutan salah, hasilnya cuma huruf acak.
 
 **Kelas XI PPLG 4 — SMK Telkom Purwokerto**
 
@@ -9,155 +10,118 @@ Temukan pesan terenkripsi, buka dengan alat dekripsi, ikuti rantai kunci, lalu t
 
 ## Cara Menjalankan
 
-Tidak perlu install apa pun. Cukup **klik dua kali `index.html`** — jalan langsung di browser (offline).
+Tidak perlu install apa pun. **Klik dua kali `index.html`** — langsung jalan di browser, offline.
 
-Kalau mau lewat server lokal:
+Atau lewat server lokal:
 
 ```bash
 python -m http.server 8000
-# buka http://localhost:8000
 ```
+
+lalu buka `http://localhost:8000`.
 
 ## Kontrol
 
 | Tombol | Fungsi |
 |---|---|
-| `W A S D` / panah | Jalan |
-| `E` | Interaksi dengan objek |
-| `Esc` | Tutup dialog |
+| `W A S D` / panah | Jalan (tahan `Shift` untuk lari) |
+| `E` / spasi | Periksa barang, bicara, lanjut dialog |
+| `N` | Catatan detektif (fakta, sandi & kunci, tersangka) |
+| `T` | Alat dekripsi |
+| `H` | Minta arahan lewat HT (−30 poin) |
+| `Esc` | Jeda |
+| `M` | Suara on/off |
 
-## Tiga Kasus
+## Ceritanya
 
-| # | Kasus | Kejahatan | Lokasi | Peta | Langkah |
-|---|---|---|---|---|---|
-| 01 | **Rekaman 23.47** | Penculikan | Lab Komputer 2 | 28 × 18 | 2 |
-| 02 | **Jam Terakhir Bu Ratna** | **Pembunuhan** | Ruang Guru | 30 × 20 | 4 |
-| 03 | **Api di Ruang Server** | **Pembakaran sengaja** | Ruang Server Lt. 3 | 32 × 20 | 6 |
+Tiga kasus di **SMK Bina Cipta** (sekolah fiksi) yang saling bersambung. Di balik semuanya ada
+satu nama yang terus muncul: **"Pak K"**.
 
-Satu TKP besar per kasus: perabot nempel dinding, tengah terbuka untuk menyelidik.
-**Alat dekripsi dibawa detektif** — buka lewat tombol **ALAT** di HUD atau tombol **T**.
-Tidak ada meja/komputer dekripsi di TKP: alatnya selalu ikut si detektif.
+| # | Kasus | Kejahatan | TKP | Yang terjadi |
+|---|---|---|---|---|
+| 01 | **Rekaman 23.47** | Penyekapan | Lab Komputer 2, Ruang Teknisi, Gudang | Nayla hilang. CCTV menangkap sosok keluar membawa tas besar. Benarkah Nayla dibawa keluar? |
+| 02 | **Kopi Terakhir Bu Ratna** | Percobaan pembunuhan | Ruang Guru, Pantry, Ruang Wakasek | Guru matematika yang membantu Nayla diracun obat tidur. Alibi rapat seseorang ternyata palsu. |
+| 03 | **Api di Ruang Server** | Pembakaran sengaja | Ruang Server, Ruang Panel, Ruang Kontrol | Server dibakar untuk menghapus jejak. Listrik padam, alarm diputus — dan dalangnya ada di dekatmu. |
 
-### Rantai penemuan tiap kasus (sengaja dibedakan)
+Kasus terbuka **berurutan** (kasus 2 setelah kasus 1 selesai, dst.). Untuk demo di depan kelas,
+tekan **`Shift + U`** di layar Berkas Kasus untuk membuka semuanya.
 
-**Kasus 1 — pot → kunci → lemari**
-Dekripsi pesan → pot digeser → kunci → lemari arsip → bukti.
+## Yang Ada di Tiap Kasus
 
-**Kasus 2 — korban → loker → jas → brankas** *(rantai terpanjang, ada twist)*
-Dekripsi pesan → **laci meja korban** → kunci loker → **loker guru** → kunci brankas + catatan
-"jas cadangan di lemari arsip" → **lemari arsip** (temukan jas korban, kunci kedua di sakunya)
-→ **brankas** (butuh dua kunci) → bukti.
+- **Cutscene** bergaya visual novel: potret karakter, rekaman CCTV beranimasi dengan jam berjalan.
+- **Peta beberapa ruangan** dengan pintu terkunci yang harus dibuka berurutan.
+- **Saksi (NPC)** yang bisa diajak bicara — keterangan mereka masuk ke catatan.
+- **Semua barang bisa diperiksa.** Beberapa menyimpan sobekan kunci (lokasinya **diacak tiap main**),
+  sebagian berisi fakta penting, sisanya pengalih perhatian.
+- **Puzzle berbeda tiap kasus:**
+  - Kasus 1 — gembok 4 angka dari dua petunjuk yang harus digabung.
+  - Kasus 2 — kode brankas dari jam yang berhenti, dan **mencari tanda tangan palsu** di daftar hadir.
+  - Kasus 3 — padamkan api yang menutup jalan, susun **sakelar listrik yang saling terkait**,
+    lalu pakai kartu & hard disk untuk membaca log asli.
+- **Papan deduksi** — sebelum menuduh, jawab tiga pertanyaan (kapan, bagaimana, siapa yang berbohong).
+- **Ruang interogasi** — satu tuduhan saja. Salah tuduh = pelaku lolos.
 
-**Kasus 3 — padamkan api dulu** *(mekanik unik)*
-Dekripsi pesan → **ambil tabung pemadam** → **padamkan api di lantai** (api benar-benar menutup
-satu-satunya celah di dinding partisi — selama menyala, sayap belakang tidak bisa dicapai;
-begitu padam, celahnya langsung bisa dilewati) → panel alarm *(tidak bisa di-interaksi sebelum
-api padam dan bekasnya diperiksa — promptnya baru muncul saat giliran langkah itu)*
-→ kunci kartu → rak B → kunci tabung → unit pendingin → kunci induk → vault → bukti.
+## Tingkat Kesulitan
 
-Jadi tiap kasus punya **alur yang berbeda**, bukan sekadar ganti nama objek.
+| Mode | Lapis fungsi | Sobekan kunci | Perangkap | Kilau penanda |
+|---|---|---|---|---|
+| EASY | 2 | 1 (utuh) | — | ya |
+| NORMAL | 3 | 2 | 2, terlihat | ya |
+| HARD | 3 | 3 | 4, samar | tidak |
 
-Tiap kasus punya **EASY / NORMAL / HARD**, jadi total **9 mode**. Yang naik bukan cuma enkripsinya —
-**perangkap buatan pelaku** tersebar di lantai pada mode yang lebih sulit:
-
-| Mode | Lapis fungsi | Sobekan kunci | Perangkap |
-|---|---|---|---|
-| EASY | 2 | 1 | — |
-| NORMAL | 3 | 1 | 2 perangkap |
-| HARD | 3 | 2–3 (tergantung kasus) | 4 perangkap |
-
-### Perangkap
-
-Pelaku memasang perangkap untuk menghalangi penyelidikan. Posisinya **acak tiap main**.
-Di **NORMAL** tandanya kelihatan jelas (kabel dengan kilau logam, tali tipis, retakan lantai);
-di **HARD** sengaja dibuat **translusen/samar** — harus diperhatikan benar-benar:
-
-| Perangkap | Penalti | Efek |
-|---|---|---|
-| Kabel alarm | −100 | alarm berbunyi |
-| Tali umpan | −60 | tersandung |
-| Lantai rapuh | −80 | jatuh, kembali ke titik masuk |
-
-Badge **AWAS PERANGKAP × n** di HUD menunjukkan jumlahnya, dan berubah merah kalau kamu
-mengetahui ada yang terpicu.
-
-Jumlah petunjuk naik mengikuti kasus: kasus 1 = 2–3 petunjuk, kasus 2 = 3–4, kasus 3 = 3–4.
-
-## Alur Permainan
-
-1. **Pilih kasus di jalanan** — senter mengikuti kursor. Tiga sosok hitam = tiga kasus.
-2. **Popup kasus & tingkat** — pilih EASY / NORMAL / HARD.
-3. **Cutscene CCTV** — kamera malam itu, caption mengetik sendiri.
-4. **Papan kasus** — foto terpin, tali merah, deduksi.
-5. **Investigasi TKP** — **semua barang** bisa diperiksa. Beberapa menyimpan **pesan terenkripsi**
-   dan **sobekan kunci**; sisanya memberi alasan kenapa kosong.
-6. **Alat dekripsi** — buka dari alat yang dibawa detektif (tombol ALAT / T), tempel sandi + kunci, jalankan.
-   Hasilnya kalimat yang menunjuk lokasi kunci pertama.
-7. **Rantai kunci** — buka kunci 1 → dapat kunci 2 → buka kunci 2 → … sampai bukti.
-   Kasus 1 dua langkah, kasus 2 tiga langkah, kasus 3 empat langkah.
-8. **Ruang interogasi** — tiga tersangka duduk diborgol. Sorot dengan lampu, klik untuk memilih.
-   Pelaku benar dan salah punya cutscene vonis berbeda.
+Perangkap dipasang pelaku di lantai (posisi acak): kabel alarm, tali jebakan, papan lepas.
+Kena = kehilangan poin, papan lepas memaksa kembali ke titik masuk.
 
 ## Matematika di Baliknya
 
-Pesan dienkripsi berlapis (komposisi fungsi) — yang kamu temukan di TKP sudah berupa sandi:
-
-$$c = f(g(x))$$
-
-Alat dekripsi membuka lapis dari **baris pertama ke baris terakhir** — lapis terluar dulu.
-Kunci yang ditempel berbentuk:
+Huruf diubah ke angka `A = 1 … Z = 26`, tiap lapis berbentuk `ax + b`, hasil selalu dikembalikan
+ke 1–26 (`mod 26`, angka 0 ditulis 26).
 
 ```
-c = f(g(x))
-f(x) = 3x + 7
-g(x) = x + 5
+c = f(g(x))        f(x) = 3x + 7        g(x) = x + 5
 ```
 
-Contoh: sandi `C` (3) → `f⁻¹(3) = 9(3 − 7) = −36 ≡ 16` → `g⁻¹(16) = 16 − 5 = 11` → `K`.
+Membuka sandi = memakai invers dengan urutan **terbalik**, mulai dari lapis terluar:
 
-Aturan yang selalu berlaku: huruf dipetakan `A=1 … Z=26`, hasil dikembalikan ke 1–26
-(`0` ditulis 26), dan koefisien `a` wajib **koprima dengan 26** supaya fungsinya punya invers.
-
-**Yang jadi inti pembelajaran:** urutan lapis. Kalau siswa menempelkan kunci dengan urutan
-terbalik, alat menolak dengan pesan *"Hasilnya belum jadi kalimat"* — jadi `f(g(x))` vs `g(f(x))`
-terlihat akibatnya langsung, bukan cuma dihafal.
-
-## Pesan & Kunci
-
-Pesan asli dan fungsinya **tetap per kasus + tingkat** (biar jawaban bisa dinilai), tapi
-**lokasi petunjuk diacak setiap kali main** — jadi tidak bisa dihafal urutannya.
-Untuk mencetak jawaban dari sesi berjalan:
-
-```bash
-node _genkunci.js
+```
+x = g⁻¹(f⁻¹(c))    f⁻¹(y) = 9(y − 7)    g⁻¹(y) = y − 5
 ```
 
-Penjelasan lengkap untuk guru ada di [`KUNCI-JAWABAN.md`](KUNCI-JAWABAN.md).
+Contoh huruf `C` (3): `f⁻¹(3) = 9(3 − 7) = −36 ≡ 16`, lalu `g⁻¹(16) = 11` → **K**.
+
+Alat dekripsi di game menampilkan invers tiap fungsi dan tabel langkah per huruf, dan menolak:
+
+- urutan lapis yang salah → *"Hasilnya belum jadi kalimat"* (inti pelajarannya: `f(g(x)) ≠ g(f(x))`),
+- jumlah fungsi yang tidak sesuai jumlah lapis,
+- koefisien `a` yang tidak koprima dengan 26 (tidak punya invers).
+
+Di mode NORMAL/HARD, sobekan kunci ditempel **sesuai urutan ditemukan** — siswa harus menyusunnya
+sendiri (tombol ▲▼) berdasarkan baris `c = f(g(h(x)))`.
 
 ## Struktur Berkas
 
 ```
-index.html       — layar & markup (pilih kasus, cutscene, papan, main, alat dekripsi, interogasi, vonis)
-style.css        — tema noir, layout 1280×720
-game.js          — mesin game, 3 peta, puzzle, render pixel-art (data kasus di blok CASES)
-KUNCI-JAWABAN.md — panduan penilaian untuk guru
-_selftest.js     — uji otomatis (node _selftest.js): 9 mode, alur penuh, alat, interogasi
-_geomtest.js     — uji tata letak (node _geomtest.js): tabrakan = gambar = titik interaksi
-_genkunci.js     — pencetak tabel kunci jawaban (node _genkunci.js)
+index.html        — semua layar & modal
+style.css         — tema noir, panggung 1280×720 yang diskalakan
+js/art.js         — grafis prosedural: font piksel, sprite, potret, lantai, dinding, perabot
+js/data.js        — karakter, tingkat kesulitan, 3 kasus (peta ASCII, barang, dialog, puzzle, cutscene)
+js/scenes.js      — layar judul, meja berkas, pemutar cutscene, ruang interogasi
+js/main.js        — mesin game: gerak, tabrakan, interaksi, puzzle, alat dekripsi, skor, alur
+KUNCI-JAWABAN.md  — panduan guru (jangan dibuka di depan kelas)
+_selftest.js      — uji otomatis: node _selftest.js
+_genkunci.js      — cetak semua sandi & kunci: node _genkunci.js
 ```
 
-Semua grafis digambar lewat `<canvas>` — **tanpa aset eksternal**, jadi aman dipresentasikan offline.
+Semua grafis dan suara dibuat langsung oleh kode (canvas + WebAudio) — **tanpa aset luar**,
+jadi aman dipresentasikan offline.
 
-## Catatan Teknis
+## Uji Otomatis
 
-- Stage dikunci 1280×720 lalu di-scale ke viewport, jadi aman untuk proyektor.
-- Menu, pilih kasus, cutscene, papan kasus, ruang interogasi, dan cutscene vonis memakai canvas
-  640×360 yang di-stretch dengan `image-rendering: pixelated` supaya tetap tajam.
-- Peta dibuat dari daftar perabot `{c, r, w, h, draw}` dalam satuan **tile**. Satu perabot = satu
-  kotak: gambar, tabrakan, dan titik interaksi dihitung dari kotak yang sama, jadi perabot tidak
-  bisa meleset dari posisinya. Tiap fungsi gambar wajib muat di dalam kotaknya (diuji `_geomtest.js`).
-- Titik interaksi tiap perabot adalah tile kosong yang menempel kotaknya sendiri, dan jaraknya
-  diukur dari **kotak** perabot (bukan dari satu titik), maksimal 30px. Jadi tidak ada lagi objek
-  yang bisa diperiksa dari seberang ruangan, dan objek yang sedang dihadapi selalu menang.
-- `_selftest.js` menjalankan **9 mode penuh** (3 kasus × 3 tingkat): 170 assertion — sandi,
-  dekripsi, rantai kunci, bukti, interogasi, sampai layar akhir.
+```bash
+node _selftest.js
+```
+
+Memainkan 3 kasus × 3 tingkat dari awal sampai vonis tanpa browser: enkripsi/dekripsi, urutan
+lapis terbalik ditolak, tata letak peta (perabot tidak menimpa dinding/barang lain), setiap barang
+**terjangkau dengan berjalan**, semua langkah tugas selesai, deduksi, interogasi, salah tuduh, dan
+waktu habis.
