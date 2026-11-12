@@ -1,0 +1,8 @@
+Backsound (keduanya lisensi CC0 / domain publik, dari OpenGameArt.org)
+
+bgm-tkp.mp3        "Unsolved Investigation" oleh isaiah658
+                   https://opengameart.org/content/unsolved-investigation
+bgm-interogasi.mp3 "Investigation" oleh Umplix
+                   https://opengameart.org/content/investigation-0
+
+Dikonversi ke MP3 112 kbps agar ringan dan jalan di semua browser.

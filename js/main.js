@@ -70,53 +70,73 @@
   }
   DS.sfx = sfx;
 
-  /* ---- BACKSOUND: musik noir sintetis (WebAudio), mengalun terus tanpa file ---- */
+  /* ---- BACKSOUND: dua lagu CC0 dari OpenGameArt.org (lihat audio/CREDITS.txt) ----
+     TKP & cutscene  : "Unsolved Investigation" — isaiah658
+     Ruang interogasi: "Investigation" — Umplix
+     Diputar lewat WebAudio supaya loop-nya mulus dan bisa crossfade.
+     Kalau dibuka lewat file:// (fetch diblok), pakai <audio loop> biasa. */
   var BGM = (function () {
-    var bus = null, timer = null, step = 0, next = 0, tense = false;
-    var BEAT = 0.6;                       // ~100 bpm, pelan
-    // progresi minor: Am - F - Dm - E  (nada akar MIDI)
-    var PROG = [[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]];
-    function hz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
-    function note(type, m, t, dur, vol, cutoff) {
-      var c = AC, o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
-      o.type = type; o.frequency.value = hz(m);
-      f.type = 'lowpass'; f.frequency.value = cutoff || 1200;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(vol, t + Math.min(0.4, dur * 0.3));
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(f); f.connect(g); g.connect(bus); o.start(t); o.stop(t + dur + 0.05);
+    var VOL = 0.45, FADE = 1.2;
+    var SRC = { tkp: 'audio/bgm-tkp.mp3', interro: 'audio/bgm-interogasi.mp3' };
+    var started = false, want = 'tkp', cur = null, isMuted = false;
+    var bufs = {}, tracks = {}, useEl = false, els = {};
+
+    function load(name) {
+      return fetch(SRC[name]).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+        .then(function (ab) {
+          return new Promise(function (res, rej) { var p = AC.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+        })
+        .then(function (b) { bufs[name] = b; });
     }
-    function schedule() {
-      if (!AC || !bus) return;
-      while (next < AC.currentTime + 0.5) {
-        var bar = (step >> 3) % 4, b = step % 8, ch = PROG[bar], t = next;
-        if (b === 0) {                                   // pad + bass tiap birama
-          for (var i = 0; i < 3; i++) { note('triangle', ch[i], t, BEAT * 8.2, 0.035, 900); note('sine', ch[i] + 12, t, BEAT * 8.2, 0.012, 1400); }
-          note('sine', ch[0] - 12, t, BEAT * 7, 0.09, 400);
-        }
-        if (b === 4) note('sine', ch[0] - 12, t, BEAT * 3, 0.06, 400);
-        // arpeggio piano-ish yang jarang, sedikit acak
-        if ((b % 2 === 0 && Math.random() < 0.55) || (tense && Math.random() < 0.5)) {
-          var m = ch[(Math.random() * 3) | 0] + 12 + (Math.random() < 0.25 ? 12 : 0);
-          note('triangle', m, t, BEAT * 2.5, 0.03, 2200);
-        }
-        if (tense && b % 2 === 0) note('sine', ch[0] - 24, t, BEAT * 0.5, 0.12, 200);   // detak tegang
-        next += BEAT * (tense ? 0.75 : 1); step++;
+    function play(name) {
+      if (cur === name) return;
+      var old = cur; cur = name;
+      if (useEl) {
+        if (old && els[old]) fadeEl(els[old], 0, true);
+        var e = els[name] || (els[name] = new Audio(SRC[name]));
+        e.loop = true; e.volume = 0;
+        var p = e.play(); if (p && p.catch) p.catch(function () {});
+        fadeEl(e, isMuted ? 0 : VOL);
+        return;
       }
+      var t = AC.currentTime;
+      if (old && tracks[old]) {
+        var o = tracks[old]; tracks[old] = null;
+        o.g.gain.cancelScheduledValues(t); o.g.gain.setValueAtTime(o.g.gain.value, t);
+        o.g.gain.linearRampToValueAtTime(0, t + FADE);
+        try { o.s.stop(t + FADE + 0.05); } catch (err) { /* abaikan */ }
+      }
+      if (!bufs[name]) return;               // belum termuat: dimulai setelah load selesai
+      var s = AC.createBufferSource(), g = AC.createGain();
+      s.buffer = bufs[name]; s.loop = true;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(isMuted ? 0 : VOL, t + FADE);
+      s.connect(g); g.connect(AC.destination); s.start(t);
+      tracks[name] = { s: s, g: g };
+    }
+    function fadeEl(e, to, stop) {
+      var from = e.volume, n = 0;
+      var iv = setInterval(function () {
+        n++; e.volume = Math.max(0, Math.min(1, from + (to - from) * n / 12));
+        if (n >= 12) { clearInterval(iv); if (stop) e.pause(); }
+      }, FADE * 1000 / 12);
     }
     function start() {
-      var c = ac(); if (!c || timer) return;
-      if (c.state === 'suspended' && c.resume) c.resume();
-      bus = c.createGain(); bus.gain.value = muted ? 0 : 0.55;
-      // gema sederhana biar terasa luas
-      var d = c.createDelay(), fb = c.createGain(), wet = c.createGain();
-      d.delayTime.value = 0.42; fb.gain.value = 0.35; wet.gain.value = 0.3;
-      bus.connect(c.destination); bus.connect(d); d.connect(fb); fb.connect(d); d.connect(wet); wet.connect(c.destination);
-      next = c.currentTime + 0.1;
-      timer = setInterval(schedule, 120);
+      if (started) return;
+      var c = ac(); if (!c) { useEl = true; }
+      started = true;
+      if (c && c.state === 'suspended' && c.resume) c.resume();
+      if (useEl || location.protocol === 'file:') { useEl = true; play(want); return; }
+      load('tkp').then(function () { if (want === 'tkp') { cur = null; play('tkp'); } return load('interro'); })
+        .then(function () { if (want === 'interro') { cur = null; play('interro'); } })
+        .catch(function () { useEl = true; cur = null; play(want); });
     }
-    function setMuted(m) { if (bus && AC) bus.gain.setTargetAtTime(m ? 0 : 0.55, AC.currentTime, 0.2); }
-    function setTense(v) { tense = !!v; }
+    function setTense(v) { want = v ? 'interro' : 'tkp'; if (started) play(want); }
+    function setMuted(m) {
+      isMuted = m;
+      if (useEl) { if (cur && els[cur]) els[cur].volume = m ? 0 : VOL; return; }
+      var tr = cur && tracks[cur];
+      if (tr && AC) tr.g.gain.setTargetAtTime(m ? 0 : VOL, AC.currentTime, 0.2);
+    }
     return { start: start, setMuted: setMuted, setTense: setTense };
   })();
   function bgmKick() { BGM.start(); }
