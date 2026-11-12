@@ -60,53 +60,54 @@
     'body.pad-on .tool-main{min-height:0}',
     'body.pad-on .tool-side{min-height:0}',
 
+    /* --- HUD atas jadi tombol utama catatan/alat/HT: diperbesar biar gampang ditap --- */
+    'body.pad-on .hbtn{padding:15px 18px;font-size:15px}',
+    'body.pad-on .hbtn.icon{width:52px;padding:15px 0}',
+    'body.pad-on .hbtn kbd{display:none}',
+    'body.pad-on .hud-btns{gap:10px}',
+    'body.pad-on .prompt kbd{display:none}',
+
     /* --- kontroler --- */
-    '#pad{position:fixed;inset:0;z-index:60;pointer-events:none;display:none;--pb:56px;--js:150px;' +
+    '#pad{position:fixed;inset:0;z-index:60;pointer-events:none;display:none;--pb:52px;--js:132px;' +
       'font-family:"Segoe UI",system-ui,-apple-system,sans-serif}',
-    '@media (max-height:430px){#pad{--pb:48px;--js:118px}}',
-    '@media (max-width:560px){#pad{--pb:50px;--js:136px}#pad-acts .pad-row:first-child{display:grid;grid-template-columns:repeat(3,var(--pb));gap:6px}}',
-    '@media (max-width:340px){#pad{--pb:44px;--js:120px}}',
+    '@media (max-height:430px){#pad{--pb:46px;--js:112px}}',
     '#pad *{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}',
-    '.pbtn{pointer-events:auto;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;' +
-      'background:rgba(10,13,19,.72);border:1px solid rgba(242,181,68,.5);border-radius:50%;color:#e9edf3;' +
-      'font:700 16px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;padding:0;' +
-      'box-shadow:0 2px 12px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);' +
-      '-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}',
-    '.pbtn small{font-size:8px;letter-spacing:.12em;color:#9aa6b8;font-weight:700}',
-    '.pbtn.on{background:rgba(242,181,68,.9);color:#1a1206;border-color:#f2b544}',
-    '.pbtn.on small{color:#4a3410}',
-    '.pbtn.off{opacity:.4}',
-
-    /* joystick */
-    '#pad-stick{position:absolute;left:calc(14px + env(safe-area-inset-left));bottom:calc(14px + env(safe-area-inset-bottom));' +
-      'width:var(--js);height:var(--js);border-radius:50%;pointer-events:auto;touch-action:none;' +
-      'background:radial-gradient(circle at 50% 42%,rgba(22,28,39,.5),rgba(8,10,15,.72));' +
-      'border:1px solid rgba(242,181,68,.32);box-shadow:inset 0 0 26px rgba(0,0,0,.65);transition:opacity .25s,border-color .15s}',
-    '#pad-stick.on{border-color:rgba(242,181,68,.8)}',
-    '#pad-stick::before{content:"";position:absolute;left:50%;top:50%;width:calc(var(--js)*.64);height:calc(var(--js)*.64);' +
-      'margin:calc(var(--js)*-.32) 0 0 calc(var(--js)*-.32);border-radius:50%;border:1px dashed rgba(255,255,255,.12)}',
-    '#pad-knob{position:absolute;left:50%;top:50%;width:calc(var(--js)*.46);height:calc(var(--js)*.46);' +
-      'margin:calc(var(--js)*-.23) 0 0 calc(var(--js)*-.23);border-radius:50%;' +
+    /* zona joystick: separuh kiri layar, di bawah panel tugas */
+    '#pad-zone{position:absolute;left:0;top:34%;bottom:0;width:46%;pointer-events:auto;touch-action:none}',
+    '#pad-base{position:absolute;width:var(--js);height:var(--js);margin:calc(var(--js)*-.5) 0 0 calc(var(--js)*-.5);border-radius:50%;' +
+      'background:radial-gradient(circle,rgba(22,28,39,.35),rgba(8,10,15,.6));border:2px solid rgba(242,181,68,.35);' +
+      'box-shadow:inset 0 0 22px rgba(0,0,0,.6);opacity:.5;transition:opacity .2s;pointer-events:none}',
+    '#pad-base.on{opacity:1;border-color:rgba(242,181,68,.85);transition:none}',
+    '#pad-base i{position:absolute;color:rgba(255,255,255,.3);font:700 11px/1 sans-serif;font-style:normal}',
+    '#pad-knob{position:absolute;left:50%;top:50%;width:calc(var(--js)*.44);height:calc(var(--js)*.44);' +
+      'margin:calc(var(--js)*-.22) 0 0 calc(var(--js)*-.22);border-radius:50%;' +
       'background:radial-gradient(circle at 38% 32%,rgba(255,219,150,.95),rgba(242,181,68,.88));' +
-      'border:2px solid #f2b544;box-shadow:0 4px 16px rgba(0,0,0,.55);pointer-events:none}',
+      'border:2px solid #f2b544;box-shadow:0 4px 14px rgba(0,0,0,.55)}',
+    '#pad-hint{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;' +
+      'font:700 9px/1 sans-serif;letter-spacing:.14em;color:rgba(255,255,255,.5)}',
+    '#pad-base.on #pad-hint{display:none}',
 
-    '#pad-run{position:absolute;left:calc(14px + env(safe-area-inset-left));' +
-      'bottom:calc(24px + env(safe-area-inset-bottom) + var(--js));width:var(--pb);height:var(--pb);' +
-      'font-size:10px;letter-spacing:.1em;border-color:rgba(255,255,255,.16);background:rgba(10,13,19,.55)}',
-    '#pad-acts{position:absolute;right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));' +
-      'display:flex;flex-direction:column;align-items:flex-end;gap:10px}',
-    '.pad-row{display:flex;gap:8px;align-items:flex-end}',
-    '#pad-acts .sm{width:var(--pb);height:var(--pb)}',
-    '#pad-e{width:calc(var(--pb)*1.55);height:calc(var(--pb)*1.55);border-radius:50%;border-width:2px;font-size:24px}',
-    '#pad-e small{font-size:8px}',
-    '#pad-deduce{display:none;height:calc(var(--pb)*.9);padding:0 20px;border-radius:999px;flex-direction:row;gap:8px;' +
-      'background:#f2b544;border-color:#f2b544;color:#1a1206;font-size:13px;letter-spacing:.14em}',
+    '.pbtn{pointer-events:auto;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;' +
+      'background:rgba(10,13,19,.72);border:2px solid rgba(242,181,68,.5);border-radius:50%;color:#e9edf3;' +
+      'font:800 15px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:.06em;padding:0;cursor:pointer;' +
+      'box-shadow:0 2px 12px rgba(0,0,0,.55);transition:transform .08s,opacity .2s}',
+    '.pbtn.on{background:rgba(242,181,68,.92);color:#1a1206;border-color:#f2b544;transform:scale(.94)}',
+    '#pad-acts{position:absolute;right:calc(18px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));' +
+      'width:calc(var(--pb)*2.9);height:calc(var(--pb)*2.9)}',
+    '#pad-e{position:absolute;right:0;bottom:0;width:calc(var(--pb)*1.8);height:calc(var(--pb)*1.8);opacity:.55}',
+    '#pad-e b{font-size:26px}',
+    '#pad-e span{font-size:9px;letter-spacing:.12em;max-width:86%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '#pad-e.ready{opacity:1;border-color:#f2b544;animation:padPulse 1.5s infinite}',
+    '#pad-run{position:absolute;left:0;bottom:calc(var(--pb)*.2);width:var(--pb);height:var(--pb);font-size:9px;letter-spacing:.12em;' +
+      'border-color:rgba(255,255,255,.22)}',
+    '#pad-deduce{display:none;position:absolute;right:0;bottom:calc(var(--pb)*2.05);height:calc(var(--pb)*.8);padding:0 18px;border-radius:999px;' +
+      'background:#f2b544;border-color:#f2b544;color:#1a1206;font-size:12px;letter-spacing:.14em;white-space:nowrap;animation:padPulse 1.5s infinite}',
     '#pad-deduce.show{display:flex}',
-    /* dialog terbuka: joystick meredup (gerak memang dikunci), tombol E dipulse */
-    '#pad.in-dlg #pad-stick{opacity:.15;pointer-events:none}',
-    '#pad.in-dlg #pad-e{border-color:#f2b544;animation:padPulse 1.5s infinite}',
-    '@keyframes padPulse{0%,100%{box-shadow:0 0 0 2px rgba(242,181,68,.18),0 2px 12px rgba(0,0,0,.55)}' +
-      '50%{box-shadow:0 0 0 8px rgba(242,181,68,0),0 2px 12px rgba(0,0,0,.55)}}',
+    '@keyframes padPulse{0%,100%{box-shadow:0 0 0 2px rgba(242,181,68,.25),0 2px 12px rgba(0,0,0,.55)}' +
+      '50%{box-shadow:0 0 0 10px rgba(242,181,68,0),0 2px 12px rgba(0,0,0,.55)}}',
+    /* dialog/modal terbuka: kontroler disembunyikan, ketuk kotak dialog untuk lanjut */
+    '#pad.hidden{display:none!important}',
+    'body.pad-on .dlg::after{content:"ketuk untuk lanjut \\25B8";position:absolute;right:16px;bottom:8px;font-size:11px;letter-spacing:.12em;color:#8a96a8}',
     '#pad-rotate{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translateX(-50%);z-index:61;display:none;' +
       'padding:8px 16px;border-radius:999px;background:rgba(10,13,19,.85);border:1px solid rgba(242,181,68,.5);color:#ffd98a;' +
       'font:700 11px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:.14em;white-space:nowrap;pointer-events:none;transition:opacity .8s}',
@@ -225,67 +226,83 @@
     btn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   }
 
-  /* ---------- joystick (kiri bawah) ---------- */
+
+  /* ---------- joystick mengambang: muncul di titik sentuh mana pun di sisi kiri ---------- */
   var pad = mk('div'); pad.id = 'pad';
-  var stick = mk('div'); stick.id = 'pad-stick';
-  var knob = mk('div'); knob.id = 'pad-knob';
-  stick.appendChild(knob);
+  var zone = mk('div'); zone.id = 'pad-zone';
+  var base = mk('div', null,
+    '<i style="left:50%;top:6px;margin-left:-4px">&#9650;</i><i style="left:50%;bottom:6px;margin-left:-4px">&#9660;</i>' +
+    '<i style="left:7px;top:50%;margin-top:-6px">&#9664;</i><i style="right:7px;top:50%;margin-top:-6px">&#9654;</i>' +
+    '<div id="pad-knob"></div><div id="pad-hint">GESER UNTUK JALAN</div>');
+  base.id = 'pad-base';
+  zone.appendChild(base);
+  var knob = base.querySelector('#pad-knob');
+  function homeBase() {
+    var h = zone.clientHeight, js = base.offsetWidth || 120;
+    base.style.left = (26 + js / 2) + 'px';
+    base.style.top = (h - 22 - js / 2) + 'px';
+  }
 
   var move = { w: false, a: false, s: false, d: false };
   function setMove(nx, ny) {
-    var want = { w: ny < -0.4, s: ny > 0.4, a: nx < -0.4, d: nx > 0.4 };
+    var ax = Math.abs(nx), ay = Math.abs(ny), m = Math.max(ax, ay);
+    var want = { w: false, s: false, a: false, d: false };
+    if (m > 0.28) {
+      // ikuti arah dominan; diagonal hanya kalau jempol benar-benar miring ~45°
+      var diag = Math.min(ax, ay) > m * 0.72;
+      if (ax >= ay || diag) { want.a = nx < 0; want.d = nx > 0; }
+      if (ay > ax || diag) { want.w = ny < 0; want.s = ny > 0; }
+    }
     for (var k in want) {
-      if (want[k] !== move[k]) {
-        move[k] = want[k];
-        kb(want[k] ? 'keydown' : 'keyup', k);
-      }
+      if (want[k] !== move[k]) { move[k] = want[k]; kb(want[k] ? 'keydown' : 'keyup', k); }
     }
   }
-  var stickId = null, stickCx = 0, stickCy = 0, stickR = 1;
+  var stickId = null, cx = 0, cy = 0, rad = 1;
   function stickAt(e) {
-    var dx = e.clientX - stickCx, dy = e.clientY - stickCy;
-    var d = Math.sqrt(dx * dx + dy * dy) || 1;
-    var cl = Math.min(1, d / stickR);
-    var nx = (dx / d) * cl, ny = (dy / d) * cl;
-    knob.style.transform = 'translate(' + (nx * stickR * 0.62).toFixed(1) + 'px,' + (ny * stickR * 0.62).toFixed(1) + 'px)';
+    var dx = e.clientX - cx, dy = e.clientY - cy;
+    var d = Math.sqrt(dx * dx + dy * dy) || 1, cl = Math.min(1, d / rad);
+    var nx = dx / d * cl, ny = dy / d * cl;
+    knob.style.transform = 'translate(' + (nx * rad * 0.6).toFixed(1) + 'px,' + (ny * rad * 0.6).toFixed(1) + 'px)';
     setMove(nx, ny);
   }
-  function stickStart(e) {
-    e.preventDefault();
-    e.stopPropagation();
+  zone.addEventListener('pointerdown', function (e) {
+    e.preventDefault(); e.stopPropagation();
     if (stickId !== null) return;
     stickId = e.pointerId;
-    var r = stick.getBoundingClientRect();
-    stickCx = r.left + r.width / 2;
-    stickCy = r.top + r.height / 2;
-    stickR = r.width / 2;
-    stick.classList.add('on');
-    if (stick.setPointerCapture) { try { stick.setPointerCapture(e.pointerId); } catch (err) { /* abaikan */ } }
-    buzz();
-    stickAt(e);
-  }
+    var r = zone.getBoundingClientRect();
+    base.style.left = (e.clientX - r.left) + 'px';
+    base.style.top = (e.clientY - r.top) + 'px';
+    cx = e.clientX; cy = e.clientY; rad = (base.offsetWidth || 120) / 2;
+    base.classList.add('on');
+    try { zone.setPointerCapture(e.pointerId); } catch (err) { /* abaikan */ }
+    buzz(); stickAt(e);
+  });
+  zone.addEventListener('pointermove', function (e) { if (e.pointerId === stickId) stickAt(e); });
   function stickEnd(e) {
-    if (e) e.preventDefault();
-    if (stickId === null) return;
+    if (stickId === null || (e && e.pointerId !== stickId)) return;
     stickId = null;
-    stick.classList.remove('on');
+    base.classList.remove('on');
     knob.style.transform = 'translate(0,0)';
-    setMove(0, 0);
+    setMove(0, 0); homeBase();
   }
-  stick.addEventListener('pointerdown', stickStart);
-  stick.addEventListener('pointermove', function (e) { if (e.pointerId === stickId) stickAt(e); });
-  stick.addEventListener('pointerup', stickEnd);
-  stick.addEventListener('pointercancel', stickEnd);
-  stick.addEventListener('lostpointercapture', stickEnd);
-  stick.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  zone.addEventListener('pointerup', stickEnd);
+  zone.addEventListener('pointercancel', stickEnd);
+  zone.addEventListener('lostpointercapture', stickEnd);
+  zone.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  window.addEventListener('resize', function () { setTimeout(homeBase, 50); });
 
-  /* tombol LARI: sekali tap untuk menyalakan (biar bisa satu jempol) */
+  /* ---------- tombol kanan: E (labelnya ikut aksi), LARI, DEDUKSI ---------- */
+  var acts = mk('div'); acts.id = 'pad-acts';
+  var eBtn = mk('button', 'pbtn', '<b>E</b><span>PERIKSA</span>');
+  eBtn.type = 'button'; eBtn.id = 'pad-e'; eBtn.setAttribute('aria-label', 'Periksa / bicara');
+  tap(eBtn, function () { tapKey('e'); });
+  var eLbl = eBtn.querySelector('span');
+
   var runB = mk('button', 'pbtn', 'LARI');
   runB.type = 'button'; runB.id = 'pad-run'; runB.setAttribute('aria-label', 'Nyalakan / matikan lari');
   var runOn = false;
   runB.addEventListener('pointerdown', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     runOn = !runOn;
     runB.classList.toggle('on', runOn);
     kb(runOn ? 'keydown' : 'keyup', 'Shift', runOn);
@@ -293,57 +310,14 @@
   });
   runB.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  /* ---------- tombol aksi (kanan bawah) ---------- */
-  var acts = mk('div'); acts.id = 'pad-acts';
-  var row1 = mk('div', 'pad-row');
-  var smalls = [
-    ['n', 'N', 'CATATAN'],
-    ['t', 'T', 'ALAT'],
-    ['h', 'H', 'HT'],
-    ['m', '♪', 'SUARA'],
-    ['escape', 'II', 'JEDA']
-  ];
-  var muteBtn = null;
-  for (var i = 0; i < smalls.length; i++) {
-    (function (def) {
-      var b = mk('button', 'pbtn sm', def[1] + '<small>' + def[2] + '</small>');
-      b.type = 'button';
-      b.setAttribute('aria-label', def[2]);
-      tap(b, function () {
-        tapKey(def[0]);
-        if (def[0] === 'm') { muteBtn = b; setTimeout(syncMute, 40); }
-      });
-      row1.appendChild(b);
-    })(smalls[i]);
-  }
-  function syncMute() {
-    var real = document.getElementById('btn-mute');
-    if (muteBtn && real) muteBtn.classList.toggle('off', real.classList.contains('off'));
-  }
+  var ddBtn = mk('button', 'pbtn', 'DEDUKSI &#9656;');
+  ddBtn.type = 'button'; ddBtn.id = 'pad-deduce';
+  tap(ddBtn, function () { var d = document.getElementById('btn-deduce'); if (d) d.click(); });
 
-  var row2 = mk('div', 'pad-row');
-  var ddBtn = mk('button', 'pbtn', 'DEDUKSI');
-  ddBtn.type = 'button'; ddBtn.id = 'pad-deduce'; ddBtn.setAttribute('aria-label', 'Susun deduksi');
-  tap(ddBtn, function () {
-    var d = document.getElementById('btn-deduce');
-    if (d) d.click();
-  });
-
-  var eBtn = mk('button', 'pbtn', 'E<small>PERIKSA</small>');
-  eBtn.type = 'button'; eBtn.id = 'pad-e'; eBtn.setAttribute('aria-label', 'Periksa / bicara / lanjut');
-  tap(eBtn, function () { tapKey('e'); });
-
-  row2.appendChild(ddBtn);
-  row2.appendChild(eBtn);
-  acts.appendChild(row1);
-  acts.appendChild(row2);
-
-  pad.appendChild(stick);
-  pad.appendChild(runB);
-  pad.appendChild(acts);
+  acts.appendChild(runB); acts.appendChild(ddBtn); acts.appendChild(eBtn);
+  pad.appendChild(zone); pad.appendChild(acts);
   document.body.appendChild(pad);
 
-  /* sentuhan pertama di kontroler: pastikan fullscreen (kalau belum) */
   pad.addEventListener('pointerdown', function () { if (!isFull() && !fsBlocked) enterFull(); }, true);
 
   /* ---------- petunjuk putar HP (hanya saat portrait) ---------- */
@@ -352,18 +326,25 @@
   document.body.appendChild(rot);
   setTimeout(function () { rot.classList.add('hide'); }, 9000);
 
-  /* ---------- tampilkan kontroler hanya saat di TKP / cutscene ---------- */
-  var last = null, lastDlg = null;
+  /* ---------- ikuti keadaan game: layar, dialog/modal, prompt aksi ---------- */
+  var prm = document.getElementById('prompt'), pLbl = document.getElementById('prompt-label');
+  var lastShow = null, lastBusy = null, lastReady = null, lastTxt = '';
   function syncPad() {
     var a = document.querySelector('.screen.active');
-    var id = a ? a.id : '';
-    var on = id === 'scr-play' || id === 'scr-cut';
-    if (on !== last) { last = on; pad.style.display = on ? 'block' : 'none'; }
-    var dlg = !!document.querySelector('#dlg.show');
-    if (dlg !== lastDlg) { lastDlg = dlg; pad.classList.toggle('in-dlg', dlg); }
+    var show = !!a && a.id === 'scr-play';
+    if (show !== lastShow) { lastShow = show; pad.style.display = show ? 'block' : 'none'; if (show) setTimeout(homeBase, 30); }
+    var busy = !!document.querySelector('#dlg.show, .modal.show');
+    if (busy !== lastBusy) {
+      lastBusy = busy; pad.classList.toggle('hidden', busy);
+      if (busy && stickId !== null) stickEnd({ pointerId: stickId });
+    }
+    var ready = !!(prm && prm.classList.contains('show'));
+    if (ready !== lastReady) { lastReady = ready; eBtn.classList.toggle('ready', ready); }
+    var txt = ready && pLbl ? ((pLbl.textContent || 'Periksa').trim().split(/\s+/)[0]).toUpperCase() : 'PERIKSA';
+    if (txt !== lastTxt) { lastTxt = txt; eLbl.textContent = txt; }
   }
   syncPad();
-  setInterval(syncPad, 200);
+  setInterval(syncPad, 120);
 
   /* ---------- tombol DEDUKSI muncul saat bukti sudah lengkap ---------- */
   var dd = document.getElementById('btn-deduce');
@@ -373,14 +354,14 @@
     syncDeduce();
   }
 
-  /* ---------- tambahan kecil di modal CARA BERMAIN (khusus HP) ---------- */
+  /* ---------- tambahan di modal CARA BERMAIN (khusus HP) ---------- */
   var helpCol = document.querySelector('#m-help .help-grid > div');
   if (helpCol) {
     var p = document.createElement('p');
     p.className = 'dim';
-    p.innerHTML = '<b>Di HP:</b> geser <b>joystick</b> di kiri bawah untuk jalan, tombol <b>LARI</b> di atasnya ' +
-      'sekali tap untuk lari. Tombol <b>E</b> bulat di kanan bawah untuk periksa / lanjut, ' +
-      'N, T, H, suara, dan jeda ada di baris atasnya. Game otomatis fullscreen saat mulai main.';
+    p.innerHTML = '<b>Di HP:</b> sentuh dan geser jempol di <b>mana saja di sisi kiri</b> untuk jalan. ' +
+      'Tombol <b>E</b> di kanan bawah menyala saat ada yang bisa diperiksa; <b>LARI</b> cukup sekali tap. ' +
+      'Catatan, alat, HT, suara, dan jeda ada di tombol kanan atas. Ketuk kotak dialog untuk lanjut.';
     helpCol.appendChild(p);
   }
 })();

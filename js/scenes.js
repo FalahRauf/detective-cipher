@@ -231,6 +231,13 @@
     vignette(g, 0.8);
   };
 
+  // tumpukan kardus di depan Nayla yang duduk (agar badannya tidak terpotong melayang)
+  BG.storageFg = function (g) {
+    R(g, 352, 252, 62, 56, '#4a3a28'); R(g, 352, 252, 62, 4, '#6a5438'); R(g, 380, 252, 6, 56, '#3a2c1e');
+    R(g, 408, 258, 74, 50, '#55422c'); R(g, 408, 258, 74, 4, '#74593a'); R(g, 440, 258, 8, 50, '#3e2f20');
+    R(g, 340, 300, 160, 10, 'rgba(0,0,0,.35)');
+  };
+
   BG.hospital = function (g, t) {
     grad(g, 0, 250, '#c8d4de', '#a8b8c8');
     R(g, 0, 240, W, 10, '#8a9aac');
@@ -433,7 +440,7 @@
     var bg = BG[s.bg] || BG.black;
     bg(g, performance.now() / 1000, s, { time: t, figs: cut.figs, clock: cut.clock, cut: cut.cutSig });
     drawActors(g, s, t);
-    if (s.bg === 'interro') BG.interroFg(g);
+    if (BG[s.bg + 'Fg']) BG[s.bg + 'Fg'](g);
   }
   function drawActors(g, s, t) {
     var acts = s.actors || [];
@@ -454,7 +461,9 @@
       var fr = walking ? (((t * 7) | 0) % 4) : 0;
       var dir = walking ? (a.dir || 'right') : (a.face || a.dir || 'down');
       if (a.sit) {
-        g.save(); g.beginPath(); g.rect(x - 40, 0, 80, ay - 4 * sc); g.clip();
+        // di ruang interogasi meja menutupi kaki; di tempat lain (gudang) kardus foreground yang menutupi
+        var clipY = s.bg === 'interro' ? ay - 4 * sc : ay + 20 * sc;
+        g.save(); g.beginPath(); g.rect(x - 40, 0, 80, clipY); g.clip();
         A.drawChar(g, ch, x, ay + 3 * sc - bob, dir, 0, sc);
         g.restore();
       } else {
@@ -561,16 +570,18 @@
     dark.addColorStop(0, 'rgba(0,0,0,0)'); dark.addColorStop(1, 'rgba(0,0,0,.72)');
     g.fillStyle = dark; g.fillRect(0, 0, W, H);
     glow(g, mx, my, 70, 'rgba(255,236,190,.22)', 1);
-    // papan nama
+    vignette(g, 0.5);
+    // papan nama — digambar setelah sorot & vignette, huruf skala 2 agar tajam
     for (var j = 0; j < suspects.length; j++) {
       var c2 = DS.CHARS[suspects[j].ch], xx = SEAT_X[j];
       var nm = c2.name.toUpperCase();
-      var w2 = A.textW(nm, 1) + 12;
-      R(g, xx - w2 / 2, 300, w2, 13, hover === j ? '#f2b544' : '#1d2129');
-      A.text(g, nm, xx - w2 / 2 + 6, 304, 1, hover === j ? '#1a1206' : '#c9d3de');
-      if (accused && accused[suspects[j].ch]) A.text(g, 'SALAH', xx - 10, 318, 1, '#e8564a');
+      var sz = A.textW(nm, 2) + 16 > 152 ? 1 : 2;
+      var w2 = A.textW(nm, sz) + 16, h2 = sz * 7 + 10;
+      R(g, xx - w2 / 2 - 1, 299, w2 + 2, h2 + 2, '#000000');
+      R(g, xx - w2 / 2, 300, w2, h2, hover === j ? '#f2b544' : '#232833');
+      A.text(g, nm, Math.round(xx - A.textW(nm, sz) / 2), 305, sz, hover === j ? '#1a1206' : '#eef3f8');
+      if (accused && accused[suspects[j].ch]) A.text(g, 'SALAH', Math.round(xx - A.textW('SALAH', 2) / 2), 330, 2, '#ff6a5a');
     }
-    vignette(g, 0.5);
   }
   function hitSeat(x, y) {
     if (y < 120 || y > 320) return -1;

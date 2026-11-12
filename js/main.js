@@ -70,6 +70,58 @@
   }
   DS.sfx = sfx;
 
+  /* ---- BACKSOUND: musik noir sintetis (WebAudio), mengalun terus tanpa file ---- */
+  var BGM = (function () {
+    var bus = null, timer = null, step = 0, next = 0, tense = false;
+    var BEAT = 0.6;                       // ~100 bpm, pelan
+    // progresi minor: Am - F - Dm - E  (nada akar MIDI)
+    var PROG = [[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]];
+    function hz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+    function note(type, m, t, dur, vol, cutoff) {
+      var c = AC, o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+      o.type = type; o.frequency.value = hz(m);
+      f.type = 'lowpass'; f.frequency.value = cutoff || 1200;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol, t + Math.min(0.4, dur * 0.3));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f); f.connect(g); g.connect(bus); o.start(t); o.stop(t + dur + 0.05);
+    }
+    function schedule() {
+      if (!AC || !bus) return;
+      while (next < AC.currentTime + 0.5) {
+        var bar = (step >> 3) % 4, b = step % 8, ch = PROG[bar], t = next;
+        if (b === 0) {                                   // pad + bass tiap birama
+          for (var i = 0; i < 3; i++) { note('triangle', ch[i], t, BEAT * 8.2, 0.035, 900); note('sine', ch[i] + 12, t, BEAT * 8.2, 0.012, 1400); }
+          note('sine', ch[0] - 12, t, BEAT * 7, 0.09, 400);
+        }
+        if (b === 4) note('sine', ch[0] - 12, t, BEAT * 3, 0.06, 400);
+        // arpeggio piano-ish yang jarang, sedikit acak
+        if ((b % 2 === 0 && Math.random() < 0.55) || (tense && Math.random() < 0.5)) {
+          var m = ch[(Math.random() * 3) | 0] + 12 + (Math.random() < 0.25 ? 12 : 0);
+          note('triangle', m, t, BEAT * 2.5, 0.03, 2200);
+        }
+        if (tense && b % 2 === 0) note('sine', ch[0] - 24, t, BEAT * 0.5, 0.12, 200);   // detak tegang
+        next += BEAT * (tense ? 0.75 : 1); step++;
+      }
+    }
+    function start() {
+      var c = ac(); if (!c || timer) return;
+      if (c.state === 'suspended' && c.resume) c.resume();
+      bus = c.createGain(); bus.gain.value = muted ? 0 : 0.55;
+      // gema sederhana biar terasa luas
+      var d = c.createDelay(), fb = c.createGain(), wet = c.createGain();
+      d.delayTime.value = 0.42; fb.gain.value = 0.35; wet.gain.value = 0.3;
+      bus.connect(c.destination); bus.connect(d); d.connect(fb); fb.connect(d); d.connect(wet); wet.connect(c.destination);
+      next = c.currentTime + 0.1;
+      timer = setInterval(schedule, 120);
+    }
+    function setMuted(m) { if (bus && AC) bus.gain.setTargetAtTime(m ? 0 : 0.55, AC.currentTime, 0.2); }
+    function setTense(v) { tense = !!v; }
+    return { start: start, setMuted: setMuted, setTense: setTense };
+  })();
+  function bgmKick() { BGM.start(); }
+  window.addEventListener('pointerdown', bgmKick); window.addEventListener('keydown', bgmKick); window.addEventListener('touchstart', bgmKick);
+
   /* =========================================================
      2. MATEMATIKA — enkripsi berlapis c = f(g(h(x)))  (mod 26)
      Lapis disimpan dari LUAR ke DALAM: layers[0] = f (terluar).
@@ -1491,6 +1543,7 @@
     for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
     $(id).classList.add('active');
     screen = id;
+    BGM.setTense(id === 'scr-interro');
     keys = {};
     if (id !== 'scr-play') $('prompt').classList.remove('show');
   }
@@ -1570,8 +1623,10 @@
           later(function () {
             G.say([[CASE.radio === 'nayla' ? 'nayla' : 'hendra',
               CASE.id === 'c1'
-                ? 'Gerak pakai <b>WASD</b> atau panah, <b>E</b> untuk memeriksa. <b>N</b> membuka catatan, <b>T</b> alat dekripsi, <b>H</b> memanggil saya lewat HT. Semoga berhasil, Detektif.'
-                : 'Saya standby di HT, Detektif. Tekan <b>H</b> kalau butuh arahan.']]);
+                ? (document.body.classList.contains('pad-on')
+                  ? 'Geser jempol di <b>sisi kiri layar</b> untuk jalan, tombol <b>E</b> untuk memeriksa. Tombol <b>CATATAN</b>, <b>ALAT</b> dekripsi, dan <b>HT</b> ada di kanan atas. Semoga berhasil, Detektif.'
+                  : 'Gerak pakai <b>WASD</b> atau panah, <b>E</b> untuk memeriksa. <b>N</b> membuka catatan, <b>T</b> alat dekripsi, <b>H</b> memanggil saya lewat HT. Semoga berhasil, Detektif.')
+                : 'Saya standby di HT, Detektif. ' + (document.body.classList.contains('pad-on') ? 'Ketuk tombol <b>HT</b>' : 'Tekan <b>H</b>') + ' kalau butuh arahan.']]);
           });
         });
       });
@@ -1603,7 +1658,7 @@
     $('btn-tool').onclick = function () { if (!ui.modal) openTool(); };
     $('btn-hint').onclick = function () { hint(); };
     $('btn-deduce').onclick = function () { if (!ui.dialog && !ui.modal) openDeduce(); };
-    $('btn-mute').onclick = function () { muted = !muted; $('btn-mute').classList.toggle('off', muted); };
+    $('btn-mute').onclick = function () { muted = !muted; BGM.setMuted(muted); $('btn-mute').classList.toggle('off', muted); };
     $('btn-pause').onclick = function () { if (!ui.dialog && !ui.modal) openModal('m-pause'); };
     $('quest-toggle').onclick = function () { $('quest').classList.toggle('min'); };
     $('dlg').addEventListener('click', function (e) { if (e.target.tagName !== 'BUTTON') advanceDialog(false); });
