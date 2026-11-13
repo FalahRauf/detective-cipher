@@ -16,7 +16,7 @@
     <div class="title-top">
       <div class="stamp">TIGA KASUS &middot; SATU DALANG</div>
       <h1>DETEKTIF<span>SANDI</span></h1>
-      <p class="tagline">Setiap pesan dikunci berlapis. Setiap lapis punya invers.</p>
+      <p class="tagline">Setiap pesan adalah fungsi. Setiap fungsi punya invers.</p>
     </div>
     <div class="title-actions">
       <button class="btn primary big" id="btn-start">MULAI PENYELIDIKAN</button>
@@ -95,47 +95,19 @@
       </div>
     </div>
 
-    <div class="p-keys" id="p-keys">WASD / panah: jalan &middot; Shift: lari &middot; E: periksa &middot; N: catatan &middot; T: alat dekripsi &middot; H: HT</div>
+    <div class="p-keys" id="p-keys">WASD / panah: jalan &middot; Shift: lari &middot; E: periksa &middot; N: catatan &middot; T: alat hitung &middot; H: HT</div>
   </section>
 
-  <!-- ================= ALAT DEKRIPSI ================= -->
+  <!-- ================= ALAT HITUNG SANDI ================= -->
   <section class="screen" id="scr-tool">
     <div class="tool-head">
-      <span class="tag">ALAT DEKRIPSI</span>
-      <span class="dim">Buka lapis dari yang <b>terluar</b>: untuk c = f(g(x)), pakai f&#8315;&#185; dulu, baru g&#8315;&#185;. &nbsp;Pesan ini dikunci <b id="tool-lapis">2</b> lapis.</span>
+      <span class="tag">ALAT HITUNG SANDI</span>
+      <span class="dim">Materi: <b id="tool-lapis">-</b>. Hitung sendiri &mdash; alat ini hanya memeriksa jawabanmu.</span>
       <button class="btn tiny tool-back" id="btn-tool-back">&larr; KEMBALI KE TKP <kbd>Esc</kbd></button>
     </div>
     <div class="tool-wrap">
-      <div class="tool-main">
-        <div class="tool-box">
-          <label>PESAN TERENKRIPSI <button class="btn tiny tool-paste" data-target="in-msg">TEMPEL</button></label>
-          <textarea id="in-msg" rows="2" spellcheck="false" placeholder="tempel pesan terenkripsi yang kamu temukan..."></textarea>
-        </div>
-        <div class="tool-box">
-          <label>KUNCI / FUNGSI <button class="btn tiny tool-paste" data-target="in-key">TEMPEL</button></label>
-          <textarea id="in-key" rows="3" spellcheck="false" class="mono" placeholder="satu fungsi per baris, mis. f(x) = 3x + 7"></textarea>
-          <div class="tool-comp" id="tool-comp"></div>
-          <div class="tool-fns" id="tool-fns"></div>
-        </div>
-        <div class="tool-run">
-          <button class="btn primary" id="btn-decrypt">DEKRIPSI &rarr;</button>
-          <button class="btn tiny" id="btn-tool-clear">KOSONGKAN</button>
-          <span class="tool-msg" id="tool-msg"></span>
-        </div>
-        <div class="tool-out-wrap">
-          <div class="tool-out-label">HASIL</div>
-          <div class="tool-out" id="tool-out">&mdash;</div>
-          <div class="tool-steps" id="tool-steps"></div>
-        </div>
-      </div>
-      <aside class="tool-side">
-        <div class="side-head">PETUNJUK DITEMUKAN</div>
-        <div id="tool-evidence"></div>
-        <div class="side-math">
-          <b>Ingat:</b> huruf A=1 &hellip; Z=26, hasil dikembalikan ke 1&ndash;26.<br>
-          Invers f(x) = ax + b adalah f&#8315;&#185;(y) = a&#8315;&#185;(y &minus; b) mod 26, dengan a&#8315;&#185; kebalikan a modulo 26 (contoh: 3 &times; 9 = 27 &equiv; 1).
-        </div>
-      </aside>
+      <div class="tool-main" id="tool-main"></div>
+      <aside class="tool-side" id="tool-side"></aside>
     </div>
   </section>
 
@@ -198,18 +170,18 @@
           <h4>Kontrol</h4>
           <p><kbd>W A S D</kbd> / panah &mdash; jalan, <kbd>Shift</kbd> lari<br>
           <kbd>E</kbd> / spasi &mdash; periksa, bicara, lanjut dialog<br>
-          <kbd>N</kbd> catatan &middot; <kbd>T</kbd> alat dekripsi &middot; <kbd>H</kbd> HT (bantuan, &minus;30)<br>
+          <kbd>N</kbd> catatan &middot; <kbd>T</kbd> alat hitung sandi &middot; <kbd>H</kbd> HT (bantuan, &minus;30)<br>
           <kbd>Esc</kbd> jeda &middot; <kbd>M</kbd> suara</p>
           <h4>Alur</h4>
-          <p>Tanyai saksi &rarr; cari <b>pesan terenkripsi</b> dan <b>sobekan kunci</b> &rarr; buka dengan alat dekripsi &rarr; ikuti petunjuknya sampai bukti terakhir &rarr; susun <b>deduksi</b> &rarr; tuduh pelaku.</p>
+          <p>Tanyai saksi &rarr; cari <b>pesan terenkripsi</b> dan <b>sobekan kunci</b> &rarr; hitung sandinya &rarr; ikuti petunjuknya sampai bukti terakhir &rarr; susun <b>deduksi</b> &rarr; tuduh pelaku.</p>
         </div>
         <div>
           <h4>Matematikanya</h4>
-          <p>Pesan dikunci berlapis: <code>c = f(g(x))</code>. Huruf A=1 &hellip; Z=26, hasil selalu mod 26.</p>
-          <p>Untuk membuka, balik urutannya: lapis <b>terluar</b> dulu.<br><code>x = g&#8315;&#185;(f&#8315;&#185;(c))</code></p>
-          <p>Contoh f(x) = 3x + 7, g(x) = x + 5, sandi <b>C</b> = 3:<br>
-          f&#8315;&#185;(3) = 9(3 &minus; 7) = &minus;36 &equiv; 16<br>g&#8315;&#185;(16) = 16 &minus; 5 = 11 &rarr; <b>K</b></p>
-          <p class="dim">Urutan salah &rArr; hasilnya bukan kalimat. Karena f(g(x)) &ne; g(f(x)).</p>
+          <p>Pesan sandi berupa <b>angka</b>. Huruf A=1 &hellip; Z=26. Kamu yang menghitung &mdash; alat hanya memeriksa.</p>
+          <p><b>Kasus 1 &middot; komposisi:</b> (f&#8728;g)(x) = f(g(x)). Contoh f(x) = x + 2, g(x) = 5x &minus; 1 &rArr; 5x + 1. Angka 2 &rarr; 11 &rarr; <b>K</b> (lebih dari 26? kurangi 26).</p>
+          <p><b>Kasus 2 &middot; invers:</b> f(x) = 7x + 9 &rArr; f&#8315;&#185;(x) = (x &minus; 9) &divide; 7. Angka 86 &rarr; 11 &rarr; <b>K</b>.</p>
+          <p><b>Kasus 3 &middot; gabungan:</b> gabungkan fungsinya dulu, lalu cari invers fungsi gabungan itu.</p>
+          <p class="dim">Macet? Di alat ada petunjuk bertahap, tapi tiap petunjuk mengurangi skor.</p>
         </div>
       </div>
     </div>

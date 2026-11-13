@@ -51,14 +51,12 @@ function makeEl(tag, id) {
 function byId(id) { if (!registry[id]) registry[id] = makeEl('div', id); return registry[id]; }
 const SCREENS = ['scr-title', 'scr-select', 'scr-cut', 'scr-play', 'scr-tool', 'scr-interro', 'scr-end'];
 const tabs = ['fakta', 'sandi', 'orang'].map(t => { const e = makeEl('button'); e.setAttribute('data-tab', t); return e; });
-const pastes = ['in-msg', 'in-key'].map(t => { const e = makeEl('button'); e.setAttribute('data-target', t); return e; });
 const documentStub = {
-  getElementById: byId,
+  getElementById: byId, body: makeEl('body'),
   createElement: t => makeEl(t),
   querySelectorAll(sel) {
     if (sel === '.screen') return SCREENS.map(byId);
     if (sel === '#m-notes .nb-tab') return tabs;
-    if (sel === '.tool-paste') return pastes;
     return [];
   }
 };
@@ -169,13 +167,14 @@ function use(id, answers, label) {
 }
 function decrypt(label) {
   D.openTool();
-  D.pasteClue('in-msg'); D.pasteClue('in-key');
-  D.runDecrypt();
-  // coba urutan lain (tukar baris) sampai benar — sama seperti siswa
-  const n = D.BUILT.layers.length;
-  const perms = n === 2 ? [[0, 1]] : [[0, 1], [1, 2], [0, 1], [1, 2], [0, 1]];
-  let i = 0;
-  while (!D.S.decrypted && i < perms.length) { D.moveFn(perms[i][0], 1); D.runDecrypt(); i++; }
+  // jawaban salah dulu harus ditolak & mengurangi skor
+  const sc0 = D.S.score;
+  D.checkStage(0, [999, 999]);
+  ok(D.S.score === sc0 - 10, label + ': jawaban langkah salah -10');
+  D.toolStages().forEach((sg, i) => D.checkStage(i, sg.ans));
+  D.checkMessage('X'.repeat(D.BUILT.plain.replace(/ /g, '').length));
+  ok(!D.S.decrypted, label + ': pesan salah ditolak');
+  D.checkMessage(D.BUILT.plain.replace(/ /g, ''));
   ok(D.S.decrypted, label + ': dekripsi berhasil');
   D.closeTool(); flush();
   resolveUI({ code: [] });
@@ -183,15 +182,20 @@ function decrypt(label) {
 
 /* ---------------- uji matematika ---------------- */
 (function mathTests() {
-  const L = [{ a: 3, b: 7, inv: 9 }, { a: 1, b: 5, inv: 1 }];
-  ok(D.encrypt('K', L) === 'C', 'contoh buku: K -> C');
-  ok(D.decryptWith('C', L) === 'K', 'contoh buku: C -> K');
+  ok(JSON.stringify(D.compose([{ a: 3, b: 7 }, { a: 1, b: 5 }])) === JSON.stringify({ A: 3, B: 22 }), 'komposisi f(g(x)) = 3(x+5)+7 = 3x+22');
   for (const C of DS.CASES) for (const d of ['easy', 'normal', 'hard']) {
-    const ly = C.layers[d].map(p => ({ a: p[0], b: p[1], inv: D.ainv(p[0]) }));
-    ly.forEach(x => ok(D.ainv(x.a) > 0, C.id + '.' + d + ': a=' + x.a + ' koprima 26'));
-    const c = D.encrypt(C.plain, ly);
-    ok(D.decryptWith(c, ly) === C.plain, C.id + '.' + d + ': dekripsi(enkripsi(x)) = x');
-    if (ly.length > 1) ok(D.decryptWith(c, ly.slice().reverse()) !== C.plain, C.id + '.' + d + ': urutan terbalik gagal');
+    for (let t = 0; t < 40; t++) {
+      const ly = D.genLayers(C.mode, d), cp = D.compose(ly);
+      const words = D.encodeNums(C.plain, C.mode, ly);
+      const back = words.map(w => w.map(v => {
+        const x = C.mode === 'komposisi' ? (((cp.A * v + cp.B) % 26) + 26) % 26 || 26 : (v - cp.B) / cp.A;
+        return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[x - 1];
+      }).join('')).join(' ');
+      if (back !== C.plain) { ok(false, C.id + '.' + d + ': balik sandi gagal ' + JSON.stringify(ly)); break; }
+      if (C.mode !== 'komposisi' && words.some(w => w.some(v => v < 1))) { ok(false, C.id + '.' + d + ': ada angka sandi < 1'); break; }
+      if (C.mode === 'komposisi' && words.some(w => w.some(v => v < 1 || v > 26))) { ok(false, C.id + '.' + d + ': n di luar 1-26'); break; }
+    }
+    ok(true, C.id + '.' + d + ': 40 kunci acak terbalik benar');
   }
 })();
 
@@ -218,6 +222,7 @@ function decrypt(label) {
     });
     C.doors.forEach(d => ok(C.map[d.r][d.c] === 'L', C.id + ': pintu ' + d.id + ' di tile L'));
     ok(Object.keys(C.handlers).every(h => ids.has(h) || (C.npcs || []).some(n => n.id === h)), C.id + ': semua handler punya objek');
+    ok(C.deduce.length === 12, C.id + ': bank deduksi 12 soal');
     C.deduce.forEach(q => ok(q.a.length >= 3, C.id + ': opsi deduksi'));
     ok(C.suspects.some(s => s.ch === C.culprit), C.id + ': pelaku ada di daftar tersangka');
     ['intro', 'win', 'lose'].forEach(s => ok(Array.isArray(C.scenes[s]), C.id + ': scene ' + s));
@@ -226,9 +231,9 @@ function decrypt(label) {
 
 /* ---------------- main 9 mode ---------------- */
 const WALK = {
-  c1: { code: ['2317'], order: ['joko', 'mejaNayla', '@keys', '@decrypt', 'pot', 'dTeknisi', 'mejaDedi', 'dGudang'] },
-  c2: { code: ['1642'], order: ['slamet', 'naylaNpc', 'mejaRatna', '@keys', '@decrypt', 'jamMeja', 'brankas', 'mejaKopi', 'mejaRapat', 'dWakasek', 'lemariBram'] },
-  c3: { code: [], order: ['joko', 'hendraNpc', 'ext', 'apiLantai', 'apiRak', 'panelListrik', 'panelAlarm', 'terminalCad', '@keys', '@decrypt', 'rakB', 'terminalKontrol', 'kursiJaket'] }
+  c1: { code: () => [D.V.kode], order: ['joko', 'mejaNayla', '@keys', '@decrypt', 'pot', 'dTeknisi', 'mejaDedi', 'dGudang'] },
+  c2: { code: () => [D.V.kodeJam], order: ['slamet', 'naylaNpc', 'mejaRatna', '@keys', '@decrypt', 'jamMeja', 'brankas', 'mejaKopi', 'mejaRapat', 'dWakasek', 'lemariBram'] },
+  c3: { code: () => [], order: ['joko', 'hendraNpc', 'ext', 'apiLantai', 'apiRak', 'panelListrik', 'panelAlarm', 'terminalCad', '@keys', '@decrypt', 'rakB', 'terminalKontrol', 'kursiJaket'] }
 };
 
 DS.CASES.forEach((C, ci) => {
@@ -244,13 +249,14 @@ DS.CASES.forEach((C, ci) => {
     const S = D.S;
     ok(!D.boxBlocked(D.player.x, D.player.y), label + ': titik masuk tidak di dalam tembok');
     const nKeys = D.BUILT.clues.filter(c => c.kind === 'key').length;
-    ok(nKeys === Math.min(DS.DIFFS[diff].frags, C.layers[diff].length), label + ': jumlah sobekan kunci');
+    ok(nKeys === Math.min(DS.DIFFS[diff].frags, D.BUILT.layers.length), label + ': jumlah sobekan kunci');
+    ok(D.CASE.deduce.length === 5, label + ': 5 soal deduksi diambil');
     ok(Object.keys(D.BUILT.spots).length === nKeys, label + ': semua sobekan dapat tempat');
     ok(D.traps().length === DS.DIFFS[diff].traps, label + ': jumlah perangkap');
     // perangkap dimatikan supaya uji tidak terlempar ke titik masuk
     D.traps().forEach(t => t.done = true);
 
-    const W = WALK[C.id];
+    const W = { code: WALK[C.id].code(), order: WALK[C.id].order };
     for (const step of W.order) {
       if (step === '@keys') {
         for (const pid of Object.keys(D.BUILT.spots)) use(pid, W, label + ' sobekan di ' + pid);
@@ -278,8 +284,8 @@ DS.CASES.forEach((C, ci) => {
     ok(D.S.readyShown, label + ': tombol deduksi muncul');
     if (!D.S.readyShown) return;
     D.openDeduce();
-    for (let q = 0; q < C.deduce.length; q++) {
-      const btn = (registry['dd-opts'] || { children: [] }).children.find(b => b.textContent === C.deduce[q].a[0]);
+    for (let q = 0; q < D.CASE.deduce.length; q++) {
+      const btn = (registry['dd-opts'] || { children: [] }).children.find(b => b.textContent === D.CASE.deduce[q].a[0]);
       ok(!!btn, label + ': opsi benar deduksi ' + (q + 1));
       if (btn) btn.click();
       D.deduceNext();

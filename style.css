@@ -321,3 +321,32 @@ pre.clue { margin: 12px 0 10px; padding: 12px 16px; background: var(--paper); co
 #fade.on { opacity: 1; }
 #err { position: fixed; left: 0; right: 0; bottom: 0; display: none; padding: 10px; background: #5a0f0a; color: #fff; font: 12px/1.4 Consolas, monospace; white-space: pre-wrap; z-index: 99; max-height: 40vh; overflow: auto; }
 ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #2a3342; } ::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- alat hitung sandi (manual) ---- */
+.tl-pre { white-space: pre-wrap; background: #0b0f16; border: 1px solid var(--line); padding: 10px 12px; font: 700 17px/1.5 Consolas, monospace; letter-spacing: .04em; color: var(--text); }
+.tl-lock { padding: 14px; border: 1px dashed var(--line); color: var(--dim); }
+.tl-stage { padding: 12px 14px; background: #0d121b; border: 1px solid var(--line); }
+.tl-stage.done { border-color: #2f7a55; }
+.tl-stage.done > label::after { content: '✓ BENAR'; color: #8ff0bd; margin-left: auto; letter-spacing: .2em; }
+.tl-stage.locked { opacity: .45; }
+.tl-eq { display: flex; align-items: center; gap: 8px; font: 700 20px Consolas, monospace; color: var(--amber); flex-wrap: wrap; }
+.tl-eq b { color: #8ff0bd; }
+.tl-num { width: 74px; padding: 6px 8px; font: 700 20px Consolas, monospace; text-align: center; background: #0b0f16; color: var(--text); border: 1px solid var(--line); outline: none; }
+.tl-num:focus, .tl-let:focus { border-color: var(--amber); }
+.tl-tip { font-size: 13px; margin: 8px 0; }
+.tl-grid { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 6px 0 10px; }
+.tl-word { display: flex; gap: 5px; }
+.tl-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tl-cell span { font: 700 13px Consolas, monospace; color: var(--dim); min-width: 34px; text-align: center; }
+.tl-let { width: 34px; height: 40px; text-align: center; font: 800 20px Consolas, monospace; text-transform: uppercase; background: #0b0f16; color: var(--amber); border: 1px solid var(--line); outline: none; padding: 0; }
+.tl-let.bad { border-color: var(--red); color: #ff9a90; background: #2a1012; }
+.tl-let:disabled { color: #8ff0bd; }
+.tl-abc { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin: 6px 0 12px; }
+.tl-abc span { display: flex; justify-content: space-between; padding: 3px 5px; background: #0b0f16; border: 1px solid #1d2532; font: 12px Consolas, monospace; color: var(--dim); }
+.tl-abc b { color: var(--amber); }
+.tl-hints { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.tl-hint { font-size: 13px; line-height: 1.45; padding: 8px 10px; background: #1a1608; border: 1px solid #5a4620; }
+.tl-scratch { width: 100%; min-height: 110px; flex: 1; resize: vertical; margin-top: 6px; background: #0b0f16; color: var(--text); border: 1px solid var(--line); padding: 8px; font: 14px/1.4 Consolas, monospace; outline: none; }
+#tool-side .side-math { margin: 0 0 14px; }
+#tool-side .side-head { margin: 4px 0 6px; }
+#tool-side > .btn { align-self: flex-start; margin-bottom: 12px; }

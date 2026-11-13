@@ -1,8 +1,14 @@
 # Detektif Sandi — Tiga Kasus, Satu Dalang
 
 Game detektif pixel-art untuk tugas **Matematika: Fungsi Komposisi & Fungsi Invers**.
-Setiap pesan penting dikunci berlapis, `c = f(g(x))`. Untuk membacanya kamu harus membuka lapis
-**dari yang terluar** — urutan salah, hasilnya cuma huruf acak.
+Setiap pesan penting berupa **deretan angka** yang dibuat dengan fungsi. Pemain harus **menghitung
+sendiri** — game hanya memeriksa jawaban. Tiap kasus fokus ke satu materi:
+
+| Kasus | Materi | Yang dihitung pemain |
+|---|---|---|
+| 01 | **Fungsi komposisi** | gabungkan `(f∘g)(x)`, lalu masukkan tiap angka sandi ke fungsi gabungan itu |
+| 02 | **Fungsi invers** | cari `f⁻¹(x) = (x − b) ÷ a`, lalu balik tiap angka sandi |
+| 03 | **Komposisi + invers** | gabungkan fungsinya, cari invers fungsi gabungan, lalu balik tiap angka |
 
 **Kelas XI PPLG 4 — SMK Telkom Purwokerto**
 
@@ -27,7 +33,7 @@ lalu buka `http://localhost:8000`.
 | `W A S D` / panah | Jalan (tahan `Shift` untuk lari) |
 | `E` / spasi | Periksa barang, bicara, lanjut dialog |
 | `N` | Catatan detektif (fakta, sandi & kunci, tersangka) |
-| `T` | Alat dekripsi |
+| `T` | Alat hitung sandi (memeriksa jawaban, ada petunjuk berbayar poin) |
 | `H` | Minta arahan lewat HT (−30 poin) |
 | `Esc` | Jeda |
 | `M` | Suara on/off |
@@ -39,8 +45,8 @@ satu nama yang terus muncul: **"Pak K"**.
 
 | # | Kasus | Kejahatan | TKP | Yang terjadi |
 |---|---|---|---|---|
-| 01 | **Rekaman 23.47** | Penyekapan | Lab Komputer 2, Ruang Teknisi, Gudang | Nayla hilang. CCTV menangkap sosok keluar membawa tas besar. Benarkah Nayla dibawa keluar? |
-| 02 | **Kopi Terakhir Bu Ratna** | Percobaan pembunuhan | Ruang Guru, Pantry, Ruang Wakasek | Guru matematika yang membantu Nayla diracun obat tidur. Alibi rapat seseorang ternyata palsu. |
+| 01 | **Rekaman 23.47** | Penyekapan | Lab Komputer 2, Ruang Teknisi, Gudang | Alya hilang. CCTV menangkap sosok keluar membawa tas besar. Benarkah Alya dibawa keluar? |
+| 02 | **Kopi Terakhir Bu Dewi** | Percobaan pembunuhan | Ruang Guru, Pantry, Ruang Wakasek | Guru matematika yang membantu Alya diracun obat tidur. Alibi rapat seseorang ternyata palsu. |
 | 03 | **Api di Ruang Server** | Pembakaran sengaja | Ruang Server, Ruang Panel, Ruang Kontrol | Server dibakar untuk menghapus jejak. Listrik padam, alarm diputus — dan dalangnya ada di dekatmu. |
 
 Kasus terbuka **berurutan** (kasus 2 setelah kasus 1 selesai, dst.). Untuk demo di depan kelas,
@@ -58,45 +64,54 @@ tekan **`Shift + U`** di layar Berkas Kasus untuk membuka semuanya.
   - Kasus 2 — kode brankas dari jam yang berhenti, dan **mencari tanda tangan palsu** di daftar hadir.
   - Kasus 3 — padamkan api yang menutup jalan, susun **sakelar listrik yang saling terkait**,
     lalu pakai kartu & hard disk untuk membaca log asli.
-- **Papan deduksi** — sebelum menuduh, jawab tiga pertanyaan (kapan, bagaimana, siapa yang berbohong).
+- **Papan deduksi** — sebelum menuduh, jawab 5 pertanyaan yang **diambil acak dari bank 12 soal**
+  per kasus, jadi tiap main pertanyaannya beda.
+- **Tersangka yang memang dicurigai** — tiap tersangka punya motif dan bukti mencurigakan di TKP,
+  tapi hanya satu yang alibinya runtuh.
+- **Diacak tiap main baru:** fungsi kunci, posisi meja Alya & nomor PC-nya, kode laci (kasus 1),
+  jam yang berhenti & kode brankas (kasus 2), lokasi sobekan kunci, dan perangkap.
 - **Ruang interogasi** — satu tuduhan saja. Salah tuduh = pelaku lolos.
 
 ## Tingkat Kesulitan
 
-| Mode | Lapis fungsi | Sobekan kunci | Perangkap | Kilau penanda |
+| Mode | Fungsi | Sobekan kunci | Perangkap | Kilau penanda |
 |---|---|---|---|---|
-| EASY | 2 | 1 (utuh) | — | ya |
-| NORMAL | 3 | 2 | 2, terlihat | ya |
-| HARD | 3 | 3 | 4, samar | tidak |
+| EASY | angka kecil (kasus 1 & 3: 2 fungsi) | 1 (utuh) | — | ya |
+| NORMAL | angka sedang (kasus 1 & 3: 2 fungsi) | 2 | 2, terlihat | ya |
+| HARD | angka besar (kasus 1 & 3: 3 fungsi) | 3 | 4, samar | tidak |
 
 Perangkap dipasang pelaku di lantai (posisi acak): kabel alarm, tali jebakan, papan lepas.
 Kena = kehilangan poin, papan lepas memaksa kembali ke titik masuk.
 
 ## Matematika di Baliknya
 
-Huruf diubah ke angka `A = 1 … Z = 26`, tiap lapis berbentuk `ax + b`, hasil selalu dikembalikan
-ke 1–26 (`mod 26`, angka 0 ditulis 26).
+Huruf diubah ke angka `A = 1 … Z = 26`. Fungsi kunci berbentuk `ax + b` dan **diacak tiap main**.
+
+**Kasus 1 — komposisi** (angka sandi `n` dimasukkan maju ke fungsi gabungan, hasil dikembalikan ke 1–26):
 
 ```
-c = f(g(x))        f(x) = 3x + 7        g(x) = x + 5
+f(x) = x + 2     g(x) = 5x − 1     (f∘g)(x) = f(g(x)) = (5x − 1) + 2 = 5x + 1
+n = 2  →  5·2 + 1 = 11  →  K
 ```
 
-Membuka sandi = memakai invers dengan urutan **terbalik**, mulai dari lapis terluar:
+**Kasus 2 — invers** (sandi = f(huruf), tanpa modulo):
 
 ```
-x = g⁻¹(f⁻¹(c))    f⁻¹(y) = 9(y − 7)    g⁻¹(y) = y − 5
+f(x) = 7x + 9     f⁻¹(x) = (x − 9) ÷ 7
+86  →  (86 − 9) ÷ 7 = 11  →  K
 ```
 
-Contoh huruf `C` (3): `f⁻¹(3) = 9(3 − 7) = −36 ≡ 16`, lalu `g⁻¹(16) = 11` → **K**.
+**Kasus 3 — gabungan**: gabungkan dulu, lalu balik fungsi gabungannya.
 
-Alat dekripsi di game menampilkan invers tiap fungsi dan tabel langkah per huruf, dan menolak:
+```
+f(x) = 3x − 2   g(x) = 3x − 3   h(x) = 3x + 4
+(f∘g∘h)(x) = 27x + 25      (f∘g∘h)⁻¹(x) = (x − 25) ÷ 27
+```
 
-- urutan lapis yang salah → *"Hasilnya belum jadi kalimat"* (inti pelajarannya: `f(g(x)) ≠ g(f(x))`),
-- jumlah fungsi yang tidak sesuai jumlah lapis,
-- koefisien `a` yang tidak koprima dengan 26 (tidak punya invers).
-
-Di mode NORMAL/HARD, sobekan kunci ditempel **sesuai urutan ditemukan** — siswa harus menyusunnya
-sendiri (tombol ▲▼) berdasarkan baris `c = f(g(h(x)))`.
+Alat hitung di game **tidak menghitung**. Pemain mengisi hasil langkah fungsi (dicek, salah −10),
+lalu mengisi huruf per huruf (salah −15, huruf yang salah ditandai). Ada tabel huruf dan kertas
+coretan. Petunjuk bertahap bisa dibeli: cara kerja (−25), jawaban langkah fungsi (−50),
+contoh hitungan dua angka (−75), kata pertama (−100).
 
 ## Struktur Berkas
 
@@ -109,11 +124,10 @@ js/scenes.js      — layar judul, meja berkas, pemutar cutscene, ruang interoga
 js/main.js        — mesin game: gerak, tabrakan, interaksi, puzzle, alat dekripsi, skor, alur
 KUNCI-JAWABAN.md  — panduan guru (jangan dibuka di depan kelas)
 _selftest.js      — uji otomatis: node _selftest.js
-_genkunci.js      — cetak semua sandi & kunci: node _genkunci.js
 ```
 
-Semua grafis dan suara dibuat langsung oleh kode (canvas + WebAudio) — **tanpa aset luar**,
-jadi aman dipresentasikan offline.
+Semua grafis dan efek suara dibuat langsung oleh kode (canvas + WebAudio). Musik latar memakai dua
+lagu CC0 dari OpenGameArt (lihat `audio/CREDITS.txt`) — semua berkas ada di repo, jadi tetap jalan offline.
 
 ## Uji Otomatis
 
@@ -121,7 +135,7 @@ jadi aman dipresentasikan offline.
 node _selftest.js
 ```
 
-Memainkan 3 kasus × 3 tingkat dari awal sampai vonis tanpa browser: enkripsi/dekripsi, urutan
-lapis terbalik ditolak, tata letak peta (perabot tidak menimpa dinding/barang lain), setiap barang
+Memainkan 3 kasus × 3 tingkat dari awal sampai vonis tanpa browser: ratusan kunci acak bisa dibalik
+dengan benar, jawaban salah ditolak, tata letak peta (perabot tidak menimpa dinding/barang lain), setiap barang
 **terjangkau dengan berjalan**, semua langkah tugas selesai, deduksi, interogasi, salah tuduh, dan
 waktu habis.

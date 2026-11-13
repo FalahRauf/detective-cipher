@@ -231,7 +231,7 @@
     vignette(g, 0.8);
   };
 
-  // tumpukan kardus di depan Nayla yang duduk (agar badannya tidak terpotong melayang)
+  // tumpukan kardus di depan Alya yang duduk (agar badannya tidak terpotong melayang)
   BG.storageFg = function (g) {
     R(g, 352, 252, 62, 56, '#4a3a28'); R(g, 352, 252, 62, 4, '#6a5438'); R(g, 380, 252, 6, 56, '#3a2c1e');
     R(g, 408, 258, 74, 50, '#55422c'); R(g, 408, 258, 74, 4, '#74593a'); R(g, 440, 258, 8, 50, '#3e2f20');
