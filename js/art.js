@@ -1,5 +1,5 @@
 /* =========================================================
-   DETEKTIF SANDI — art.js
+   DETEKTIF CIPHER — art.js
    Semua grafis digambar prosedural di <canvas>: tanpa aset luar.
    Isi: font piksel, sprite karakter, potret, lantai/dinding, perabot.
    ========================================================= */

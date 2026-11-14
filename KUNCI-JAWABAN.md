@@ -1,4 +1,4 @@
-# Kunci & Panduan Penilaian — Detektif Sandi
+# Kunci & Panduan Penilaian — Detektif Cipher
 
 Bahan untuk guru / presentasi. **Jangan dibuka di depan kelas** sebelum kelompok lain mencoba.
 

@@ -1,5 +1,5 @@
 /* =========================================================
-   DETEKTIF SANDI — data.js
+   DETEKTIF CIPHER — data.js
    Karakter, tingkat kesulitan, dan tiga kasus yang saling bersambung.
    Peta ditulis sebagai teks ASCII:
      #  dinding        D  pintu terbuka     L  pintu terkunci
@@ -14,17 +14,17 @@
      KARAKTER
      --------------------------------------------------------- */
   var CHARS = {
-    arsa:   { id: 'arsa', name: 'Detektif Bima', role: 'Detektif swasta', skin: '#e0a77c', hair: '#2a1c12',
+    arsa:   { id: 'arsa', name: 'Detektif Cipher', role: 'Detektif swasta', skin: '#e0a77c', hair: '#2a1c12',
               style: 'fedora', hat: '#4a3622', top: '#a08560', coat: true, pants: '#2a2d38' },
     hendra: { id: 'hendra', name: 'Pak Surya Kencana', role: 'Guru TKJ', skin: '#d49a6e', hair: '#2a2420',
               style: 'short', top: '#7a4a2a', acc: ['glasses', 'mustache', 'batik', 'grey'], pants: '#2b2b30' },
-    nayla:  { id: 'nayla', name: 'Alya Rahma', role: 'Siswi XI PPLG 4', skin: '#e8b88f', style: 'hijab',
+    nayla:  { id: 'nayla', name: 'Alya Rahma', role: 'Siswi XI RPL 2', skin: '#e8b88f', style: 'hijab',
               hijab: '#eeeeee', top: '#35507a', pants: '#4a4f5a' },
     dedi:   { id: 'dedi', name: 'Pak Rudi Hartono', role: 'Teknisi Lab', skin: '#c98d62', hair: '#141210',
               style: 'short', top: '#2f3b4a', acc: ['lanyard', 'mustache'], pants: '#22252c' },
-    rian:   { id: 'rian', name: 'Fajar Nugraha', role: 'Siswa XI PPLG 4', skin: '#d9a070', hair: '#121012',
+    rian:   { id: 'rian', name: 'Fajar Nugraha', role: 'Siswa XI RPL 2', skin: '#d9a070', hair: '#121012',
               style: 'spiky', top: '#9a2f2f', pants: '#2a2d38' },
-    sinta:  { id: 'sinta', name: 'Citra Lestari', role: 'Siswi XI PPLG 4', skin: '#efc29c', hair: '#1a1210',
+    sinta:  { id: 'sinta', name: 'Citra Lestari', role: 'Siswi XI RPL 2', skin: '#efc29c', hair: '#1a1210',
               style: 'long', top: '#dfe4ea', collar: '#ffffff', pants: '#5a5f6a' },
     joko:   { id: 'joko', name: 'Pak Darto', role: 'Satpam sekolah', skin: '#c08458', hair: '#1a1612',
               style: 'cap', hat: '#1e2c48', top: '#2b3d5e', acc: ['badge', 'mustache'], pants: '#1e2a40' },
@@ -70,7 +70,7 @@
   var C1 = {
     id: 'c1', no: 'KASUS 01', title: 'Rekaman 23.47', crime: 'Penyekapan',
     place: 'Lab Komputer 2', when: 'Kamis, 23.58',
-    blurb: 'Alya, siswi XI PPLG 4, hilang dari Lab Komputer 2 saat hujan deras. ' +
+    blurb: 'Alya, siswi XI RPL 2, hilang dari Lab Komputer 2 saat hujan deras. ' +
            'Kamera menangkap sosok gelap keluar membawa tas besar. Alya sempat meninggalkan satu pesan — terenkripsi.',
     radio: 'hendra',
     plain: 'KUNCI DI BAWAH POT',
@@ -178,7 +178,7 @@
         look: 'Serutan pensil dan penghapus karet. Komputernya mati total.',
         spotText: 'Terselip di celah monitor:' },
       { id: 'meja3', type: 'desk_pc', c: 12, r: 3, w: 3, h: 2, spot: true, title: 'MEJA PC-{{pc_meja3}}',
-        look: 'Stiker "PPLG JUARA" di CPU. Laci kosong.',
+        look: 'Stiker "RPL JUARA" di CPU. Laci kosong.',
         spotText: 'Di laci meja, di bawah stiker yang belum ditempel:' },
       { id: 'meja4', type: 'desk_pc', c: 2, r: 7, w: 3, h: 2, spot: true, title: 'MEJA PC-{{pc_meja4}}',
         look: 'Kursinya ditarik jauh ke belakang, seperti ditinggal buru-buru. Tapi tidak ada apa-apa.',
@@ -406,9 +406,9 @@
         { bg: 'gate', actors: [{ ch: 'hendra', x: 400, y: 312, dir: 'left', umbrella: true }, { ch: 'arsa', x: -40, y: 318, to: 300, dur: 2.4, dir: 'right' }],
           lines: [
             [null, 'Hujan belum berhenti sejak magrib. Gerbang SMK Bina Cipta masih terbuka — dan itu sendiri sudah pertanda buruk.'],
-            ['hendra', 'Detektif Bima? Terima kasih sudah datang selarut ini. Saya Surya, guru TKJ. Saya yang menelepon.'],
+            ['hendra', 'Detektif Cipher? Terima kasih sudah datang selarut ini. Saya Surya, guru TKJ. Saya yang menelepon.'],
             ['arsa', 'Ceritakan dari awal, Pak.'],
-            ['hendra', 'Alya Rahma, kelas XI PPLG 4. Dia izin lembur di Lab Komputer 2 untuk persiapan lomba keamanan siber. Sampai sekarang belum pulang. Ponselnya mati.', 'worried'],
+            ['hendra', 'Alya Rahma, kelas XI RPL 2. Dia izin lembur di Lab Komputer 2 untuk persiapan lomba keamanan siber. Sampai sekarang belum pulang. Ponselnya mati.', 'worried'],
             ['hendra', 'Tasnya masih di lab. Orang tuanya di ruang tunggu. Polisi bilang belum dua puluh empat jam...', 'worried'],
             ['arsa', 'Dua puluh empat jam terlalu lama. Ada rekaman CCTV?']
           ] },
@@ -435,7 +435,7 @@
           lines: [
             [null, 'Gembok terlepas. Pintu gudang berderit terbuka, dan senter menyapu rak-rak pel dan ember...'],
             ['nayla', 'Si-siapa itu?! ...Tolong!', 'worried'],
-            ['arsa', 'Tenang. Namaku Bima, detektif. Pak Surya yang memanggilku. Kamu terluka?'],
+            ['arsa', 'Tenang. Namaku Cipher, detektif. Pak Surya yang memanggilku. Kamu terluka?'],
             ['nayla', 'Nggak... cuma kedinginan. Aku dikunci di sini dari sebelum tengah malam.', 'worried'],
             ['nayla', 'Aku lihat Pak Rudi menyalin soal UAS dari server, lalu mencetaknya. Aku merekam diam-diam pakai laptop... tapi dia sadar.'],
             ['nayla', 'Dia ambil ponselku dan mengunciku di sini. Tas besar yang dia bawa keluar itu isinya lembar soal.'],
@@ -846,7 +846,7 @@
             ['nayla', 'Dokter bilang Bu Dewi sudah melewati masa kritis! Beliau sempat membuka mata.', 'happy'],
             ['arsa', 'Syukurlah. ...Alya, server sekolah itu ada di mana?'],
             ['nayla', 'Lantai tiga, di atas lab. Kenapa, Detektif?'],
-            [null, 'Ponsel Bima bergetar. Pesan dari Pak Darto: <b>"PAK, ADA ASAP DI LANTAI TIGA."</b>']
+            [null, 'Ponsel Detektif Cipher bergetar. Pesan dari Pak Darto: <b>"PAK, ADA ASAP DI LANTAI TIGA."</b>']
           ] },
         { card: { kicker: 'BERSAMBUNG', title: 'Kasus 03 terbuka', sub: 'Api di Ruang Server' } }
       ],
@@ -1209,7 +1209,7 @@
             ['arsa', 'Sandi yang bagus, Bu. Berlapis. Salah urutan sedikit saja, hasilnya jadi omong kosong.'],
             ['ratna', 'Seperti hidup, Detektif. Urutan itu penting. <b>f(g(x))</b> tidak sama dengan <b>g(f(x))</b>.', 'smirk']
           ] },
-        { card: { kicker: 'TAMAT', title: 'Terima kasih sudah bermain', sub: 'Detektif Sandi · XI PPLG 4' } }
+        { card: { kicker: 'TAMAT', title: 'Terima kasih sudah bermain', sub: 'Detektif Cipher' } }
       ],
       lose: [
         { bg: 'interro', actors: [{ ch: 'arsa', x: 200, y: 322, dir: 'right' }],

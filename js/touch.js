@@ -1,5 +1,5 @@
 /* =========================================================
-   DETEKTIF SANDI — touch.js
+   DETEKTIF CIPHER — touch.js
    Kontroler layar sentuh untuk HP / tablet:
    joystick gerak (kiri) + tombol aksi bulat (kanan).
 

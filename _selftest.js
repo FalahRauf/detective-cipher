@@ -1,4 +1,4 @@
-/* Uji otomatis Detektif Sandi — jalankan:  node _selftest.js
+/* Uji otomatis Detektif Cipher — jalankan:  node _selftest.js
    Memainkan 3 kasus x 3 tingkat dari awal sampai vonis, tanpa browser.
    Setiap barang dicapai dengan jalur jalan kaki (BFS), bukan teleport buta. */
 'use strict';
@@ -335,5 +335,5 @@ DS.CASES.forEach((C, ci) => {
   ok(registry['end-stamp'].textContent === 'WAKTU HABIS', 'waktu habis: cap WAKTU HABIS');
 })();
 
-console.log('\n  Detektif Sandi selftest: ' + pass + ' lulus, ' + fail + ' gagal');
+console.log('\n  Detektif Cipher selftest: ' + pass + ' lulus, ' + fail + ' gagal');
 if (fail) { console.log('\n  GAGAL:'); failures.slice(0, 60).forEach(f => console.log('   - ' + f)); process.exit(1); }

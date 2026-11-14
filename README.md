@@ -1,4 +1,4 @@
-# Detektif Sandi — Tiga Kasus, Satu Dalang
+# Detektif Cipher — Tiga Kasus, Satu Dalang
 
 Game detektif pixel-art untuk tugas **Matematika: Fungsi Komposisi & Fungsi Invers**.
 Setiap pesan penting berupa **deretan angka** yang dibuat dengan fungsi. Pemain harus **menghitung
@@ -9,8 +9,6 @@ sendiri** — game hanya memeriksa jawaban. Tiap kasus fokus ke satu materi:
 | 01 | **Fungsi komposisi** | gabungkan `(f∘g)(x)`, lalu masukkan tiap angka sandi ke fungsi gabungan itu |
 | 02 | **Fungsi invers** | cari `f⁻¹(x) = (x − b) ÷ a`, lalu balik tiap angka sandi |
 | 03 | **Komposisi + invers** | gabungkan fungsinya, cari invers fungsi gabungan, lalu balik tiap angka |
-
-**Kelas XI PPLG 4 — SMK Telkom Purwokerto**
 
 ---
 

@@ -1,5 +1,5 @@
 /* =========================================================
-   DETEKTIF SANDI — main.js
+   DETEKTIF CIPHER — main.js
    Mesin game: peta, gerak & tabrakan, interaksi, puzzle,
    alat dekripsi (komposisi fungsi), catatan, deduksi,
    interogasi, skor, dan alur antar-layar.
@@ -2266,7 +2266,7 @@
       else if (screen === 'scr-select') SC.drawSelect(dt, tt);
       else if (screen === 'scr-cut') SC.updateCut(dt);
       else if (screen === 'scr-play' && S) { update(dt); render(); }
-      else if (screen === 'scr-interro' && S) SC.drawInterro(tt, iSus, iHover, iMouse, S.accused);
+      else if (screen === 'scr-interro' && S) SC.drawInterro(tt, iSus, iHover, iMouse, S.accused, CASE.culprit);
     } catch (err) {
       var e = $('err');
       if (e) { e.style.display = 'block'; e.textContent = String(err && err.stack ? err.stack : err); }

@@ -1,5 +1,5 @@
 /* =========================================================
-   DETEKTIF SANDI — scenes.js
+   DETEKTIF CIPHER — scenes.js
    Layar judul, meja pemilihan kasus, pemutar cutscene
    (latar animasi + aktor + dialog bergaya visual novel),
    dan ruang interogasi.
@@ -542,7 +542,7 @@
   var icv, ig;
   var SEAT_X = [160, 320, 480];
   function initInterro() { icv = $('icv'); ig = icv.getContext('2d'); ig.imageSmoothingEnabled = false; }
-  function drawInterro(t, suspects, hover, mouse, accused) {
+  function drawInterro(t, suspects, hover, mouse, accused, culprit) {
     var g = ig;
     R(g, 0, 0, W, H, '#0b0d11');
     R(g, 0, 0, W, 230, '#161920');
@@ -552,7 +552,7 @@
     g.globalAlpha = 0.07; R(g, 140, 50, 70, 80, '#cfe6ff'); g.globalAlpha = 1;
     for (var i = 0; i < suspects.length; i++) {
       var s = suspects[i], ch = DS.CHARS[s.ch], x = SEAT_X[i];
-      var on = hover === i, gone = accused && accused[s.ch];
+      var on = hover === i, gone = accused && accused[s.ch] && s.ch !== culprit;
       // sandaran kursi + potret besar tersangka
       R(g, x - 52, 120, 104, 150, '#1c1f26'); R(g, x - 52, 120, 104, 4, '#2a2e38');
       g.globalAlpha = gone ? 0.3 : 1;
@@ -580,7 +580,11 @@
       R(g, xx - w2 / 2 - 1, 299, w2 + 2, h2 + 2, '#000000');
       R(g, xx - w2 / 2, 300, w2, h2, hover === j ? '#f2b544' : '#232833');
       A.text(g, nm, Math.round(xx - A.textW(nm, sz) / 2), 305, sz, hover === j ? '#1a1206' : '#eef3f8');
-      if (accused && accused[suspects[j].ch]) A.text(g, 'SALAH', Math.round(xx - A.textW('SALAH', 2) / 2), 330, 2, '#ff6a5a');
+      if (accused && accused[suspects[j].ch]) {
+        // tuduhan benar -> TERBUKTI (hijau), tuduhan salah -> SALAH (merah)
+        var right = suspects[j].ch === culprit, tag = right ? 'TERBUKTI' : 'SALAH';
+        A.text(g, tag, Math.round(xx - A.textW(tag, 2) / 2), 330, 2, right ? '#8ff0bd' : '#ff6a5a');
+      }
     }
   }
   function hitSeat(x, y) {
