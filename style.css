@@ -323,30 +323,99 @@ pre.clue { margin: 12px 0 10px; padding: 12px 16px; background: var(--paper); co
 ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #2a3342; } ::-webkit-scrollbar-track { background: transparent; }
 
 /* ---- alat hitung sandi (manual) ---- */
-.tl-pre { white-space: pre-wrap; background: #0b0f16; border: 1px solid var(--line); padding: 10px 12px; font: 700 17px/1.5 Consolas, monospace; letter-spacing: .04em; color: var(--text); }
-.tl-lock { padding: 14px; border: 1px dashed var(--line); color: var(--dim); }
-.tl-stage { padding: 12px 14px; background: #0d121b; border: 1px solid var(--line); }
-.tl-stage.done { border-color: #2f7a55; }
-.tl-stage.done > label::after { content: '✓ BENAR'; color: #8ff0bd; margin-left: auto; letter-spacing: .2em; }
-.tl-stage.locked { opacity: .45; }
-.tl-eq { display: flex; align-items: center; gap: 8px; font: 700 20px Consolas, monospace; color: var(--amber); flex-wrap: wrap; }
-.tl-eq b { color: #8ff0bd; }
-.tl-num { width: 74px; padding: 6px 8px; font: 700 20px Consolas, monospace; text-align: center; background: #0b0f16; color: var(--text); border: 1px solid var(--line); outline: none; }
+#scr-tool .tool-wrap { gap: 22px; }
+#tool-main { gap: 14px; }
+#tool-side { width: 360px; gap: 12px; padding-right: 4px; }
+/* penunjuk langkah */
+.tl-steps { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; counter-reset: s; }
+.tl-steps li { flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #0d121b; border: 1px solid var(--line);
+  font-size: 13px; font-weight: 700; letter-spacing: .06em; color: var(--dim); position: relative; }
+.tl-steps li i { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+  border: 2px solid currentColor; font-size: 13px; }
+.tl-steps li.now { color: #1a1206; background: var(--amber); border-color: var(--amber); }
+.tl-steps li.done { color: #8ff0bd; border-color: #2f7a55; background: #0f1f18; }
+/* instruksi sekarang */
+.tl-now { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; background: #1a1608; border: 1px solid #6a5222;
+  border-left: 4px solid var(--amber); font-size: 15px; line-height: 1.5; color: #f1e6cc; }
+.tl-now.win { background: #0f1f18; border-color: #2f7a55; border-left-color: #8ff0bd; }
+.tl-now-k { flex: none; font-size: 11px; letter-spacing: .25em; color: var(--amber); padding-top: 4px; }
+.tl-now.win .tl-now-k { color: #8ff0bd; }
+/* bukti */
+.tl-ev { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; }
+.tl-card label, .tl-stage > label { display: block; font-size: 11px; letter-spacing: .3em; color: var(--dim); margin-bottom: 6px; }
+.tl-pre { white-space: pre-wrap; background: #0b0f16; border: 1px solid var(--line); padding: 10px 12px; font: 700 16px/1.55 Consolas, monospace; color: var(--text); min-height: 72px; }
+/* kartu langkah */
+.tl-stage { padding: 16px 18px; background: #0d121b; border: 1px solid var(--amber); box-shadow: 0 0 0 3px rgba(242,181,68,.08); }
+.tl-stage > label { color: var(--amber); }
+.tl-stage.done { border-color: #2f7a55; box-shadow: none; }
+.tl-stage.done > label { color: #8ff0bd; }
+.tl-done-row { padding: 10px 14px; background: #0f1f18; border: 1px solid #2f7a55; color: #8ff0bd; font: 700 17px Consolas, monospace; }
+.tl-eq { display: flex; align-items: center; gap: 10px; font: 700 24px Consolas, monospace; color: var(--text); flex-wrap: wrap; margin: 6px 0 14px; }
+.tl-num { width: 90px; padding: 8px; font: 700 24px Consolas, monospace; text-align: center; background: #0b0f16; color: var(--amber);
+  border: 2px solid var(--line); outline: none; }
+.tl-num::placeholder { color: #3a4556; }
 .tl-num:focus, .tl-let:focus { border-color: var(--amber); }
-.tl-tip { font-size: 13px; margin: 8px 0; }
-.tl-grid { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 6px 0 10px; }
+.tool-run { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.tl-count { font-size: 13px; color: var(--dim); }
+/* huruf */
+.tl-focus { padding: 9px 12px; margin-bottom: 10px; background: #0b0f16; border: 1px dashed #3a4556; font-size: 14px; color: #c9d3de; line-height: 1.6; }
+.tl-focus code { color: var(--amber); font: 700 15px Consolas, monospace; }
+.tl-focus .btn { margin-left: 8px; }
+.tl-abc { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; margin-bottom: 14px; }
+.tl-abc span, .tl-abc-k { display: flex; flex-direction: column; align-items: center; padding: 3px 0; background: #0b0f16; border: 1px solid #1d2532;
+  font: 11px Consolas, monospace; color: var(--dim); }
+.tl-abc.pick .tl-abc-k { cursor: pointer; padding: 5px 0; background: #121926; border-color: #2a3446; transition: transform .06s; }
+.tl-abc.pick .tl-abc-k:hover { border-color: var(--amber); background: #1d1808; }
+.tl-abc.pick .tl-abc-k:active { transform: scale(.92); background: var(--amber); }
+.tl-abc.pick .tl-abc-k:active b, .tl-abc.pick .tl-abc-k:active { color: #1a1206; }
+.tl-abc b { color: var(--amber); font-size: 14px; }
+.tl-grid { display: flex; flex-wrap: wrap; gap: 14px 26px; margin-bottom: 14px; }
 .tl-word { display: flex; gap: 5px; }
-.tl-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.tl-cell span { font: 700 13px Consolas, monospace; color: var(--dim); min-width: 34px; text-align: center; }
-.tl-let { width: 34px; height: 40px; text-align: center; font: 800 20px Consolas, monospace; text-transform: uppercase; background: #0b0f16; color: var(--amber); border: 1px solid var(--line); outline: none; padding: 0; }
+.tl-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: text; }
+.tl-cell span { font: 700 13px Consolas, monospace; color: var(--dim); min-width: 38px; text-align: center; padding: 1px 0; }
+.tl-cell.on span { color: #1a1206; background: var(--amber); }
+.tl-let { width: 38px; height: 44px; text-align: center; font: 800 22px Consolas, monospace; text-transform: uppercase; background: #0b0f16;
+  color: var(--amber); border: 2px solid var(--line); outline: none; padding: 0; }
 .tl-let.bad { border-color: var(--red); color: #ff9a90; background: #2a1012; }
-.tl-let:disabled { color: #8ff0bd; }
-.tl-abc { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin: 6px 0 12px; }
-.tl-abc span { display: flex; justify-content: space-between; padding: 3px 5px; background: #0b0f16; border: 1px solid #1d2532; font: 12px Consolas, monospace; color: var(--dim); }
-.tl-abc b { color: var(--amber); }
-.tl-hints { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.tl-let:disabled { color: #8ff0bd; border-color: #2f7a55; }
+.tl-win { font-size: 16px; letter-spacing: .1em; color: #8ff0bd; }
+/* kalkulator */
+.calc { background: #0b0f16; border: 1px solid var(--line); padding: 12px; }
+.calc-head { font-size: 11px; letter-spacing: .3em; color: var(--dim); margin-bottom: 6px; }
+.calc-hist { min-height: 18px; font: 12px Consolas, monospace; color: #6f7c8f; text-align: right; }
+.calc-disp { width: 100%; margin-top: 4px; padding: 8px 10px; background: #05070b; color: var(--text); border: 1px solid #222b38; outline: none;
+  font: 700 22px Consolas, monospace; text-align: right; }
+.calc-disp:focus { border-color: var(--amber); }
+.calc-res { font: 700 18px Consolas, monospace; color: var(--amber); text-align: right; min-height: 26px; margin: 4px 0 8px; }
+.calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.calc-k { padding: 11px 0; font: 700 17px Consolas, monospace; background: #151b26; color: var(--text); border: 1px solid #222b38; cursor: pointer; }
+.calc-k:hover { border-color: var(--amber); }
+.calc-k:active { transform: scale(.96); }
+.calc-k.op { color: var(--amber); }
+.calc-k.fn { color: #9aa6b8; font-size: 14px; }
+.calc-k.mod { color: #8fc8ff; font-size: 13px; }
+.calc-k.eq { background: var(--amber); color: #1a1206; border-color: var(--amber); }
+/* bagian lipat di samping */
+.tl-sec { background: #0b0f16; border: 1px solid var(--line); }
+.tl-sec summary { cursor: pointer; padding: 10px 12px; font-size: 11px; letter-spacing: .25em; color: var(--dim); list-style: none; }
+.tl-sec summary::before { content: '▸ '; color: var(--amber); }
+.tl-sec[open] summary::before { content: '▾ '; }
+.tl-sec-b { padding: 0 12px 12px; font-size: 13px; line-height: 1.55; color: #b8c2d0; }
+.tl-hints { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .tl-hint { font-size: 13px; line-height: 1.45; padding: 8px 10px; background: #1a1608; border: 1px solid #5a4620; }
-.tl-scratch { width: 100%; min-height: 110px; flex: 1; resize: vertical; margin-top: 6px; background: #0b0f16; color: var(--text); border: 1px solid var(--line); padding: 8px; font: 14px/1.4 Consolas, monospace; outline: none; }
-#tool-side .side-math { margin: 0 0 14px; }
-#tool-side .side-head { margin: 4px 0 6px; }
-#tool-side > .btn { align-self: flex-start; margin-bottom: 12px; }
+.tl-scratch { width: 100%; min-height: 120px; resize: vertical; background: #05070b; color: var(--text); border: 1px solid #222b38; padding: 8px;
+  font: 14px/1.4 Consolas, monospace; outline: none; }
+.tl-focus .btn.primary { margin: 6px 0 0; display: inline-block; }
+.tl-focus-tip { font-size: 12.5px; margin-top: 6px; }
+.calc-k.eq.pulse { animation: eqPulse .9s ease-out 3; }
+@keyframes eqPulse { 0% { box-shadow: 0 0 0 0 rgba(242,181,68,.8); } 100% { box-shadow: 0 0 0 12px rgba(242,181,68,0); } }
+/* susun kalimat */
+.tl-sent-label { font-size: 11px; letter-spacing: .25em; margin: 4px 0 6px; }
+.tl-sent { display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px; padding: 8px; margin-bottom: 12px; background: #05070b; border: 2px dashed #3a4556; align-items: center; }
+.tl-pool { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.tl-chip { padding: 8px 14px; font: 800 18px Consolas, monospace; letter-spacing: .08em; color: var(--amber); background: #151b26;
+  border: 2px solid #2f3a4d; cursor: pointer; transition: transform .06s; }
+.tl-chip:hover { border-color: var(--amber); }
+.tl-chip:active { transform: scale(.94); }
+.tl-chip:disabled { opacity: .25; cursor: default; }
+.tl-chip.in { color: #1a1206; background: var(--amber); border-color: var(--amber); }

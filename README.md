@@ -113,6 +113,9 @@ lalu mengisi huruf per huruf (salah −15, huruf yang salah ditandai). Ada tabel
 coretan. Petunjuk bertahap bisa dibeli: cara kerja (−25), jawaban langkah fungsi (−50),
 contoh hitungan dua angka (−75), kata pertama (−100).
 
+Urutan kata pesan **diacak tiap main** (mis. `HARDISK B RAK DI ASLI`). Setelah hurufnya benar, pemain
+menyusun kata-katanya jadi kalimat (salah −15), atau pakai tombol *urutkan otomatis* (−50).
+
 ## Struktur Berkas
 
 ```

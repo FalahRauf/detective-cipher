@@ -165,7 +165,7 @@ function use(id, answers, label) {
   for (let k = 0; k < 50; k++) { tick(1); if (D.ui.dialog || D.ui.modal || D.screen !== 'scr-play') resolveUI(answers); }
   return true;
 }
-function decrypt(label) {
+function decrypt(label, diff) {
   D.openTool();
   // jawaban salah dulu harus ditolak & mengurangi skor
   const sc0 = D.S.score;
@@ -174,7 +174,16 @@ function decrypt(label) {
   D.toolStages().forEach((sg, i) => D.checkStage(i, sg.ans));
   D.checkMessage('X'.repeat(D.BUILT.plain.replace(/ /g, '').length));
   ok(!D.S.decrypted, label + ': pesan salah ditolak');
+  ok(D.BUILT.scrambled !== D.BUILT.plain && D.BUILT.scrambled.split(' ').sort().join() === D.BUILT.plain.split(' ').sort().join(), label + ': kalimat sandi teracak');
   D.checkMessage(D.BUILT.plain.replace(/ /g, ''));
+  ok(!D.S.tool.decoded || D.BUILT.scrambled.replace(/ /g, '') === D.BUILT.plain.replace(/ /g, ''), label + ': huruf urutan asli (bukan acak) ditolak');
+  D.checkMessage(D.BUILT.scrambled.replace(/ /g, ''));
+  ok(D.S.tool.decoded && !D.S.decrypted, label + ': huruf benar -> lanjut susun kalimat');
+  const sc1 = D.S.score;
+  D.checkOrder(D.BUILT.scrambled.split(' '));
+  ok(!D.S.decrypted && D.S.score === sc1 - 15, label + ': urutan acak ditolak -15');
+  if (diff === 'hard') { const sc2 = D.S.score; D.autoOrder(); ok(D.S.score === sc2 - 50, label + ': urutkan otomatis -50'); }
+  else D.checkOrder(D.BUILT.plain.split(' '));
   ok(D.S.decrypted, label + ': dekripsi berhasil');
   D.closeTool(); flush();
   resolveUI({ code: [] });
@@ -196,6 +205,10 @@ function decrypt(label) {
       if (C.mode === 'komposisi' && words.some(w => w.some(v => v < 1 || v > 26))) { ok(false, C.id + '.' + d + ': n di luar 1-26'); break; }
     }
     ok(true, C.id + '.' + d + ': 40 kunci acak terbalik benar');
+    { let prev = '', same = 0; const seen = new Set();
+      for (let t = 0; t < 60; t++) { const k = JSON.stringify(D.genLayers(C.mode, d).map(x => [x.a, x.b])); if (k === prev) same++; prev = k; seen.add(k); }
+      ok(same === 0, C.id + '.' + d + ': fungsi tidak sama dengan main sebelumnya');
+      ok(seen.size >= 15, C.id + '.' + d + ': variasi fungsi cukup banyak (' + seen.size + '/60)'); }
   }
 })();
 
@@ -259,12 +272,18 @@ DS.CASES.forEach((C, ci) => {
     const W = { code: WALK[C.id].code(), order: WALK[C.id].order };
     for (const step of W.order) {
       if (step === '@keys') {
+        if (diff === 'easy') { const gc = D.guideCheck(); ok(gc.rect && gc.len > 0, label + ': penunjuk ke sobekan kunci (' + gc.id + ')'); }
         for (const pid of Object.keys(D.BUILT.spots)) use(pid, W, label + ' sobekan di ' + pid);
         ok(D.G.allKeys(), label + ': semua kunci ditemukan');
       } else if (step === '@decrypt') {
         ok(D.G.found('msg'), label + ': pesan ditemukan sebelum dekripsi');
-        decrypt(label);
+        decrypt(label, diff);
       } else {
+        if (diff === 'easy' && C.steps.some(s => s.go === step)) {
+          const gc = D.guideCheck();
+          ok(gc.id === step || (step === 'naylaNpc'), label + ': penunjuk ke ' + step + ' (dapat ' + gc.id + ')');
+          if (gc.id === step) ok(gc.rect && gc.len > 0, label + ': jalur penunjuk ke ' + step);
+        }
         use(step, W, label + ' -> ' + step);
       }
     }

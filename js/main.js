@@ -186,6 +186,7 @@
      komposisi : huruf = (f∘g)(n) mod 26        — hitung maju (komposisi)
      invers    : sandi = f(huruf), tanpa mod     — balik pakai f⁻¹
      gabungan  : sandi = (f∘g)(huruf), tanpa mod — komposisi lalu invers   */
+  var LAST_KEY = {}, LAST_ORDER = {};
   function genLayers(mode, diff) {
     var n = mode === 'invers' ? 1 : (diff === 'hard' ? 3 : 2), L, tries = 0;
     do {
@@ -193,15 +194,15 @@
       for (var i = 0; i < n; i++) {
         var a, b;
         if (mode === 'komposisi') {
-          a = R.pick(diff === 'normal' ? [1, 3, 5] : [1, 3]);
-          b = diff === 'easy' ? R.int(1, 6) : R.nz(-7, 9);
+          a = R.pick(diff === 'easy' ? [1, 3] : (diff === 'normal' ? [1, 3, 5, 7] : [1, 3, 5]));
+          b = diff === 'easy' ? R.int(1, 9) : R.nz(-9, 12);
         } else if (mode === 'invers') {
-          if (diff === 'easy') { a = R.int(2, 3); b = R.int(1, 9); }
-          else if (diff === 'normal') { a = R.int(3, 6); b = R.nz(-9, 15); }
+          if (diff === 'easy') { a = R.int(2, 4); b = R.int(1, 12); }
+          else if (diff === 'normal') { a = R.int(3, 7); b = R.nz(-9, 20); }
           else { a = R.int(6, 9); b = R.nz(-20, 30); }
         } else {
-          if (diff === 'easy') { a = R.int(2, 3); b = R.int(1, 5); }
-          else if (diff === 'normal') { a = R.int(2, 4); b = R.nz(-5, 9); }
+          if (diff === 'easy') { a = R.int(2, 3); b = R.int(1, 8); }
+          else if (diff === 'normal') { a = R.int(2, 4); b = R.nz(-6, 12); }
           else { a = R.int(2, 3); b = R.nz(-4, 6); }
         }
         L.push({ name: FN_NAMES[i], a: a, b: b });
@@ -209,8 +210,11 @@
       var c = compose(L);
       var ok = c.A + c.B >= 1;                                  // sandi selalu positif
       if (mode === 'komposisi') ok = L.some(function (x) { return x.a > 1; }) && gcd(c.A, 26) === 1;
+      var sig = mode + diff + JSON.stringify(L.map(function (x) { return [x.a, x.b]; }));
+      if (ok && LAST_KEY[mode + diff] === sig && tries < 150) ok = false;   // jangan sama dengan main sebelumnya
       tries++;
     } while (!ok && tries < 200);
+    LAST_KEY[mode + diff] = sig;
     return L;
   }
   // (f∘g∘h)(x) = A x + B  — dikerjakan dari fungsi terdalam (paling kanan)
@@ -280,7 +284,13 @@
     var mode = CASE.mode || 'gabungan';
     var layers = genLayers(mode, DIFF.id);
     var plain = CASE.plain;
-    var words = encodeNums(plain, mode, layers);
+    // urutan kata pesan diacak tiap main (tidak pernah sama dengan urutan asli / main sebelumnya)
+    var pw = plain.split(' '), order, tries = 0;
+    do { order = shuffle(pw.map(function (x, i) { return i; })); tries++; }
+    while (pw.length > 1 && tries < 50 && (order.join() === pw.map(function (x, i) { return i; }).join() || order.join() === LAST_ORDER[CASE.id]));
+    LAST_ORDER[CASE.id] = order.join();
+    var scrambled = order.map(function (i) { return pw[i]; }).join(' ');
+    var words = encodeNums(scrambled, mode, layers);
     var clues = [{ id: 'msg', kind: 'msg', title: 'PESAN SANDI (ANGKA)', body: numsStr(words) }];
     var frag = Math.max(1, Math.min(DIFF.frags, layers.length));
     var per = Math.ceil(layers.length / frag);
@@ -294,7 +304,7 @@
         title: frag === 1 ? 'KUNCI FUNGSI' : 'KUNCI — SOBEKAN ' + String.fromCharCode(65 + q), body: body.join('\n') });
     }
     var cp = compose(layers);
-    BUILT = { mode: mode, layers: layers, A: cp.A, B: cp.B, plain: plain, words: words, cipher: numsStr(words), clues: clues, spots: {} };
+    BUILT = { mode: mode, layers: layers, A: cp.A, B: cp.B, plain: plain, scrambled: scrambled, words: words, cipher: numsStr(words), clues: clues, spots: {} };
   }
   function clueById(id) { for (var i = 0; i < BUILT.clues.length; i++) if (BUILT.clues[i].id === id) return BUILT.clues[i]; return null; }
   function keyClues() { return BUILT.clues.filter(function (c) { return c.kind === 'key'; }); }
@@ -943,74 +953,321 @@
     }
     flushPending();
   }
+  /* ---- tampilan alat: penunjuk langkah, kartu langkah aktif, kalkulator ---- */
+  var MODE_NAME = { komposisi: 'KOMPOSISI FUNGSI', invers: 'FUNGSI INVERS', gabungan: 'KOMPOSISI + INVERS' };
+  function fnPretty(a, b) { return fnStr({ a: a, b: b }); }
+  function stageSummary(sg) {
+    if (sg.id === 'inv') return sg.lhs.replace(/\(x − $/, '(') + fnPretty(1, -sg.ans[0]) + ') ÷ ' + sg.ans[1];
+    return sg.lhs + fnPretty(sg.ans[0], sg.ans[1]);
+  }
+  function stageExplain(sg) {
+    var n = BUILT.layers.length;
+    if (sg.id === 'comp') return 'Gabungkan semua fungsi jadi <b>satu</b> fungsi berbentuk <b>ax + b</b>. ' +
+      'Mulai dari yang paling dalam: ' + esc(nestStr(n, 'x')) + ' — ganti x di fungsi luar dengan rumus fungsi dalam, lalu sederhanakan.';
+    if (BUILT.mode === 'invers') return 'Sandi dibuat dengan <b>f(huruf)</b>. Untuk membaliknya, cari <b>f⁻¹</b>: ' +
+      'tulis y = ax + b, lalu pindahkan ruas sampai x = (y − b) ÷ a. Isi angka bertanda, misalnya <b>−4</b>.';
+    return 'Sekarang balik fungsi gabungan dari langkah sebelumnya: <b>kurangi b dulu, baru bagi a</b>.';
+  }
+  function cellFormula(num) {
+    if (BUILT.mode === 'komposisi')
+      return BUILT.A + ' × ' + num + (BUILT.B < 0 ? ' − ' + (-BUILT.B) : ' + ' + BUILT.B);
+    return '(' + num + (BUILT.B < 0 ? ' + ' + (-BUILT.B) : ' − ' + BUILT.B) + ') ÷ ' + BUILT.A;
+  }
   function renderTool() {
     var ts = toolState(), haveMsg = !!S.found.msg, haveKeys = G.allKeys();
-    var stages = toolStages();
-    $('tool-lapis').textContent = { komposisi: 'KOMPOSISI FUNGSI', invers: 'FUNGSI INVERS', gabungan: 'KOMPOSISI + INVERS' }[BUILT.mode];
-    var h = '';
-    // pesan & kunci (otomatis dari petunjuk yang sudah ditemukan)
-    h += '<div class="tool-box"><label>PESAN SANDI</label><div class="tl-pre">' +
-      (haveMsg ? esc(BUILT.cipher) : '<span class="dim">— pesan sandinya belum ditemukan —</span>') + '</div></div>';
+    var stages = toolStages(), ready = haveMsg && haveKeys;
+    $('tool-lapis').textContent = MODE_NAME[BUILT.mode];
+
+    // urutan langkah: kumpulkan -> langkah fungsi -> tulis pesan
+    var steps = [{ t: 'Kumpulkan petunjuk', done: ready }];
+    stages.forEach(function (sg) { steps.push({ t: sg.id === 'comp' ? 'Gabungkan fungsi' : 'Cari invers', done: !!ts.st[sg.id] }); });
+    steps.push({ t: 'Ubah angka jadi huruf', done: !!ts.decoded });
+    steps.push({ t: 'Susun kalimat', done: !!S.decrypted });
+    var active = -1;
+    for (var a = 0; a < steps.length; a++) if (!steps[a].done) { active = a; break; }
+
+    var h = '<ol class="tl-steps">';
+    steps.forEach(function (st, i) {
+      h += '<li class="' + (st.done ? 'done' : (i === active ? 'now' : '')) + '"><i>' + (st.done ? '✓' : i + 1) + '</i><span>' + st.t + '</span></li>';
+    });
+    h += '</ol>';
+
+    // apa yang harus dilakukan sekarang
+    var now;
+    if (!ready) now = 'Cari <b>pesan sandi</b> dan <b>semua sobekan kunci</b> di TKP dulu. Yang sudah ditemukan otomatis muncul di bawah.';
+    else if (S.decrypted) now = 'Selesai! Pesannya terbaca. Kembali ke TKP dan ikuti isi pesannya.';
+    else if (active === steps.length - 1) now = 'Kata-kata pesan ini <b>teracak</b>. Klik kata-katanya sesuai urutan kalimat yang masuk akal, lalu cek. Bingung? Ada tombol urutkan otomatis (mengurangi poin).';
+    else if (active === steps.length - 2) now = 'Hitung <b>tiap angka</b> sandi pakai fungsi yang sudah benar, lalu cocokkan hasilnya dengan tabel huruf. Klik kotak untuk melihat rumusnya.';
+    else now = stageExplain(stages[active - 1]);
+    h += '<div class="tl-now' + (S.decrypted ? ' win' : '') + '"><b class="tl-now-k">SEKARANG</b><div>' + now + '</div></div>';
+
+    // bukti
     var keys = keyClues().map(function (c) { return S.found[c.id] ? esc(c.body) : '<span class="dim">— ' + esc(c.title) + ' belum ditemukan —</span>'; });
-    h += '<div class="tool-box"><label>KUNCI FUNGSI</label><div class="tl-pre mono">' + keys.join('\n') + '</div></div>';
-    if (!haveMsg || !haveKeys) {
-      h += '<div class="tool-box tl-lock">Kumpulkan pesan sandi dan <b>semua</b> sobekan kunci dulu, baru hitung di sini.</div>';
-      $('tool-main').innerHTML = h; renderToolSide(); return;
-    }
-    // langkah fungsi
-    var open = true;
-    stages.forEach(function (sg, si) {
-      var done = !!ts.st[sg.id];
-      h += '<div class="tool-box tl-stage' + (done ? ' done' : '') + (open ? '' : ' locked') + '" data-st="' + si + '"><label>' + esc(sg.title) + '</label>';
-      h += '<div class="tl-eq"><span>' + esc(sg.lhs) + '</span>';
-      if (done) h += '<b>' + sg.ans[0] + '</b><span>' + esc(sg.parts[1]) + '</span><b>' + sg.ans[1] + '</b>';
-      else h += '<input class="tl-num" data-st="' + si + '" data-i="0" inputmode="numeric" ' + (open ? '' : 'disabled') + '>' +
-        '<span>' + esc(sg.parts[1]) + '</span><input class="tl-num" data-st="' + si + '" data-i="1" inputmode="numeric" ' + (open ? '' : 'disabled') + '>';
-      h += '</div><div class="tl-tip dim">' + esc(sg.tip) + '</div>';
-      if (!done && open) h += '<div class="tool-run"><button class="btn tiny primary tl-check-st" data-st="' + si + '">CEK</button><span class="tool-msg" id="tl-msg-' + si + '"></span></div>';
-      h += '</div>';
-      if (!done) open = false;
-    });
-    // isi pesan huruf per huruf
-    var idx = 0;
-    h += '<div class="tool-box tl-stage' + (S.decrypted ? ' done' : '') + (open ? '' : ' locked') + '"><label>LANGKAH TERAKHIR — HITUNG TIAP ANGKA JADI HURUF</label>';
-    h += '<div class="tl-grid">';
-    BUILT.words.forEach(function (w) {
-      h += '<div class="tl-word">';
-      w.forEach(function (num) {
-        var val = S.decrypted ? BUILT.plain.replace(/ /g, '').charAt(idx) : (ts.letters[idx] || '');
-        h += '<div class="tl-cell"><span>' + num + '</span><input class="tl-let" maxlength="1" data-i="' + idx + '" value="' + esc(val) + '" ' +
-          (open && !S.decrypted ? '' : 'disabled') + '></div>';
-        idx++;
+    h += '<div class="tl-ev"><div class="tl-card"><label>PESAN SANDI</label><div class="tl-pre">' +
+      (haveMsg ? esc(BUILT.cipher) : '<span class="dim">— belum ditemukan —</span>') + '</div></div>' +
+      '<div class="tl-card"><label>KUNCI FUNGSI</label><div class="tl-pre">' + keys.join('\n') + '</div></div></div>';
+
+    if (ready) {
+      // langkah fungsi: yang selesai jadi ringkasan hijau, yang aktif jadi kartu besar
+      stages.forEach(function (sg, si) {
+        if (ts.st[sg.id]) { h += '<div class="tl-done-row">✓ ' + esc(stageSummary(sg)) + '</div>'; return; }
+        if (si + 1 !== active) return;
+        h += '<div class="tl-stage now"><label>LANGKAH ' + (si + 2) + ' · ' + (sg.id === 'comp' ? 'GABUNGKAN FUNGSI' : 'CARI INVERS') + '</label>';
+        h += '<div class="tl-eq"><span>' + esc(sg.lhs) + '</span>' +
+          '<input class="tl-num" data-st="' + si + '" data-i="0" inputmode="numeric" placeholder="?">' +
+          '<span>' + esc(sg.parts[1]) + '</span>' +
+          '<input class="tl-num" data-st="' + si + '" data-i="1" inputmode="numeric" placeholder="?"></div>';
+        h += '<div class="tool-run"><button class="btn primary tl-check-st" data-st="' + si + '">CEK LANGKAH INI</button>' +
+          '<span class="tool-msg" id="tl-msg-' + si + '"></span></div></div>';
       });
-      h += '</div>';
-    });
-    h += '</div>';
-    if (open && !S.decrypted) h += '<div class="tool-run"><button class="btn primary" id="tl-check-msg">CEK JAWABAN &rarr;</button><span class="tool-msg" id="tl-msg-final"></span></div>';
-    if (S.decrypted) h += '<div class="tool-msg good">Pesan terbaca: <b>' + esc(BUILT.plain) + '</b></div>';
-    else if (!open) h += '<div class="dim">Selesaikan langkah fungsi di atas dulu.</div>';
-    h += '</div>';
+
+      // langkah huruf
+      var lettersOpen = active >= steps.length - 2 || S.decrypted, dec = !!ts.decoded;
+      if (lettersOpen && dec) {
+        h += '<div class="tl-done-row">✓ Pesan (masih teracak): ' + esc(BUILT.scrambled) + '</div>';
+      }
+      if (lettersOpen && !dec) {
+        var idx = 0, filled = 0;
+        h += '<div class="tl-stage now"><label>LANGKAH ' + (steps.length - 1) + ' · UBAH ANGKA JADI HURUF</label>';
+        if (!S.decrypted) h += '<div class="tl-focus" id="tl-focus">Klik kotak di bawah angka untuk mulai. Hurufnya bisa diketik, atau <b>klik saja di tabel huruf</b>.</div>';
+        h += '<div class="tl-abc' + (S.decrypted ? '' : ' pick') + '">';
+        for (var i = 1; i <= 26; i++) h += '<button type="button" class="tl-abc-k" data-l="' + n2l(i) + '"' + (S.decrypted ? ' disabled' : '') + '><b>' + n2l(i) + '</b>' + i + '</button>';
+        h += '</div><div class="tl-grid">';
+        BUILT.words.forEach(function (w) {
+          h += '<div class="tl-word">';
+          w.forEach(function (num) {
+            var val = ts.letters[idx] || '';
+            if (val) filled++;
+            h += '<label class="tl-cell"><span>' + num + '</span><input class="tl-let" maxlength="1" data-i="' + idx + '" data-n="' + num + '" value="' + esc(val) + '"' +
+              (S.decrypted ? ' disabled' : '') + '></label>';
+            idx++;
+          });
+          h += '</div>';
+        });
+        h += '</div>';
+        h += '<div class="tool-run"><button class="btn primary" id="tl-check-msg">CEK JAWABAN &rarr;</button>' +
+          '<span class="tl-count" id="tl-count">' + filled + ' / ' + idx + ' terisi</span><span class="tool-msg" id="tl-msg-final"></span></div>';
+        h += '</div>';
+      }
+      // langkah susun kalimat
+      if (dec) {
+        var sw = BUILT.scrambled.split(' '), pick = ts.pick || (ts.pick = []);
+        h += '<div class="tl-stage now' + (S.decrypted ? ' done' : '') + '"><label>LANGKAH ' + steps.length + ' · SUSUN KALIMAT</label>';
+        if (S.decrypted) {
+          h += '<div class="tl-win">PESAN TERBACA: <b>' + esc(BUILT.plain) + '</b></div>';
+        } else {
+          h += '<div class="tl-sent-label dim">KALIMATMU</div><div class="tl-sent" id="tl-sent">';
+          if (!pick.length) h += '<span class="dim">Klik kata di bawah sesuai urutan…</span>';
+          pick.forEach(function (wi, k) { h += '<button type="button" class="tl-chip in" data-k="' + k + '" title="klik untuk melepas">' + esc(sw[wi]) + '</button>'; });
+          h += '</div><div class="tl-sent-label dim">KATA YANG TERSEDIA</div><div class="tl-pool">';
+          sw.forEach(function (w, wi) {
+            var used = pick.indexOf(wi) >= 0;
+            h += '<button type="button" class="tl-chip" data-w="' + wi + '"' + (used ? ' disabled' : '') + '>' + esc(w) + '</button>';
+          });
+          h += '</div><div class="tool-run"><button class="btn primary" id="tl-check-order">CEK KALIMAT &rarr;</button>' +
+            '<button class="btn tiny" id="tl-clear-order">KOSONGKAN</button>' +
+            '<button class="btn tiny" id="tl-auto-order">URUTKAN OTOMATIS (−' + ORDER_HINT + ' poin)</button>' +
+            '<span class="tool-msg" id="tl-msg-order"></span></div>';
+        }
+        h += '</div>';
+      }
+    }
     $('tool-main').innerHTML = h;
     bindTool();
     renderToolSide();
+    var first = $('tool-main').querySelector && $('tool-main').querySelector('.tl-num');
+    if (first && first.focus) first.focus();
   }
+
   function renderToolSide() {
     var ts = toolState(), h = '';
-    h += '<div class="side-head">TABEL HURUF</div><div class="tl-abc">';
-    for (var i = 1; i <= 26; i++) h += '<span><b>' + n2l(i) + '</b>' + i + '</span>';
-    h += '</div>';
-    h += '<div class="side-math">' + theoryHtml() + '</div>';
-    h += '<div class="side-head">PETUNJUK <span class="dim">(mengurangi skor)</span></div><div class="tl-hints">';
+    h += '<div class="calc"><div class="calc-head">KALKULATOR</div>' +
+      '<div class="calc-hist" id="calc-hist"></div>' +
+      '<input class="calc-disp" id="calc-disp" spellcheck="false" autocomplete="off" placeholder="0">' +
+      '<div class="calc-res" id="calc-res">&nbsp;</div><div class="calc-keys">';
+    [['C', 'c fn'], ['(', 'op'], [')', 'op'], ['⌫', 'bk fn'],
+     ['7'], ['8'], ['9'], ['÷', 'op'],
+     ['4'], ['5'], ['6'], ['×', 'op'],
+     ['1'], ['2'], ['3'], ['−', 'op'],
+     ['0'], ['mod 26', 'mod fn'], ['=', 'eq'], ['+', 'op']].forEach(function (k) {
+      h += '<button type="button" class="calc-k ' + (k[1] || 'num') + '" data-k="' + k[0] + '">' + k[0] + '</button>';
+    });
+    h += '</div></div>';
+    h += '<details class="tl-sec" open><summary>CARA HITUNG</summary><div class="tl-sec-b">' + theoryHtml() + '</div></details>';
+    h += '<details class="tl-sec"' + (ts.hints ? ' open' : '') + '><summary>PETUNJUK <span class="dim">(mengurangi skor)</span></summary><div class="tl-sec-b"><div class="tl-hints">';
     for (var k = 0; k < ts.hints; k++) h += '<div class="tl-hint">' + hintHtml(k) + '</div>';
+    if (!ts.hints) h += '<div class="dim">Belum ada petunjuk dipakai.</div>';
     h += '</div>';
     if (!S.decrypted && S.found.msg && G.allKeys() && ts.hints < HINT_COST.length)
-      h += '<button class="btn tiny" id="tl-hint-btn">MINTA PETUNJUK ' + (ts.hints + 1) + ' (−' + HINT_COST[ts.hints] + ')</button>';
-    h += '<div class="side-head">KERTAS CORETAN</div><textarea id="tl-scratch" class="tl-scratch" spellcheck="false" placeholder="hitung di sini..."></textarea>';
+      h += '<button class="btn tiny" id="tl-hint-btn">MINTA PETUNJUK ' + (ts.hints + 1) + ' (−' + HINT_COST[ts.hints] + ' poin)</button>';
+    h += '</div></details>';
+    h += '<details class="tl-sec"><summary>KERTAS CORETAN</summary><div class="tl-sec-b"><textarea id="tl-scratch" class="tl-scratch" spellcheck="false" placeholder="tulis hitunganmu di sini..."></textarea></div></details>';
     $('tool-side').innerHTML = h;
     $('tl-scratch').value = ts.scratch || '';
     $('tl-scratch').oninput = function () { ts.scratch = this.value; };
     var hb = $('tl-hint-btn'); if (hb) hb.onclick = useHint;
+    bindCalc();
   }
+
+  /* ---- kalkulator: + − × ÷ ( ) dan mod 26, dihitung tanpa eval ---- */
+  var calc = { expr: '', hist: [] };
+  function calcEval(src) {
+    var s = String(src).replace(/×/g, '*').replace(/÷/g, '/').replace(/[−–]/g, '-').replace(/\s+/g, '');
+    if (!s) return null;
+    var i = 0;
+    function peek() { return s.charAt(i); }
+    function num() {
+      var m = s.slice(i).match(/^\d+(\.\d+)?/);
+      if (!m) throw 0;
+      i += m[0].length; return parseFloat(m[0]);
+    }
+    function factor() {
+      var c = peek();
+      if (c === '-') { i++; return -factor(); }
+      if (c === '+') { i++; return factor(); }
+      if (c === '(') { i++; var v = expr(); if (peek() !== ')') throw 0; i++; return v; }
+      return num();
+    }
+    function term() {
+      var v = factor();
+      for (;;) {
+        var c = peek();
+        if (c === '*') { i++; v *= factor(); }
+        else if (c === '/') { i++; var d = factor(); if (d === 0) throw 0; v /= d; }
+        else if (c === '(' || /\d/.test(c)) { v *= factor(); }   // 3(4) = 12
+        else return v;
+      }
+    }
+    function expr() {
+      var v = term();
+      for (;;) {
+        var c = peek();
+        if (c === '+') { i++; v += term(); } else if (c === '-') { i++; v -= term(); } else return v;
+      }
+    }
+    try { var r = expr(); if (i !== s.length || !isFinite(r)) return null; return r; } catch (e) { return null; }
+  }
+  function calcFmt(v) {
+    if (v == null) return '';
+    if (Math.abs(v - Math.round(v)) < 1e-9) return String(Math.round(v)).replace('-', '−');
+    return (Math.round(v * 10000) / 10000).toString().replace('-', '−') + '  (bukan bilangan bulat)';
+  }
+  function calcShow() {
+    var d = $('calc-disp'), r = $('calc-res'), hs = $('calc-hist');
+    if (!d) return;
+    if (d.value !== calc.expr) d.value = calc.expr;
+    var v = calcEval(calc.expr);
+    r.textContent = calc.expr ? (v == null ? '…' : '= ' + calcFmt(v)) : ' ';
+    hs.innerHTML = calc.hist.slice(-4).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('');
+  }
+  function calcPress(k) {
+    if (k === 'C') calc.expr = '';
+    else if (k === '⌫') calc.expr = calc.expr.slice(0, -1);
+    else if (k === '=' || k === 'mod 26') {
+      var v = calcEval(calc.expr);
+      if (v == null) { sfx('bad'); return; }
+      if (k === 'mod 26') {
+        if (Math.abs(v - Math.round(v)) > 1e-9) { sfx('bad'); return; }
+        var m = m26(Math.round(v));
+        calc.hist.push(calcFmt(v) + ' mod 26 = ' + m);
+        calc.expr = String(m);
+      } else {
+        calc.hist.push(calc.expr + ' = ' + calcFmt(v));
+        calc.expr = calcFmt(v).split(' ')[0];
+      }
+    } else calc.expr += k;
+    sfx('switch');
+    calcShow();
+  }
+  function bindCalc() {
+    var keys = $('tool-side').querySelectorAll ? $('tool-side').querySelectorAll('.calc-k') : [];
+    for (var i = 0; i < keys.length; i++) keys[i].onclick = function () { calcPress(this.getAttribute('data-k')); };
+    var d = $('calc-disp');
+    d.oninput = function () { calc.expr = this.value.replace(/\*/g, '×').replace(/\//g, '÷').replace(/[^0-9+\-−×÷().\s]/g, ''); calcShow(); };
+    d.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); calcPress('='); } };
+    calcShow();
+  }
+  function calcInsert(t) { calc.expr += t; calcShow(); }
+  // ganti isi kalkulator dengan rumus untuk satu angka sandi — tinggal tekan "="
+  function calcSetFormula(num) {
+    calc.expr = cellFormula(num).replace(/\s+/g, '');
+    sfx('switch');
+    calcShow();
+    var eq = $('tool-side').querySelector && $('tool-side').querySelector('.calc-k.eq');
+    if (eq) { eq.classList.remove('pulse'); void eq.offsetWidth; eq.classList.add('pulse'); }
+  }
+
+  function bindTool() {
+    var ts = toolState(), main = $('tool-main');
+    var nums = main.querySelectorAll ? main.querySelectorAll('.tl-num') : [];
+    var lets = main.querySelectorAll ? main.querySelectorAll('.tl-let') : [];
+    var btns = main.querySelectorAll ? main.querySelectorAll('.tl-check-st') : [];
+    for (var i = 0; i < btns.length; i++) btns[i].onclick = function () { checkStage(+this.getAttribute('data-st')); };
+    function count() {
+      var c = $('tl-count'); if (!c) return;
+      var f = 0; for (var q = 0; q < lets.length; q++) if (lets[q].value) f++;
+      c.textContent = f + ' / ' + lets.length + ' terisi';
+    }
+    for (var j = 0; j < lets.length; j++) {
+      lets[j].onfocus = function () {
+        ts.cur = +this.getAttribute('data-i');
+        var num = this.getAttribute('data-n'), fx = $('tl-focus');
+        for (var q = 0; q < lets.length; q++) lets[q].parentNode.classList.remove('on');
+        this.parentNode.classList.add('on');
+        if (fx) fx.innerHTML = 'Angka <b>' + num + '</b>: hitung <code>' + esc(cellFormula(+num)) + '</code>' + (BUILT.mode === 'komposisi' ? ', kalau lebih dari 26 kurangi 26 (atau tombol <b>mod 26</b>)' : '') + ', lalu cari hurufnya di tabel. ' +
+          '<button type="button" class="btn tiny primary" id="tl-to-calc">' + num + ' → MASUKKAN RUMUS KE KALKULATOR</button>' +
+          '<div class="dim tl-focus-tip">Kalkulator dibersihkan dan rumusnya terisi, tinggal tekan <b>=</b>' +
+          (BUILT.mode === 'komposisi' ? ' lalu <b>mod 26</b>' : '') + ', lalu <b>klik hurufnya di tabel</b> (atau ketik).</div>';
+        var self = this, tc = $('tl-to-calc');
+        if (tc) {
+          tc.onmousedown = function (e) { e.preventDefault(); };   // fokus tetap di kotak huruf
+          tc.onclick = function () { calcSetFormula(+num); if (self.focus) self.focus(); };
+        }
+      };
+      lets[j].oninput = function () {
+        this.value = this.value.replace(/[^a-z]/gi, '').toUpperCase().slice(-1);
+        ts.letters[+this.getAttribute('data-i')] = this.value;
+        this.classList.remove('bad');
+        count();
+        if (this.value) { var nx = lets[+this.getAttribute('data-i') + 1]; if (nx && nx.focus) nx.focus(); }
+      };
+      lets[j].onkeydown = function (e) {
+        var k = +this.getAttribute('data-i');
+        if (e.key === 'Backspace' && !this.value) { var pv = lets[k - 1]; if (pv && pv.focus) pv.focus(); }
+        if (e.key === 'ArrowLeft' && lets[k - 1]) lets[k - 1].focus();
+        if (e.key === 'ArrowRight' && lets[k + 1]) lets[k + 1].focus();
+        if (e.key === 'Enter') checkMessage();
+      };
+    }
+    // tabel huruf bisa diklik: mengisi kotak yang sedang dipilih lalu pindah ke kotak berikutnya
+    var abc = main.querySelectorAll ? main.querySelectorAll('.tl-abc-k') : [];
+    for (var a = 0; a < abc.length; a++) {
+      abc[a].onmousedown = function (e) { e.preventDefault(); };
+      abc[a].onclick = function () {
+        if (!lets.length) return;
+        var i = ts.cur != null && lets[ts.cur] ? ts.cur : 0;
+        for (var q = 0; q < lets.length && lets[i] && lets[i].value && ts.cur == null; q++) i = (i + 1) % lets.length;
+        var el = lets[i];
+        el.value = this.getAttribute('data-l');
+        sfx('blip');
+        el.oninput.call(el);
+        if (i === lets.length - 1 && el.focus) el.focus();
+      };
+    }
+    for (var k = 0; k < nums.length; k++) nums[k].onkeydown = function (e) { if (e.key === 'Enter') checkStage(+this.getAttribute('data-st')); };
+    var cm = $('tl-check-msg'); if (cm) cm.onclick = function () { checkMessage(); };
+    var chips = main.querySelectorAll ? main.querySelectorAll('.tl-chip') : [];
+    for (var c = 0; c < chips.length; c++) chips[c].onclick = function () {
+      ts.pick = ts.pick || [];
+      if (this.classList.contains('in')) ts.pick.splice(+this.getAttribute('data-k'), 1);
+      else ts.pick.push(+this.getAttribute('data-w'));
+      sfx('switch'); renderTool();
+    };
+    var co = $('tl-check-order'); if (co) co.onclick = function () { checkOrder(); };
+    var cl = $('tl-clear-order'); if (cl) cl.onclick = function () { ts.pick = []; renderTool(); };
+    var ao = $('tl-auto-order'); if (ao) ao.onclick = autoOrder;
+  }
+
   function hintHtml(k) {
     var st = toolStages(), first = BUILT.words[0];
     if (k === 0) return '<b>1.</b> ' + esc(st[0].tip) + (st[1] ? ' Lalu: ' + esc(st[1].tip) : '');
@@ -1025,7 +1282,7 @@
       });
       return '<b>3.</b> Contoh hitungan:<br>' + ex.join('<br>');
     }
-    return '<b>4.</b> Kata pertama: <b>' + first.map(solveNum).join('') + '</b>';
+    return '<b>4.</b> Kata pertama (masih teracak): <b>' + first.map(solveNum).join('') + '</b>';
   }
   function useHint() {
     var ts = toolState();
@@ -1035,27 +1292,6 @@
     if (ts.hints >= 3) { var f = BUILT.words[0]; for (var j = 0; j < Math.min(2, f.length); j++) ts.letters[j] = solveNum(f[j]); }
     if (ts.hints >= 2) toolStages().forEach(function (sg) { /* jawaban langkah ditampilkan, pemain tetap mengetik */ });
     renderTool();
-  }
-  function bindTool() {
-    var ts = toolState();
-    var nums = document.querySelectorAll ? $('tool-main').querySelectorAll('.tl-num') : [];
-    var lets = $('tool-main').querySelectorAll ? $('tool-main').querySelectorAll('.tl-let') : [];
-    var btns = $('tool-main').querySelectorAll ? $('tool-main').querySelectorAll('.tl-check-st') : [];
-    for (var i = 0; i < btns.length; i++) btns[i].onclick = function () { checkStage(+this.getAttribute('data-st')); };
-    for (var j = 0; j < lets.length; j++) {
-      lets[j].oninput = function () {
-        this.value = this.value.replace(/[^a-z]/gi, '').toUpperCase().slice(-1);
-        ts.letters[+this.getAttribute('data-i')] = this.value;
-        this.classList.remove('bad');
-        if (this.value) { var nx = lets[+this.getAttribute('data-i') + 1]; if (nx && nx.focus) nx.focus(); }
-      };
-      lets[j].onkeydown = function (e) {
-        if (e.key === 'Backspace' && !this.value) { var pv = lets[+this.getAttribute('data-i') - 1]; if (pv && pv.focus) pv.focus(); }
-        if (e.key === 'Enter') checkMessage();
-      };
-    }
-    for (var k = 0; k < nums.length; k++) nums[k].onkeydown = function (e) { if (e.key === 'Enter') checkStage(+this.getAttribute('data-st')); };
-    var cm = $('tl-check-msg'); if (cm) cm.onclick = function () { checkMessage(); };
   }
   function readNum(str) {
     var t = String(str || '').replace(/\s+/g, '').replace(/[−–]/g, '-');
@@ -1073,10 +1309,10 @@
     if (vals[0] == null || vals[1] == null) { msg.textContent = 'Isi kedua kotak dengan angka bulat.'; msg.className = 'tool-msg bad'; sfx('bad'); return; }
     if (stageOk(sg, vals)) { toolState().st[sg.id] = true; sfx('ok'); renderTool(); return; }
     addScore(-10); S.mistakes++; sfx('bad');
-    msg.textContent = 'Belum tepat (−10). Hitung ulang pelan-pelan — kertas coretan ada di kanan.'; msg.className = 'tool-msg bad';
+    msg.textContent = 'Belum tepat (−10). Hitung ulang pelan-pelan — pakai kalkulator di kanan.'; msg.className = 'tool-msg bad';
   }
   function checkMessage(given) {
-    var ts = toolState(), want = BUILT.plain.replace(/ /g, ''), wrong = 0, empty = 0;
+    var ts = toolState(), want = BUILT.scrambled.replace(/ /g, ''), wrong = 0, empty = 0;
     var lets = $('tool-main').querySelectorAll('.tl-let');
     if (given && given.split) lets = given.split('').map(function (ch) { return { value: ch, classList: { add: function () {} } }; });
     for (var i = 0; i < want.length; i++) {
@@ -1092,9 +1328,35 @@
       msg.textContent = wrong + ' huruf masih salah (ditandai merah, −15). Cek lagi hitunganmu.'; msg.className = 'tool-msg bad';
       return;
     }
+    ts.decoded = true; ts.pick = []; sfx('ok');
+    toast('Huruf benar · sekarang susun kalimatnya');
+    renderTool();
+  }
+  var ORDER_HINT = 50;
+  function checkOrder(given) {
+    var ts = toolState(), sw = BUILT.scrambled.split(' ');
+    var pick = given ? given : (ts.pick || []);
+    var txt = pick.map(function (wi) { return typeof wi === 'number' ? sw[wi] : wi; }).join(' ');
+    var msg = $('tl-msg-order');
+    if (pick.length < sw.length) { msg.textContent = 'Masih ada ' + (sw.length - pick.length) + ' kata yang belum dipakai.'; msg.className = 'tool-msg bad'; sfx('bad'); return false; }
+    if (txt !== BUILT.plain) {
+      addScore(-15); S.mistakes++; sfx('bad');
+      msg.textContent = 'Urutannya belum masuk akal (−15). Coba susun ulang.'; msg.className = 'tool-msg bad';
+      return false;
+    }
     S.decrypted = true; sfx('win'); changed();
     toast('Sandi terpecahkan');
     renderTool();
+    return true;
+  }
+  function autoOrder() {
+    var ts = toolState(), sw = BUILT.scrambled.split(' '), used = {};
+    ts.pick = BUILT.plain.split(' ').map(function (w) {
+      for (var i = 0; i < sw.length; i++) if (sw[i] === w && !used[i]) { used[i] = true; return i; }
+      return 0;
+    });
+    addScore(-ORDER_HINT); ts.orderHint = true; sfx('blip');
+    checkOrder();
   }
 
   /* =========================================================
@@ -1490,6 +1752,7 @@
     drawSpray(g);
     drawLighting(g, ox, oy);
     drawGlints(g);
+    drawGuide(g);
     drawFocus(g);
     // tanda seru NPC yang belum diajak bicara
     for (i = 0; i < NPCS.length; i++) {
@@ -1499,6 +1762,106 @@
       A.R(g, n.x - 1, n.y - 33 + bob, 3, 6, '#f2b544'); A.R(g, n.x - 1, n.y - 25 + bob, 3, 2, '#f2b544');
     }
     g.setTransform(1, 0, 0, 1, 0, 0);
+    drawGuideEdge(g, ox, oy);
+  }
+  /* ---------------------------------------------------------
+     PENUNJUK ARAH (EASY: jejak jalan + panah, NORMAL: panah saja)
+     Menunjuk objek dari langkah tugas yang sedang dikerjakan.
+     --------------------------------------------------------- */
+  var guide = { t: -1, id: null, rect: null, path: [] };
+  function guideTargetId() {
+    for (var i = 0; i < CASE.steps.length; i++) {
+      var st = CASE.steps[i];
+      if (st.done(G)) continue;
+      if (st.keys) {                               // sobekan kunci terdekat yang belum ditemukan
+        var best = null, bd = 1e9;
+        for (var id in BUILT.spots) {
+          if (S.found[BUILT.spots[id]]) continue;
+          var P = propById(id); if (!P) continue;
+          var tid = (P.def.blockedBy && fireBurning(P.def.blockedBy)) ? P.def.blockedBy : id;
+          var d = Math.hypot(P.x + P.w / 2 - player.x, P.y + P.h / 2 - player.y);
+          if (d < bd) { bd = d; best = tid; }
+        }
+        return best;
+      }
+      return st.go || null;                        // langkah tanpa tujuan (mis. buka ALAT): tidak ada panah
+    }
+    return null;
+  }
+  function guideRect(id) {
+    var its = interactables();
+    for (var i = 0; i < its.length; i++) if (its[i].o.id === id) {
+      var r = its[i].rect, o = its[i].o;
+      if (its[i].kind === 'prop') return { x: r.x, y: o.y - (o.tall || 0), w: r.w, h: o.h + (o.tall || 0), hit: r };
+      return { x: r.x, y: r.y, w: r.w, h: r.h, hit: r };
+    }
+    var P = propById(id);
+    if (P) return { x: P.x, y: P.y - (P.tall || 0), w: P.w, h: P.h + (P.tall || 0), hit: { x: P.x, y: P.y, w: P.w, h: P.h } };
+    return null;
+  }
+  // jalur jalan kaki (BFS antar tile) dari pemain ke tile di sebelah tujuan
+  function guidePath(hit) {
+    var sc = Math.floor(player.x / T), sr = Math.floor((player.y - 2) / T);
+    var W = MAP.w, H = MAP.h, prev = {}, q = [[sc, sr]], key = function (c, r) { return c + ',' + r; };
+    prev[key(sc, sr)] = null;
+    var goal = null;
+    while (q.length) {
+      var cur = q.shift(), c = cur[0], r = cur[1];
+      if (rectDist(c * T + 8, r * T + 10, hit) <= 14) { goal = cur; break; }
+      var nb = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      for (var k = 0; k < 4; k++) {
+        var nc = c + nb[k][0], nr = r + nb[k][1], kk = key(nc, nr);
+        if (nc < 0 || nr < 0 || nc >= W || nr >= H || kk in prev) continue;
+        if (boxBlocked(nc * T + 8, nr * T + 13)) continue;
+        prev[kk] = cur; q.push([nc, nr]);
+      }
+    }
+    var out = [];
+    while (goal) { out.unshift(goal); goal = prev[key(goal[0], goal[1])]; }
+    return out;
+  }
+  function updateGuide() {
+    if (!DIFF.guide || !S || time - guide.t < 0.25) return;
+    guide.t = time;
+    guide.id = guideTargetId();
+    guide.rect = guide.id ? guideRect(guide.id) : null;
+    guide.path = (guide.rect && DIFF.guide === 'path') ? guidePath(guide.rect.hit) : [];
+  }
+  function drawGuide(g) {
+    if (!DIFF.guide) return;
+    updateGuide();
+    var R0 = guide.rect;
+    if (!R0) return;
+    // jejak titik-titik bercahaya
+    var p = guide.path;
+    for (var i = 1; i < p.length; i++) {
+      var ph = (time * 3 - i * 0.35) % 1; if (ph < 0) ph += 1;
+      g.globalAlpha = 0.35 + 0.5 * (1 - ph);
+      A.R(g, p[i][0] * T + 7, p[i][1] * T + 9, 3, 3, '#f2b544');
+    }
+    g.globalAlpha = 1;
+    // panah memantul di atas tujuan
+    if (Math.hypot(R0.hit.x + R0.hit.w / 2 - player.x, R0.hit.y + R0.hit.h / 2 - player.y) < 20) return;
+    var cx = Math.round(R0.x + R0.w / 2), top = Math.round(R0.y - 6 + Math.sin(time * 5) * 2);
+    A.R(g, cx - 4, top - 7, 9, 1, '#1a1206');
+    for (var k = 0; k < 5; k++) A.R(g, cx - 4 + k, top - 6 + k, 9 - k * 2, 1, '#f2b544');
+    A.R(g, cx - 1, top - 12, 3, 6, '#f2b544');
+  }
+  // tujuan di luar layar: panah di tepi layar menunjuk arahnya
+  function drawGuideEdge(g, ox, oy) {
+    var R0 = DIFF.guide && guide.rect;
+    if (!R0) return;
+    var tx = R0.x + R0.w / 2 - ox, ty = R0.y + R0.h / 2 - oy, m = 14;
+    if (tx >= 0 && tx <= VW && ty >= 0 && ty <= VH) return;
+    var cx = VW / 2, cy = VH / 2, dx = tx - cx, dy = ty - cy;
+    var s = Math.min((VW / 2 - m) / Math.abs(dx || 1e-6), (VH / 2 - m) / Math.abs(dy || 1e-6));
+    var ex = cx + dx * s, ey = cy + dy * s, ang = Math.atan2(dy, dx);
+    var pulse = 0.7 + 0.3 * Math.sin(time * 6);
+    g.save(); g.translate(Math.round(ex), Math.round(ey)); g.rotate(ang);
+    g.globalAlpha = pulse;
+    g.fillStyle = '#1a1206'; g.beginPath(); g.moveTo(8, 0); g.lineTo(-6, -7); g.lineTo(-3, 0); g.lineTo(-6, 7); g.closePath(); g.fill();
+    g.fillStyle = '#f2b544'; g.beginPath(); g.moveTo(6, 0); g.lineTo(-5, -5); g.lineTo(-2, 0); g.lineTo(-5, 5); g.closePath(); g.fill();
+    g.restore();
   }
   function drawProp(g, P, Sv) {
     var fn = A.PROPS[P.type];
@@ -1947,6 +2310,8 @@
     },
     pickCorrect: function () { if (!pickState) return false; var btns = $('pk-opts').children; for (var i = 0; i < btns.length; i++) btns[i].click(); return true; },
     openTool: openTool, closeTool: closeTool, toolStages: toolStages, checkStage: checkStage, checkMessage: checkMessage, useHint: useHint,
+    checkOrder: checkOrder, autoOrder: autoOrder,
+    guideCheck: function () { guide.t = -1e9; updateGuide(); return { id: guide.id, rect: !!guide.rect, len: guide.path.length }; },
     compose: compose, genLayers: genLayers, encodeNums: encodeNums, solveNum: solveNum, get V() { return V; },
     openDeduce: openDeduce, deduceNext: deduceNext, get dedState() { return dedState; },
     selectSuspect: selectSuspect, accuse: accuse, openInterro: openInterro, get iSus() { return iSus; }, finish: finish,

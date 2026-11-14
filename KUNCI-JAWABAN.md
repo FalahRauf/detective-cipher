@@ -25,6 +25,9 @@ Contoh kasus 2: `f(x) = 7x + 9` → `f⁻¹(x) = (x − 9) ÷ 7`. Angka `86` →
 
 Alat hitung di game hanya memeriksa: langkah fungsi (salah −10) lalu huruf per huruf (salah −15).
 
+**Urutan kata pesan juga diacak tiap main** (mis. `HARDISK B RAK DI ASLI`). Setelah semua huruf benar,
+pemain menyusun kata-katanya jadi kalimat yang benar (salah −15). Tombol *urutkan otomatis* tersedia (−50).
+
 ---
 
 ## Kasus 01 — Rekaman 23.47
